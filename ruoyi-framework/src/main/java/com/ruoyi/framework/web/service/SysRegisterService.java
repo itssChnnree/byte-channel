@@ -1,5 +1,9 @@
 package com.ruoyi.framework.web.service;
 
+import com.ruoyi.common.core.dto.EmailRegisterDto;
+import com.ruoyi.common.helper.email.EmailConstant;
+import com.ruoyi.common.helper.email.EmailSender;
+import com.ruoyi.system.http.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.constant.CacheConstants;
@@ -19,6 +23,11 @@ import com.ruoyi.framework.manager.factory.AsyncFactory;
 import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysUserService;
 
+import javax.annotation.Resource;
+import javax.mail.MessagingException;
+import javax.validation.Valid;
+import java.util.concurrent.TimeUnit;
+
 /**
  * 注册校验方法
  * 
@@ -36,47 +45,26 @@ public class SysRegisterService
     @Autowired
     private RedisCache redisCache;
 
+    @Resource
+    private EmailSender emailSender;
+
+
     /**
      * 注册
      */
     public String register(RegisterBody registerBody)
     {
-        String msg = "", username = registerBody.getUsername(), password = registerBody.getPassword();
+        String msg = "", password = registerBody.getPassword();
         SysUser sysUser = new SysUser();
-        sysUser.setUserName(username);
-
-        // 验证码开关
-        boolean captchaEnabled = configService.selectCaptchaEnabled();
-        if (captchaEnabled)
+        sysUser.setUserName(registerBody.getEmail());
+        sysUser.setEmail(registerBody.getEmail());
+        if (!userService.checkEmailUnique(registerBody.getEmail()))
         {
-            validateCaptcha(username, registerBody.getCode(), registerBody.getUuid());
-        }
-
-        if (StringUtils.isEmpty(username))
-        {
-            msg = "用户名不能为空";
-        }
-        else if (StringUtils.isEmpty(password))
-        {
-            msg = "用户密码不能为空";
-        }
-        else if (username.length() < UserConstants.USERNAME_MIN_LENGTH
-                || username.length() > UserConstants.USERNAME_MAX_LENGTH)
-        {
-            msg = "账户长度必须在2到20个字符之间";
-        }
-        else if (password.length() < UserConstants.PASSWORD_MIN_LENGTH
-                || password.length() > UserConstants.PASSWORD_MAX_LENGTH)
-        {
-            msg = "密码长度必须在5到20个字符之间";
-        }
-        else if (!userService.checkUserNameUnique(sysUser))
-        {
-            msg = "保存用户'" + username + "'失败，注册账号已存在";
+            msg = "保存用户'" + registerBody.getEmail() + "'失败，注册邮箱已存在";
         }
         else
         {
-            sysUser.setNickName(username);
+            sysUser.setNickName(registerBody.getEmail());
             sysUser.setPwdUpdateDate(DateUtils.getNowDate());
             sysUser.setPassword(SecurityUtils.encryptPassword(password));
             boolean regFlag = userService.registerUser(sysUser);
@@ -86,7 +74,7 @@ public class SysRegisterService
             }
             else
             {
-                AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.REGISTER, MessageUtils.message("user.register.success")));
+                AsyncManager.me().execute(AsyncFactory.recordLogininfor(sysUser.getUserName(), Constants.REGISTER, MessageUtils.message("user.register.success")));
             }
         }
         return msg;
@@ -113,5 +101,39 @@ public class SysRegisterService
         {
             throw new CaptchaException();
         }
+    }
+
+    public void validateCaptcha( String code, String uuid){
+        validateCaptcha(null,code,uuid);
+    }
+
+
+    /**
+     * [获取邮箱验证码]
+     * @author 陈湘岳 2025/7/26
+     * @param emailRegisterDto
+     * @return com.ruoyi.system.http.Result
+     **/
+    public Result getEmailCode(@Valid EmailRegisterDto emailRegisterDto) {
+        //校验验证码
+        if (configService.selectCaptchaEnabled())
+        {
+            validateCaptcha( emailRegisterDto.getCode(), emailRegisterDto.getUuid());
+        }
+        //校验邮箱是否被注册
+        boolean hasEmail = userService.checkEmailUnique(emailRegisterDto.getEmail());
+        if(!hasEmail){
+            return Result.fail("邮箱已被注册");
+        }
+        try {
+            String emailCode = EmailSender.generateVerificationCode(6);
+            //设置验证码过期时间
+            redisCache.setCacheObject(CacheConstants.EMAIL_CAPTCHA_CODE_KEY+emailRegisterDto.getEmail(),emailCode,5, TimeUnit.MINUTES);
+            emailSender.sendVerificationEmail(emailRegisterDto.getEmail(),emailRegisterDto.getEmail(),
+                    emailCode, EmailConstant.REGISTER,5);
+        } catch (MessagingException e) {
+            throw new RuntimeException("发送邮件失败");
+        }
+        return Result.success("发送成功");
     }
 }

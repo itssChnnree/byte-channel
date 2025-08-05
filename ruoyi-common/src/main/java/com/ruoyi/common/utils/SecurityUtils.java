@@ -37,6 +37,21 @@ public class SecurityUtils
     }
 
     /**
+     * 用户ID
+     **/
+    public static String getStrUserId()
+    {
+        try
+        {
+            return getLoginUser().getUserId().toString();
+        }
+        catch (Exception e)
+        {
+            throw new ServiceException("获取用户ID异常", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    /**
      * 获取部门ID
      **/
     public static Long getDeptId()

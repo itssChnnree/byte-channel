@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.CommodityMapper">
+
+    <resultMap type="com.ruoyi.system.domain.Commodity" id="CommodityMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="commodityName" column="commodity_name" jdbcType="VARCHAR"/>
+                <result property="commodityPrice" column="commodity_price" jdbcType="NUMERIC"/>
+                <result property="commodityDiscountedPrice" column="commodity_discounted_price" jdbcType="NUMERIC"/>
+                <result property="categoryId" column="category_id" jdbcType="VARCHAR"/>
+                <result property="oversoldConfigurations" column="oversold_configurations" jdbcType="INTEGER"/>
+                <result property="oversold" column="oversold" jdbcType="INTEGER"/>
+                <result property="inventory" column="inventory" jdbcType="INTEGER"/>
+                <result property="alarmThreshold" column="alarm_threshold" jdbcType="INTEGER"/>
+                <result property="description" column="description" jdbcType="VARCHAR"/>
+                <result property="category" column="category" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.CommodityVo" id="CommodityVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="commodityName" column="commodity_name" jdbcType="VARCHAR"/>
+                <result property="commodityPrice" column="commodity_price" jdbcType="NUMERIC"/>
+                <result property="commodityDiscountedPrice" column="commodity_discounted_price" jdbcType="NUMERIC"/>
+                <result property="categoryId" column="category_id" jdbcType="VARCHAR"/>
+                <result property="oversoldConfigurations" column="oversold_configurations" jdbcType="INTEGER"/>
+                <result property="oversold" column="oversold" jdbcType="INTEGER"/>
+                <result property="inventory" column="inventory" jdbcType="INTEGER"/>
+                <result property="alarmThreshold" column="alarm_threshold" jdbcType="INTEGER"/>
+                <result property="description" column="description" jdbcType="VARCHAR"/>
+                <result property="category" column="category" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <update id="update">
+        update commodity
+        <set>
+            <if test="commodityName != null and commodityName!=''">
+                commodity_name = #{commodityName},
+            </if>
+            <if test="commodityPrice != null">
+                commodity_price = #{commodityPrice},
+            </if>
+            <if test="commodityDiscountedPrice != null">
+                commodity_discounted_price = #{commodityDiscountedPrice},
+            </if>
+            <if test="categoryId != null and categoryId !=''">
+                category_id = #{categoryId},
+            </if>
+            <if test="oversoldConfigurations != null">
+                oversold_configurations = #{oversoldConfigurations},
+            </if>
+            <if test="oversold != null">
+                oversold = #{oversold},
+            </if>
+            <if test="inventory != null">
+                inventory = #{inventory},
+            </if>
+            <if test="alarmThreshold != null">
+                alarm_threshold = #{alarmThreshold},
+            </if>
+            <if test="description != null">
+                `description` = #{description},
+            </if>
+            <if test="isDeleted != null">
+                is_deleted = #{isDeleted},
+            </if>
+            <if test="availableStatus != null">
+                available_status = #{availableStatus},
+            </if>
+            <if test="updateUser != null">
+                update_user = #{updateUser},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        where id = #{id} and is_deleted = 0
+    </update>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="CommodityVOMap">
+        select
+        id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
+        from commodity
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="CommodityVOMap">
+        select
+id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time        
+        from commodity
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="commodityName != null and commodityName != ''">
+                and commodity_name = #{commodityName}
+            </if>
+            <if test="commodityPrice != null">
+                and commodity_price = #{commodityPrice}
+            </if>
+            <if test="commodityDiscountedPrice != null">
+                and commodity_discounted_price = #{commodityDiscountedPrice}
+            </if>
+            <if test="categoryId != null and categoryId != ''">
+                and category_id = #{categoryId}
+            </if>
+            <if test="oversoldConfigurations != null">
+                and oversold_configurations = #{oversoldConfigurations}
+            </if>
+            <if test="oversold != null">
+                and oversold = #{oversold}
+            </if>
+            <if test="inventory != null">
+                and inventory = #{inventory}
+            </if>
+            <if test="alarmThreshold != null">
+                and alarm_threshold = #{alarmThreshold}
+            </if>
+            <if test="description != null and description != ''">
+                and description = #{description}
+            </if>
+            <if test="category != null and category != ''">
+                and category = #{category}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="availableStatus != null">
+                and available_status = #{availableStatus}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="CommodityVOMap">
+        select
+id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
+        from commodity
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.commodityName != null and dto.commodityName != ''">
+                and commodity_name = #{dto.commodityName}
+            </if>
+            <if test="dto.commodityPrice != null">
+                and commodity_price = #{dto.commodityPrice}
+            </if>
+            <if test="dto.commodityDiscountedPrice != null">
+                and commodity_discounted_price = #{dto.commodityDiscountedPrice}
+            </if>
+            <if test="dto.categoryId != null and dto.categoryId != ''">
+                and category_id = #{dto.categoryId}
+            </if>
+            <if test="dto.oversoldConfigurations != null">
+                and oversold_configurations = #{dto.oversoldConfigurations}
+            </if>
+            <if test="dto.oversold != null">
+                and oversold = #{dto.oversold}
+            </if>
+            <if test="dto.inventory != null">
+                and inventory = #{dto.inventory}
+            </if>
+            <if test="dto.alarmThreshold != null">
+                and alarm_threshold = #{dto.alarmThreshold}
+            </if>
+            <if test="dto.description != null and dto.description != ''">
+                and description = #{dto.description}
+            </if>
+            <if test="dto.category != null and dto.category != ''">
+                and category = #{dto.category}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+            <if test="dto.availableStatus != null">
+                and available_status = #{dto.availableStatus}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="CommodityVOMap">
+        select
+    id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
+        from commodity
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.commodityName != null and dto.commodityName != ''">
+                and commodity_name = #{dto.commodityName}
+            </if>
+            <if test="dto.commodityPrice != null">
+                and commodity_price = #{dto.commodityPrice}
+            </if>
+            <if test="dto.commodityDiscountedPrice != null">
+                and commodity_discounted_price = #{dto.commodityDiscountedPrice}
+            </if>
+            <if test="dto.categoryId != null and dto.categoryId != ''">
+                and category_id = #{dto.categoryId}
+            </if>
+            <if test="dto.oversoldConfigurations != null">
+                and oversold_configurations = #{dto.oversoldConfigurations}
+            </if>
+            <if test="dto.oversold != null">
+                and oversold = #{dto.oversold}
+            </if>
+            <if test="dto.inventory != null">
+                and inventory = #{dto.inventory}
+            </if>
+            <if test="dto.alarmThreshold != null">
+                and alarm_threshold = #{dto.alarmThreshold}
+            </if>
+            <if test="dto.description != null and dto.description != ''">
+                and description = #{dto.description}
+            </if>
+            <if test="dto.category != null and dto.category != ''">
+                and category = #{dto.category}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+            <if test="dto.availableStatus != null">
+                and available_status = #{dto.availableStatus}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="haveCommodity" resultType="java.lang.String">
+        select distinct category_id from commodity where category_id in
+        <foreach item="item" collection="categoryIds" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time)
+        values (#{id},#{commodityName}, #{commodityPrice}, #{commodityDiscountedPrice}, #{categoryId}, #{oversoldConfigurations}, #{oversold}, #{inventory}, #{alarmThreshold}, #{description}, #{category}, #{isDeleted}, #{status}, #{availableStatus}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.commodityName}, #{entity.commodityPrice}, #{entity.commodityDiscountedPrice}, #{entity.categoryId}, #{entity.oversoldConfigurations}, #{entity.oversold}, #{entity.inventory}, #{entity.alarmThreshold}, #{entity.description}, #{entity.category}, #{entity.isDeleted}, #{entity.status}, #{entity.availableStatus}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.commodityName}, #{entity.commodityPrice}, #{entity.commodityDiscountedPrice}, #{entity.categoryId}, #{entity.oversoldConfigurations}, #{entity.oversold}, #{entity.inventory}, #{entity.alarmThreshold}, #{entity.description}, #{entity.category}, #{entity.isDeleted}, #{entity.status}, #{entity.availableStatus}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+            </foreach>
+            on duplicate key update
+        commodity_name = values(commodity_name),
+        commodity_price = values(commodity_price),
+        commodity_discounted_price = values(commodity_discounted_price),
+        category_id = values(category_id),
+        oversold_configurations = values(oversold_configurations),
+        oversold = values(oversold),
+        inventory = values(inventory),
+        alarm_threshold = values(alarm_threshold),
+        description = values(description),
+        category = values(category),
+        is_deleted = values(is_deleted),
+        status = values(status),
+        available_status = values(available_status),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time)
+    </insert>
+
+</mapper>
+

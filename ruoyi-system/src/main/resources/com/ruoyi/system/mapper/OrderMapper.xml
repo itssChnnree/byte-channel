@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.OrderMapper">
+
+    <resultMap type="com.ruoyi.system.domain.Order" id="OrderMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="amount" column="amount" jdbcType="NUMERIC"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="orderTime" column="order_time" jdbcType="TIMESTAMP"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.OrderVo" id="OrderVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="amount" column="amount" jdbcType="NUMERIC"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="orderTime" column="order_time" jdbcType="TIMESTAMP"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="OrderVOMap">
+        select
+id, user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time
+        from order
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="OrderVOMap">
+        select
+id, user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time        
+        from `order`
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="amount != null">
+                and amount = #{amount}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="orderTime != null">
+                and order_time = #{orderTime}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="OrderVOMap">
+        select
+id, user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time
+        from `order`
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.amount != null">
+                and amount = #{dto.amount}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+            <if test="dto.orderTime != null">
+                and order_time = #{dto.orderTime}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="OrderVOMap">
+        select
+id, user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time
+        from `order`
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.amount != null">
+                and amount = #{dto.amount}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+            <if test="dto.orderTime != null">
+                and order_time = #{dto.orderTime}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into `order`(id,user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{userId}, #{amount}, #{status}, #{orderTime}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into `order`(id,user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.userId}, #{entity.amount}, #{entity.status}, #{entity.orderTime}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into `order`(id,user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.userId}, #{entity.amount}, #{entity.status}, #{entity.orderTime}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+            </foreach>
+            on duplicate key update
+        user_id = values(user_id),
+        amount = values(amount),
+        status = values(status),
+        order_time = values(order_time),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time)    
+        </insert>
+
+</mapper>
+

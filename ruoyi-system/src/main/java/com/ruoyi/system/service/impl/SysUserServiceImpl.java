@@ -217,6 +217,23 @@ public class SysUserServiceImpl implements ISysUserService
     }
 
     /**
+     * 校验email是否唯一
+     *
+     * @param email 邮箱
+     * @return
+     */
+    @Override
+    public boolean checkEmailUnique(String email)
+    {
+        SysUser info = userMapper.checkEmailUnique(email);
+        if (StringUtils.isNotNull(info) )
+        {
+            return UserConstants.NOT_UNIQUE;
+        }
+        return UserConstants.UNIQUE;
+    }
+
+    /**
      * 校验用户是否允许操作
      * 
      * @param user 用户信息

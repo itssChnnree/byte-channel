@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.CommodityCategoryMapper">
+
+    <resultMap type="com.ruoyi.system.domain.CommodityCategory" id="CommodityCategoryMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="categoryName" column="category_name" jdbcType="VARCHAR"/>
+                <result property="summary" column="summary" jdbcType="VARCHAR"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.CommodityCategoryVo" id="CommodityCategoryVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="categoryName" column="category_name" jdbcType="VARCHAR"/>
+                <result property="summary" column="summary" jdbcType="VARCHAR"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="CommodityCategoryVOMap">
+        select
+id, category_name, summary, status, available_status, is_deleted, create_user, update_user, create_time, update_time
+        from commodity_category
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="CommodityCategoryVOMap">
+        select
+id, category_name, summary, status, available_status, is_deleted, create_user, update_user, create_time, update_time        
+        from commodity_category
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="categoryName != null and categoryName != ''">
+                and category_name = #{categoryName}
+            </if>
+            <if test="summary != null and summary != ''">
+                and summary = #{summary}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="availableStatus != null">
+                and available_status = #{availableStatus}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="CommodityCategoryVOMap">
+        select
+id, category_name, summary, status, available_status, is_deleted, create_user, update_user, create_time, update_time
+        from commodity_category
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.categoryName != null and dto.categoryName != ''">
+                and category_name = #{dto.categoryName}
+            </if>
+            <if test="dto.summary != null and dto.summary != ''">
+                and summary = #{dto.summary}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+            <if test="dto.availableStatus != null">
+                and available_status = #{dto.availableStatus}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="CommodityCategoryVOMap">
+        select
+    id, category_name, summary, status, available_status, is_deleted, create_user, update_user, create_time, update_time
+        from commodity_category
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.categoryName != null and dto.categoryName != ''">
+                and category_name = #{dto.categoryName}
+            </if>
+            <if test="dto.summary != null and dto.summary != ''">
+                and summary = #{dto.summary}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+            <if test="dto.availableStatus != null">
+                and available_status = #{dto.availableStatus}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into commodity_category(id,category_name, summary, status, available_status, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{categoryName}, #{summary}, #{status}, #{availableStatus}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into commodity_category(id,category_name, summary, status, available_status, is_deleted, create_user, update_user, create_time, update_time)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.categoryName}, #{entity.summary}, #{entity.status}, #{entity.availableStatus}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into commodity_category(id,category_name, summary, status, available_status, is_deleted, create_user, update_user, create_time, update_time)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.categoryName}, #{entity.summary}, #{entity.status}, #{entity.availableStatus}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+            </foreach>
+            on duplicate key update
+            category_name = values(category_name),
+            summary = values(summary),
+            status = values(status),
+            available_status = values(available_status),
+            is_deleted = values(is_deleted),
+            create_user = values(create_user),
+            update_user = values(update_user),
+            create_time = values(create_time),
+            update_time = values(update_time)    </insert>
+
+</mapper>
+

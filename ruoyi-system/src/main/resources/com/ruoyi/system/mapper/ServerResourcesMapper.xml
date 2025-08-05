@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ServerResourcesMapper">
+
+    <resultMap type="com.ruoyi.system.domain.ServerResources" id="ServerResourcesMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="resourcesIp" column="resources_ip" jdbcType="VARCHAR"/>
+                <result property="resourcesPort" column="resources_port" jdbcType="VARCHAR"/>
+                <result property="resourcesPassword" column="resources_password" jdbcType="VARCHAR"/>
+                <result property="resourcesStatus" column="resources_status" jdbcType="VARCHAR"/>
+                <result property="resourceTenant" column="resource_tenant" jdbcType="VARCHAR"/>
+                <result property="leaseExpirationTime" column="lease_expiration_time" jdbcType="TIMESTAMP"/>
+                <result property="salesStatus" column="sales_status" jdbcType="VARCHAR"/>
+                <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+                <result property="cloudServiceProvider" column="cloud_service_provider" jdbcType="VARCHAR"/>
+                <result property="cloudUser" column="cloud_user" jdbcType="VARCHAR"/>
+                <result property="nodeUrl" column="node_url" jdbcType="VARCHAR"/>
+                <result property="nodePort" column="node_port" jdbcType="VARCHAR"/>
+                <result property="localPort" column="local_port" jdbcType="VARCHAR"/>
+                <result property="publicBrokerKey" column="public_broker_key" jdbcType="VARCHAR"/>
+                <result property="localBrokerPort" column="local_broker_port" jdbcType="INTEGER"/>
+                <result property="sni" column="sni" jdbcType="VARCHAR"/>
+                <result property="shortId" column="short_id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="commodityId" column="commodity_id" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.ServerResourcesVo" id="ServerResourcesVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="resourcesIp" column="resources_ip" jdbcType="VARCHAR"/>
+                <result property="resourcesPort" column="resources_port" jdbcType="VARCHAR"/>
+                <result property="resourcesPassword" column="resources_password" jdbcType="VARCHAR"/>
+                <result property="resourcesStatus" column="resources_status" jdbcType="VARCHAR"/>
+                <result property="resourceTenant" column="resource_tenant" jdbcType="VARCHAR"/>
+                <result property="leaseExpirationTime" column="lease_expiration_time" jdbcType="TIMESTAMP"/>
+                <result property="salesStatus" column="sales_status" jdbcType="VARCHAR"/>
+                <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+                <result property="cloudServiceProvider" column="cloud_service_provider" jdbcType="VARCHAR"/>
+                <result property="cloudUser" column="cloud_user" jdbcType="VARCHAR"/>
+                <result property="nodeUrl" column="node_url" jdbcType="VARCHAR"/>
+                <result property="nodePort" column="node_port" jdbcType="VARCHAR"/>
+                <result property="localPort" column="local_port" jdbcType="VARCHAR"/>
+                <result property="publicBrokerKey" column="public_broker_key" jdbcType="VARCHAR"/>
+                <result property="localBrokerPort" column="local_broker_port" jdbcType="INTEGER"/>
+                <result property="sni" column="sni" jdbcType="VARCHAR"/>
+                <result property="shortId" column="short_id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="commodityId" column="commodity_id" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="ServerResourcesVOMap">
+        select
+id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, local_port, public_broker_key, local_broker_port, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+        from server_resources
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="ServerResourcesVOMap">
+        select
+id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, local_port, public_broker_key, local_broker_port, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time        
+        from server_resources
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="resourcesIp != null and resourcesIp != ''">
+                and resources_ip = #{resourcesIp}
+            </if>
+            <if test="resourcesPort != null and resourcesPort != ''">
+                and resources_port = #{resourcesPort}
+            </if>
+            <if test="resourcesPassword != null and resourcesPassword != ''">
+                and resources_password = #{resourcesPassword}
+            </if>
+            <if test="resourcesStatus != null and resourcesStatus != ''">
+                and resources_status = #{resourcesStatus}
+            </if>
+            <if test="resourceTenant != null and resourceTenant != ''">
+                and resource_tenant = #{resourceTenant}
+            </if>
+            <if test="leaseExpirationTime != null">
+                and lease_expiration_time = #{leaseExpirationTime}
+            </if>
+            <if test="salesStatus != null and salesStatus != ''">
+                and sales_status = #{salesStatus}
+            </if>
+            <if test="availableStatus != null">
+                and available_status = #{availableStatus}
+            </if>
+            <if test="cloudServiceProvider != null and cloudServiceProvider != ''">
+                and cloud_service_provider = #{cloudServiceProvider}
+            </if>
+            <if test="cloudUser != null and cloudUser != ''">
+                and cloud_user = #{cloudUser}
+            </if>
+            <if test="nodeUrl != null and nodeUrl != ''">
+                and node_url = #{nodeUrl}
+            </if>
+            <if test="nodePort != null and nodePort != ''">
+                and node_port = #{nodePort}
+            </if>
+            <if test="localPort != null and localPort != ''">
+                and local_port = #{localPort}
+            </if>
+            <if test="publicBrokerKey != null and publicBrokerKey != ''">
+                and public_broker_key = #{publicBrokerKey}
+            </if>
+            <if test="localBrokerPort != null">
+                and local_broker_port = #{localBrokerPort}
+            </if>
+            <if test="sni != null and sni != ''">
+                and sni = #{sni}
+            </if>
+            <if test="shortId != null and shortId != ''">
+                and short_id = #{shortId}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="commodityId != null and commodityId != ''">
+                and commodity_id = #{commodityId}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="ServerResourcesVOMap">
+        select
+id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, local_port, public_broker_key, local_broker_port, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+        from server_resources
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.resourcesIp != null and dto.resourcesIp != ''">
+                and resources_ip = #{dto.resourcesIp}
+            </if>
+            <if test="dto.resourcesPort != null and dto.resourcesPort != ''">
+                and resources_port = #{dto.resourcesPort}
+            </if>
+            <if test="dto.resourcesPassword != null and dto.resourcesPassword != ''">
+                and resources_password = #{dto.resourcesPassword}
+            </if>
+            <if test="dto.resourcesStatus != null and dto.resourcesStatus != ''">
+                and resources_status = #{dto.resourcesStatus}
+            </if>
+            <if test="dto.resourceTenant != null and dto.resourceTenant != ''">
+                and resource_tenant = #{dto.resourceTenant}
+            </if>
+            <if test="dto.leaseExpirationTime != null">
+                and lease_expiration_time = #{dto.leaseExpirationTime}
+            </if>
+            <if test="dto.salesStatus != null and dto.salesStatus != ''">
+                and sales_status = #{dto.salesStatus}
+            </if>
+            <if test="dto.availableStatus != null">
+                and available_status = #{dto.availableStatus}
+            </if>
+            <if test="dto.cloudServiceProvider != null and dto.cloudServiceProvider != ''">
+                and cloud_service_provider = #{dto.cloudServiceProvider}
+            </if>
+            <if test="dto.cloudUser != null and dto.cloudUser != ''">
+                and cloud_user = #{dto.cloudUser}
+            </if>
+            <if test="dto.nodeUrl != null and dto.nodeUrl != ''">
+                and node_url = #{dto.nodeUrl}
+            </if>
+            <if test="dto.nodePort != null and dto.nodePort != ''">
+                and node_port = #{dto.nodePort}
+            </if>
+            <if test="dto.localPort != null and dto.localPort != ''">
+                and local_port = #{dto.localPort}
+            </if>
+            <if test="dto.publicBrokerKey != null and dto.publicBrokerKey != ''">
+                and public_broker_key = #{dto.publicBrokerKey}
+            </if>
+            <if test="dto.localBrokerPort != null">
+                and local_broker_port = #{dto.localBrokerPort}
+            </if>
+            <if test="dto.sni != null and dto.sni != ''">
+                and sni = #{dto.sni}
+            </if>
+            <if test="dto.shortId != null and dto.shortId != ''">
+                and short_id = #{dto.shortId}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.commodityId != null and dto.commodityId != ''">
+                and commodity_id = #{dto.commodityId}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="ServerResourcesVOMap">
+        select
+id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, local_port, public_broker_key, local_broker_port, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+        from server_resources
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.resourcesIp != null and dto.resourcesIp != ''">
+                and resources_ip = #{dto.resourcesIp}
+            </if>
+            <if test="dto.resourcesPort != null and dto.resourcesPort != ''">
+                and resources_port = #{dto.resourcesPort}
+            </if>
+            <if test="dto.resourcesPassword != null and dto.resourcesPassword != ''">
+                and resources_password = #{dto.resourcesPassword}
+            </if>
+            <if test="dto.resourcesStatus != null and dto.resourcesStatus != ''">
+                and resources_status = #{dto.resourcesStatus}
+            </if>
+            <if test="dto.resourceTenant != null and dto.resourceTenant != ''">
+                and resource_tenant = #{dto.resourceTenant}
+            </if>
+            <if test="dto.leaseExpirationTime != null">
+                and lease_expiration_time = #{dto.leaseExpirationTime}
+            </if>
+            <if test="dto.salesStatus != null and dto.salesStatus != ''">
+                and sales_status = #{dto.salesStatus}
+            </if>
+            <if test="dto.availableStatus != null">
+                and available_status = #{dto.availableStatus}
+            </if>
+            <if test="dto.cloudServiceProvider != null and dto.cloudServiceProvider != ''">
+                and cloud_service_provider = #{dto.cloudServiceProvider}
+            </if>
+            <if test="dto.cloudUser != null and dto.cloudUser != ''">
+                and cloud_user = #{dto.cloudUser}
+            </if>
+            <if test="dto.nodeUrl != null and dto.nodeUrl != ''">
+                and node_url = #{dto.nodeUrl}
+            </if>
+            <if test="dto.nodePort != null and dto.nodePort != ''">
+                and node_port = #{dto.nodePort}
+            </if>
+            <if test="dto.localPort != null and dto.localPort != ''">
+                and local_port = #{dto.localPort}
+            </if>
+            <if test="dto.publicBrokerKey != null and dto.publicBrokerKey != ''">
+                and public_broker_key = #{dto.publicBrokerKey}
+            </if>
+            <if test="dto.localBrokerPort != null">
+                and local_broker_port = #{dto.localBrokerPort}
+            </if>
+            <if test="dto.sni != null and dto.sni != ''">
+                and sni = #{dto.sni}
+            </if>
+            <if test="dto.shortId != null and dto.shortId != ''">
+                and short_id = #{dto.shortId}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.commodityId != null and dto.commodityId != ''">
+                and commodity_id = #{dto.commodityId}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="haveServerResources" resultType="java.lang.String">
+        select distinct commodity_id from server_resources where is_deleted = 0 and
+        commodity_id in
+        <foreach collection="commodityIdList" item="item"  separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, local_port, public_broker_key, local_broker_port, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{resourcesIp}, #{resourcesPort}, #{resourcesPassword}, #{resourcesStatus}, #{resourceTenant}, #{leaseExpirationTime}, #{salesStatus}, #{availableStatus}, #{cloudServiceProvider}, #{cloudUser}, #{nodeUrl}, #{nodePort}, #{localPort}, #{publicBrokerKey}, #{localBrokerPort}, #{sni}, #{shortId}, #{userId}, #{commodityId}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, local_port, public_broker_key, local_broker_port, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.resourcesIp}, #{entity.resourcesPort}, #{entity.resourcesPassword}, #{entity.resourcesStatus}, #{entity.resourceTenant}, #{entity.leaseExpirationTime}, #{entity.salesStatus}, #{entity.availableStatus}, #{entity.cloudServiceProvider}, #{entity.cloudUser}, #{entity.nodeUrl}, #{entity.nodePort}, #{entity.localPort}, #{entity.publicBrokerKey}, #{entity.localBrokerPort}, #{entity.sni}, #{entity.shortId}, #{entity.userId}, #{entity.commodityId}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, local_port, public_broker_key, local_broker_port, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.resourcesIp}, #{entity.resourcesPort}, #{entity.resourcesPassword}, #{entity.resourcesStatus}, #{entity.resourceTenant}, #{entity.leaseExpirationTime}, #{entity.salesStatus}, #{entity.availableStatus}, #{entity.cloudServiceProvider}, #{entity.cloudUser}, #{entity.nodeUrl}, #{entity.nodePort}, #{entity.localPort}, #{entity.publicBrokerKey}, #{entity.localBrokerPort}, #{entity.sni}, #{entity.shortId}, #{entity.userId}, #{entity.commodityId}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+            </foreach>
+            on duplicate key update
+resources_ip = values(resources_ip),
+resources_port = values(resources_port),
+resources_password = values(resources_password),
+resources_status = values(resources_status),
+resource_tenant = values(resource_tenant),
+lease_expiration_time = values(lease_expiration_time),
+sales_status = values(sales_status),
+available_status = values(available_status),
+cloud_service_provider = values(cloud_service_provider),
+cloud_user = values(cloud_user),
+node_url = values(node_url),
+node_port = values(node_port),
+local_port = values(local_port),
+public_broker_key = values(public_broker_key),
+local_broker_port = values(local_broker_port),
+sni = values(sni),
+short_id = values(short_id),
+user_id = values(user_id),
+commodity_id = values(commodity_id),
+is_deleted = values(is_deleted),
+create_user = values(create_user),
+update_user = values(update_user),
+create_time = values(create_time),
+update_time = values(update_time)    </insert>
+
+</mapper>
+

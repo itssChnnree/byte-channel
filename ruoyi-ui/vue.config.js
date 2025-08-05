@@ -9,7 +9,10 @@ const CompressionPlugin = require('compression-webpack-plugin')
 
 const name = process.env.VUE_APP_TITLE || '若依管理系统' // 网页标题
 
-const baseUrl = 'http://localhost:8080' // 后端接口
+// const baseUrl = 'http://8.155.17.11:8080' // 后端接口
+
+
+const baseUrl = 'http://localhost:8080'
 
 const port = process.env.port || process.env.npm_config_port || 80 // 端口
 

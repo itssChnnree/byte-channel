@@ -18,6 +18,12 @@ public class CacheConstants
     public static final String CAPTCHA_CODE_KEY = "captcha_codes:";
 
     /**
+     * 邮箱验证码 redis key
+     */
+    public static final String EMAIL_CAPTCHA_CODE_KEY = "email_captcha_codes:";
+
+
+    /**
      * 参数管理 cache key
      */
     public static final String SYS_CONFIG_KEY = "sys_config:";

@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FaultHandlingMapper">
+
+    <resultMap type="com.ruoyi.system.domain.FaultHandling" id="FaultHandlingMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
+                <result property="faultDescription" column="fault_description" jdbcType="VARCHAR"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.FaultHandlingVo" id="FaultHandlingVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
+                <result property="faultDescription" column="fault_description" jdbcType="VARCHAR"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+
+    <update id="update">
+        update fault_handling
+        <set>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="resourcesId != null">
+                resources_id = #{resourcesId},
+            </if>
+            <if test="faultDescription != null">
+                fault_description = #{faultDescription},
+            </if>
+            <if test="status != null">
+                `status` = #{status},
+            </if>
+            update_user = #{updateUser},
+            update_time = now()
+        where id = #{id} and is_deleted = 0
+        </set>
+    </update>
+
+
+    <delete id="deleteByIdAndUserId">
+        delete from fault_handling
+        where user_id = #{userId} and is_deleted = 0 and id in
+        <foreach item="item" collection="list" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="FaultHandlingVOMap">
+        select
+id, user_id, resources_id, fault_description, status, is_deleted, create_user, update_user, create_time, update_time
+        from fault_handling
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="FaultHandlingVOMap">
+        select
+        fh.id, fh.user_id, fh.resources_id, fh.fault_description, fh.status, fh.is_deleted, fh.create_user, fh.update_user, fh.create_time, fh.update_time
+        from fault_handling fh
+        join server_resources sr on fh.resources_id = sr.id
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="resourcesId != null">
+                and resources_id = #{resourcesId}
+            </if>
+            <if test="faultDescription != null and faultDescription != ''">
+                and fault_description = #{faultDescription}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="FaultHandlingVOMap">
+        select
+id, user_id, resources_id, fault_description, status, is_deleted, create_user, update_user, create_time, update_time
+        from fault_handling
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.resourcesId != null">
+                and resources_id = #{dto.resourcesId}
+            </if>
+            <if test="dto.faultDescription != null and dto.faultDescription != ''">
+                and fault_description = #{dto.faultDescription}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="FaultHandlingVOMap">
+        select
+id, user_id, resources_id, fault_description, status, is_deleted, create_user, update_user, create_time, update_time
+        from fault_handling
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.resourcesId != null">
+                and resources_id = #{dto.resourcesId}
+            </if>
+            <if test="dto.faultDescription != null and dto.faultDescription != ''">
+                and fault_description = #{dto.faultDescription}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into fault_handling(id,user_id, resources_id, fault_description, status, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{userId}, #{resourcesId}, #{faultDescription}, #{status}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into fault_handling(id,user_id, resources_id, fault_description, status, is_deleted, create_user, update_user, create_time, update_time)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.userId}, #{entity.resourcesId}, #{entity.faultDescription}, #{entity.status}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into fault_handling(id,user_id, resources_id, fault_description, status, is_deleted, create_user, update_user, create_time, update_time)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.userId}, #{entity.resourcesId}, #{entity.faultDescription}, #{entity.status}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+            </foreach>
+            on duplicate key update
+user_id = values(user_id),
+resources_id = values(resources_id),
+fault_description = values(fault_description),
+status = values(status),
+is_deleted = values(is_deleted),
+create_user = values(create_user),
+update_user = values(update_user),
+create_time = values(create_time),
+update_time = values(update_time)    </insert>
+
+</mapper>
+

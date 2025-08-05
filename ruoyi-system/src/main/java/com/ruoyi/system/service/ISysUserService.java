@@ -91,6 +91,14 @@ public interface ISysUserService
     public boolean checkEmailUnique(SysUser user);
 
     /**
+     * 校验email是否唯一
+     *
+     * @param email 用户邮箱
+     * @return 结果
+     */
+    public boolean checkEmailUnique(String email);
+
+    /**
      * 校验用户是否允许操作
      * 
      * @param user 用户信息
