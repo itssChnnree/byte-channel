@@ -17,7 +17,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.framework.web.service.SysPasswordService;
-import com.ruoyi.system.domain.SysLogininfor;
+import com.ruoyi.system.domain.entity.SysLogininfor;
 import com.ruoyi.system.service.ISysLogininforService;
 
 /**

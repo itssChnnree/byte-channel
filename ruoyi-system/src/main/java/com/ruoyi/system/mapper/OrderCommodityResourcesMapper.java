@@ -1,8 +1,7 @@
 package com.ruoyi.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ruoyi.system.domain.OrderCommodityResources;
-import org.apache.ibatis.annotations.Select;
+import com.ruoyi.system.domain.entity.OrderCommodityResources;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 

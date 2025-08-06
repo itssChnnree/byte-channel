@@ -5,10 +5,11 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.FaultHandingStatus;
-import com.ruoyi.system.domain.FaultHandling;
-import com.ruoyi.system.domain.ServerResources;
+import com.ruoyi.system.domain.entity.FaultHandling;
+import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.FaultHandlingDto;
 import com.ruoyi.system.domain.dto.ListDto;
+import com.ruoyi.system.domain.vo.FaultHandlingVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.FaultHandlingMapper;
 import com.ruoyi.system.mapper.ServerResourcesMapper;
@@ -104,7 +105,7 @@ public class FaultHandlingServiceImpl implements IFaultHandlingService {
     @Override
     public Result pageQuery(FaultHandlingDto faultHandlingDto) {
         PageHelper.startPage(faultHandlingDto);
-        List<FaultHandling> faultHandlings = faultHandlingMapper.queryList(faultHandlingDto);
+        List<FaultHandlingVo> faultHandlings = faultHandlingMapper.queryList(faultHandlingDto);
         return Result.success(new PageInfo<>(faultHandlings));
     }
 }

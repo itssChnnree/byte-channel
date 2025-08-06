@@ -3,8 +3,7 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ruoyi.system.domain.Order;
-import org.apache.ibatis.annotations.Select;
+import com.ruoyi.system.domain.entity.Order;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 

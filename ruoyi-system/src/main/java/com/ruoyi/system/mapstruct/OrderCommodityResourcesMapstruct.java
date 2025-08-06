@@ -1,12 +1,11 @@
 package com.ruoyi.system.mapstruct;
 
 
-import com.ruoyi.system.domain.OrderCommodityResources;
+import com.ruoyi.system.domain.entity.OrderCommodityResources;
 import com.ruoyi.system.domain.dto.OrderCommodityResourcesDto;
 import com.ruoyi.system.domain.vo.OrderCommodityResourcesVo;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
 
 /**

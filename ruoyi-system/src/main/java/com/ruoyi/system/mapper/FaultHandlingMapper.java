@@ -1,11 +1,10 @@
 package com.ruoyi.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ruoyi.system.domain.FaultHandling;
+import com.ruoyi.system.domain.entity.FaultHandling;
 import com.ruoyi.system.domain.dto.FaultHandlingDto;
 import com.ruoyi.system.domain.vo.FaultHandlingVo;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -47,7 +46,7 @@ public interface FaultHandlingMapper extends BaseMapper<FaultHandling> {
      * [分页查询故障处理流程]
      * @author 陈湘岳 2025/8/5
      * @param faultHandling 查询参数
-     * @return java.util.List<com.ruoyi.system.domain.FaultHandling>
+     * @return java.util.List<com.ruoyi.system.domain.entity.FaultHandling>
      **/
     List<FaultHandlingVo> queryList(FaultHandlingDto faultHandling);
 }

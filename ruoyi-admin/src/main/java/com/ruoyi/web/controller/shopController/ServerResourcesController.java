@@ -1,15 +1,13 @@
 package com.ruoyi.web.controller.shopController;
 
-import com.github.pagehelper.IPage;
 import com.github.pagehelper.Page;
 import com.ruoyi.common.utils.uuid.UUID;
-import com.ruoyi.system.domain.ServerResources;
+import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IServerResourcesService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 

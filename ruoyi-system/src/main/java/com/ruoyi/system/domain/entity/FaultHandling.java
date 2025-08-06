@@ -1,7 +1,4 @@
-package com.ruoyi.system.domain;
-
-import java.util.Date;
-import com.baomidou.mybatisplus.annotation.TableId;
+package com.ruoyi.system.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;

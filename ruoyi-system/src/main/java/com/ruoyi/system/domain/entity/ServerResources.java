@@ -1,7 +1,6 @@
-package com.ruoyi.system.domain;
+package com.ruoyi.system.domain.entity;
 
 import java.util.Date;
-import com.baomidou.mybatisplus.annotation.TableId;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -88,11 +87,7 @@ private static final long serialVersionUID = 1L;
      */
     @TableField(value = "node_port")
     private String nodePort;
-    /**
-     * 本地校验代理服务器端口
-     */
-    @TableField(value = "local_port")
-    private String localPort;
+
     /**
      * vless协议publickey
      */
@@ -103,11 +98,6 @@ private static final long serialVersionUID = 1L;
      */
     @TableField(value = "public_key")
     private String publicKey;
-    /**
-     * 本地xray代理端口
-     */
-    @TableField(value = "local_broker_port")
-    private Integer localBrokerPort;
     /**
      * vless协议劫持域名
      */

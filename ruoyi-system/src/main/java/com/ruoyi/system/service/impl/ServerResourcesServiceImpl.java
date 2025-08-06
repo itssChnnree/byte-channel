@@ -1,11 +1,10 @@
 package com.ruoyi.system.service.impl;
 
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.ruoyi.system.constant.ResourcesStatus;
-import com.ruoyi.system.domain.Commodity;
-import com.ruoyi.system.domain.ServerResources;
+import com.ruoyi.system.domain.entity.Commodity;
+import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.CommodityMapper;
@@ -42,7 +41,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      * [新增服务器资源]
      *
      * @param serverResourcesDto 服务器资源
-     * @return com.ruoyi.system.domain.ServerResources
+     * @return com.ruoyi.system.domain.entity.ServerResources
      * @author 陈湘岳 2025/7/23
      **/
     @Override

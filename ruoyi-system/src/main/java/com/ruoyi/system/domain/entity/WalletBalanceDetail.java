@@ -1,7 +1,4 @@
-package com.ruoyi.system.domain;
-
-import java.util.Date;
-import com.baomidou.mybatisplus.annotation.TableId;
+package com.ruoyi.system.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -14,18 +11,18 @@ import java.io.Serializable;
 
 
 /**
-* 推广码记录表(PromoCodeRecords)ʵ����
+* 钱包余额明细表(WalletBalanceDetail)ʵ����
 *
 * @author chenxiangyue
 * @version v1.0.0
-* @date 2025-07-20 23:24:13
+* @date 2025-07-20 23:24:37
 */
-@TableName(value ="promo_code_records" )
+@TableName(value ="wallet_balance_detail" )
 @Data
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class PromoCodeRecords extends ByteBaseEntity implements Serializable {
+public class WalletBalanceDetail extends ByteBaseEntity implements Serializable {
 private static final long serialVersionUID = 1L;
 
 /**
@@ -34,14 +31,16 @@ private static final long serialVersionUID = 1L;
 @TableField(value = "user_id")
 private String userId;
 /**
-    * 推广码
+    * 变更金额
     */
-@TableField(value = "promo_code")
-private String promoCode;
+@TableField(value = "change_amount")
+private Double changeAmount;
 /**
-    * 状态
+    * 变更类型
     */
-@TableField(value = "status")
-private String status;
+@TableField(value = "type")
+private String type;
+
+
 
 }

@@ -4,10 +4,7 @@ package com.ruoyi.system.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ruoyi.system.domain.CommodityCategory;
+import com.ruoyi.system.domain.entity.CommodityCategory;
 
 import com.ruoyi.system.domain.dto.CommodityCategoryDto;
 import com.ruoyi.system.domain.vo.CommodityCategoryVo;

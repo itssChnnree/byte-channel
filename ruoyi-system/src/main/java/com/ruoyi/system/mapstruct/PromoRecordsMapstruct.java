@@ -1,12 +1,11 @@
 package com.ruoyi.system.mapstruct;
 
 
-import com.ruoyi.system.domain.PromoRecords;
+import com.ruoyi.system.domain.entity.PromoRecords;
 import com.ruoyi.system.domain.dto.PromoRecordsDto;
 import com.ruoyi.system.domain.vo.PromoRecordsVo;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
 
 /**

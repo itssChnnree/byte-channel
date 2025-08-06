@@ -2,12 +2,10 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ruoyi.system.domain.Commodity;
+import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.dto.CommodityDto;
 import com.ruoyi.system.domain.vo.CommodityVo;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -30,7 +28,7 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
 //     * [根据类别id查询类]
 //     * @author 陈湘岳 2025/7/29
 //     * @param categoryId 类别id
-//     * @return java.util.List<com.ruoyi.system.domain.Commodity>
+//     * @return java.util.List<com.ruoyi.system.domain.entity.Commodity>
 //     **/
 //    List<Commodity> findByCategoryId(@Param("categoryId") String categoryId);
 

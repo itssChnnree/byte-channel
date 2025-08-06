@@ -83,9 +83,6 @@ public class ServerResourcesDto{
     @ApiModelProperty("vless协议publickey")
     private String publicBrokerKey;
 
-    @ApiModelProperty("本地xray代理端口")
-    private Integer localBrokerPort;
-
     @ApiModelProperty("vless协议劫持域名")
     @NotBlank(message = "vless协议劫持域名不能为空")
     private String sni;

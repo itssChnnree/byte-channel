@@ -1,12 +1,11 @@
 package com.ruoyi.system.mapstruct;
 
 
-import com.ruoyi.system.domain.ServerResources;
+import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
 import com.ruoyi.system.domain.vo.ServerResourcesVo;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
 
 /**

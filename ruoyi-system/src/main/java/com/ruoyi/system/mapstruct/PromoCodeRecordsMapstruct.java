@@ -1,12 +1,11 @@
 package com.ruoyi.system.mapstruct;
 
 
-import com.ruoyi.system.domain.PromoCodeRecords;
+import com.ruoyi.system.domain.entity.PromoCodeRecords;
 import com.ruoyi.system.domain.dto.PromoCodeRecordsDto;
 import com.ruoyi.system.domain.vo.PromoCodeRecordsVo;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
 /**
  * 推广码记录表(PromoCodeRecords)

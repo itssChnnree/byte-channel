@@ -2,16 +2,11 @@ package com.ruoyi.system.service.impl;
 
 
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.ruoyi.system.domain.CommodityCategory;
-import com.ruoyi.system.domain.base.PageUtil;
+import com.ruoyi.system.domain.entity.CommodityCategory;
 import com.ruoyi.system.domain.dto.CommodityCategoryDto;
 import com.ruoyi.system.domain.dto.ListDto;
-import com.ruoyi.system.domain.dto.ServerResourcesDto;
 import com.ruoyi.system.domain.vo.CommodityCategoryVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.CommodityCategoryMapper;
@@ -22,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 

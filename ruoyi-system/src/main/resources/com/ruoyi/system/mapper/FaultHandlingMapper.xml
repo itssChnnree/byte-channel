@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.system.mapper.FaultHandlingMapper">
 
-    <resultMap type="com.ruoyi.system.domain.FaultHandling" id="FaultHandlingMap">
+    <resultMap type="com.ruoyi.system.domain.entity.FaultHandling" id="FaultHandlingMap">
                 <result property="id" column="id" jdbcType="VARCHAR"/>
                 <result property="userId" column="user_id" jdbcType="VARCHAR"/>
                 <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
@@ -26,6 +26,7 @@
                 <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
                 <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
                 <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="resourcesStatus" column="resources_status" jdbcType="VARCHAR"/>
     </resultMap>
 
 
@@ -70,7 +71,8 @@ id, user_id, resources_id, fault_description, status, is_deleted, create_user, u
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="FaultHandlingVOMap">
         select
-        fh.id, fh.user_id, fh.resources_id, fh.fault_description, fh.status, fh.is_deleted, fh.create_user, fh.update_user, fh.create_time, fh.update_time
+        fh.id, fh.user_id, fh.resources_id, fh.fault_description, fh.status,
+        fh.is_deleted, fh.create_user, fh.update_user, fh.create_time, fh.update_time,resources_status
         from fault_handling fh
         join server_resources sr on fh.resources_id = sr.id
         <where>

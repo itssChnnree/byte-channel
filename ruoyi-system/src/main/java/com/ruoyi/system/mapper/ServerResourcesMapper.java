@@ -2,9 +2,8 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ruoyi.system.domain.ServerResources;
+import com.ruoyi.system.domain.entity.ServerResources;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 

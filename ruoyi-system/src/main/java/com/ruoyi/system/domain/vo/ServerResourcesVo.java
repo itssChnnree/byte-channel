@@ -59,17 +59,11 @@ public class ServerResourcesVo{
     @ApiModelProperty("节点端口")
     private String nodePort;
 
-    @ApiModelProperty("本地校验代理服务器端口")
-    private String localPort;
-
     @ApiModelProperty("vless协议publickey")
     private String publicBrokerKey;
 
     @ApiModelProperty("vless协议publicKey")
     private String publicKey;
-
-    @ApiModelProperty("本地xray代理端口")
-    private Integer localBrokerPort;
 
     @ApiModelProperty("vless协议劫持域名")
     private String sni;

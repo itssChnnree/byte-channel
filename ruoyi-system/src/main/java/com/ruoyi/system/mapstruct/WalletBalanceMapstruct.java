@@ -1,12 +1,11 @@
 package com.ruoyi.system.mapstruct;
 
 
-import com.ruoyi.system.domain.WalletBalance;
+import com.ruoyi.system.domain.entity.WalletBalance;
 import com.ruoyi.system.domain.dto.WalletBalanceDto;
 import com.ruoyi.system.domain.vo.WalletBalanceVo;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
 /**
  * 钱包余额表(WalletBalance)

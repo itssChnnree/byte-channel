@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.constant.CacheConstants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.system.domain.SysCache;
+import com.ruoyi.system.domain.entity.SysCache;
 
 /**
  * 缓存监控

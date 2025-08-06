@@ -2,8 +2,7 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ruoyi.system.domain.WalletBalanceDetail;
-import org.apache.ibatis.annotations.Select;
+import com.ruoyi.system.domain.entity.WalletBalanceDetail;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 /**

@@ -1,12 +1,11 @@
 package com.ruoyi.system.mapstruct;
 
 
-import com.ruoyi.system.domain.FaultHandling;
+import com.ruoyi.system.domain.entity.FaultHandling;
 import com.ruoyi.system.domain.dto.FaultHandlingDto;
 import com.ruoyi.system.domain.vo.FaultHandlingVo;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
 
 /**

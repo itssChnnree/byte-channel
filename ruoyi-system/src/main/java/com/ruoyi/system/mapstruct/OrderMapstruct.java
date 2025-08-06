@@ -1,12 +1,11 @@
 package com.ruoyi.system.mapstruct;
 
 
-import com.ruoyi.system.domain.Order;
+import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.domain.vo.OrderVo;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import org.springframework.stereotype.Component;
 
 /**
  * 订单表(Order)

@@ -19,7 +19,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.poi.ExcelUtil;
-import com.ruoyi.system.domain.SysConfig;
+import com.ruoyi.system.domain.entity.SysConfig;
 import com.ruoyi.system.service.ISysConfigService;
 
 /**

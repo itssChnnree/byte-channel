@@ -1,7 +1,7 @@
 package com.ruoyi.system.mapstruct;
 
 
-import com.ruoyi.system.domain.CommodityCategory;
+import com.ruoyi.system.domain.entity.CommodityCategory;
 import com.ruoyi.system.domain.dto.CommodityCategoryDto;
 import com.ruoyi.system.domain.vo.CommodityCategoryVo;
 import org.mapstruct.Mapper;

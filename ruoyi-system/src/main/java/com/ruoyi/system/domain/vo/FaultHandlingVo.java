@@ -34,6 +34,9 @@ public class FaultHandlingVo{
     
     @ApiModelProperty("处理状态")
    private String status;
+
+    @ApiModelProperty("服务器状态")
+    private String resourcesStatus;
     
     @ApiModelProperty("0为未删除，1为已删除")
    private Integer isDeleted;

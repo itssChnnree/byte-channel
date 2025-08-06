@@ -1,7 +1,5 @@
-package com.ruoyi.system.domain;
+package com.ruoyi.system.domain.entity;
 
-import java.util.Date;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.AllArgsConstructor;
@@ -13,18 +11,18 @@ import java.io.Serializable;
 
 
 /**
-* 钱包余额明细表(WalletBalanceDetail)ʵ����
+* 钱包余额表(WalletBalance)ʵ����
 *
 * @author chenxiangyue
 * @version v1.0.0
-* @date 2025-07-20 23:24:37
+* @date 2025-07-20 23:24:32
 */
-@TableName(value ="wallet_balance_detail" )
+@TableName(value ="wallet_balance" )
 @Data
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class WalletBalanceDetail extends ByteBaseEntity implements Serializable {
+public class WalletBalance extends ByteBaseEntity implements Serializable {
 private static final long serialVersionUID = 1L;
 
 /**
@@ -33,16 +31,20 @@ private static final long serialVersionUID = 1L;
 @TableField(value = "user_id")
 private String userId;
 /**
-    * 变更金额
+    * 余额
     */
-@TableField(value = "change_amount")
-private Double changeAmount;
+@TableField(value = "balance")
+private Double balance;
 /**
-    * 变更类型
+    * 邀请人数
     */
-@TableField(value = "type")
-private String type;
-
+@TableField(value = "invitees_number")
+private Integer inviteesNumber;
+/**
+    * 邀请奖励金
+    */
+@TableField(value = "referral_bonus_credits")
+private Double referralBonusCredits;
 
 
 }

@@ -1,7 +1,5 @@
-package com.ruoyi.system.domain;
+package com.ruoyi.system.domain.entity;
 
-import java.util.Date;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.AllArgsConstructor;
