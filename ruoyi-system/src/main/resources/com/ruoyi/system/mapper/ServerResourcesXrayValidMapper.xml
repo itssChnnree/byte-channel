@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ServerResourcesXrayValidMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.ServerResourcesXrayValid" id="ServerResourcesXrayValidMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
+                <result property="webIp" column="web_ip" jdbcType="VARCHAR"/>
+                <result property="webPort" column="web_port" jdbcType="VARCHAR"/>
+                <result property="xrayPort" column="xray_port" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.ServerResourcesXrayValidVo" id="ServerResourcesXrayValidVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
+                <result property="webIp" column="web_ip" jdbcType="VARCHAR"/>
+                <result property="webPort" column="web_port" jdbcType="VARCHAR"/>
+                <result property="xrayPort" column="xray_port" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="ServerResourcesXrayValidVOMap">
+        select
+id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time
+        from server_resources_xray_valid
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="ServerResourcesXrayValidVOMap">
+        select
+id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time        
+        from server_resources_xray_valid
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="resourcesId != null and resourcesId != ''">
+                and resources_id = #{resourcesId}
+            </if>
+            <if test="webIp != null and webIp != ''">
+                and web_ip = #{webIp}
+            </if>
+            <if test="webPort != null and webPort != ''">
+                and web_port = #{webPort}
+            </if>
+            <if test="xrayPort != null and xrayPort != ''">
+                and xray_port = #{xrayPort}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="ServerResourcesXrayValidVOMap">
+        select
+id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time
+        from server_resources_xray_valid
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.resourcesId != null and dto.resourcesId != ''">
+                and resources_id = #{dto.resourcesId}
+            </if>
+            <if test="dto.webIp != null and dto.webIp != ''">
+                and web_ip = #{dto.webIp}
+            </if>
+            <if test="dto.webPort != null and dto.webPort != ''">
+                and web_port = #{dto.webPort}
+            </if>
+            <if test="dto.xrayPort != null and dto.xrayPort != ''">
+                and xray_port = #{dto.xrayPort}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="ServerResourcesXrayValidVOMap">
+        select
+id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time
+        from server_resources_xray_valid
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.resourcesId != null and dto.resourcesId != ''">
+                and resources_id = #{dto.resourcesId}
+            </if>
+            <if test="dto.webIp != null and dto.webIp != ''">
+                and web_ip = #{dto.webIp}
+            </if>
+            <if test="dto.webPort != null and dto.webPort != ''">
+                and web_port = #{dto.webPort}
+            </if>
+            <if test="dto.xrayPort != null and dto.xrayPort != ''">
+                and xray_port = #{dto.xrayPort}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources_xray_valid(id,resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{entity.id},#{resourcesId}, #{webIp}, #{webPort}, #{xrayPort}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources_xray_valid(id,resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.resourcesId}, #{entity.webIp}, #{entity.webPort}, #{entity.xrayPort}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources_xray_valid(id,resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.resourcesId}, #{entity.webIp}, #{entity.webPort}, #{entity.xrayPort}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+            </foreach>
+            on duplicate key update
+resources_id = values(resources_id),
+web_ip = values(web_ip),
+web_port = values(web_port),
+xray_port = values(xray_port),
+is_deleted = values(is_deleted),
+create_user = values(create_user),
+update_user = values(update_user),
+create_time = values(create_time),
+update_time = values(update_time)    </insert>
+
+</mapper>
+

@@ -4,6 +4,7 @@ package com.ruoyi.system.service.impl;
 import com.ruoyi.system.constant.RedissonLockStatus;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.entity.Commodity;
+import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.CommodityMapper;
 import com.ruoyi.system.service.IOrderService;
@@ -13,6 +14,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.annotation.RInject;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +46,7 @@ public class OrderServiceImpl implements IOrderService {
      * @author 陈湘岳 2025/8/10
      **/
     @Override
+    @Transactional
     public Result createOrderByCommodity(OrderByCommodityDto orderByCommodityDto) {
         //校验商品是否存在
         Commodity normalCommodity = commodityMapper.findNormalCommodity(orderByCommodityDto.getCommodityId());
@@ -68,9 +71,25 @@ public class OrderServiceImpl implements IOrderService {
         }finally {
             lock.unlock();
         }
+        //创建订单
 
+        //订单入库
+
+        //消息队列   余额扣减  邮箱发送
+
+        //延迟队列   15分钟后提醒充值  30分钟后是否支付，未支付关闭订单
 
         return null;
+    }
+
+
+    private Order createOrder(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity) {
+        Order order = new Order();
+        order.setUserId(orderByCommodityDto.getUserId());
+        order.setAmount(normalCommodity.getCommodityPrice()*orderByCommodityDto.getNum());
+        order.setStatus("待支付");
+        order.setOrderTime(new Date());
+        return order;
     }
 
 

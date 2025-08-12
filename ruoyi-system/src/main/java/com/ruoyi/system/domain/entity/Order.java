@@ -27,31 +27,31 @@ import java.io.Serializable;
 public class Order  extends ByteBaseEntity implements Serializable {
 private static final long serialVersionUID = 1L;
 
-/**
-    * 购买用户id
-    */
-@TableField(value = "user_id")
-private String userId;
-/**
-    * 订单金额
-    */
-@TableField(value = "amount")
-private Double amount;
-/**
-    * 订单状态
-    */
-@TableField(value = "status")
-private String status;
-/**
-    * 下单时间
-    */
-@TableField(value = "order_time")
-private Date orderTime;
-/**
-    * 0为未删除，1为已删除
-    */
-@TableField(value = "is_deleted")
-private Integer isDeleted;
+        /**
+            * 购买用户id
+            */
+        @TableField(value = "user_id")
+        private String userId;
+        /**
+            * 订单金额
+            */
+        @TableField(value = "amount")
+        private Double amount;
+        /**
+            * 订单状态
+            */
+        @TableField(value = "status")
+        private String status;
+        /**
+            * 下单时间
+            */
+        @TableField(value = "order_time")
+        private Date orderTime;
+        /**
+            * 0为未删除，1为已删除
+            */
+        @TableField(value = "is_deleted")
+        private Integer isDeleted;
 
 
 
