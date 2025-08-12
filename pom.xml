@@ -24,6 +24,8 @@
         <swagger.version>3.0.0</swagger.version>
         <kaptcha.version>2.3.3</kaptcha.version>
         <pagehelper.boot.version>1.4.7</pagehelper.boot.version>
+        <rocketmq.version>2.1.1</rocketmq.version>
+        <rocketmq.client.version>4.9.7</rocketmq.client.version>
         <fastjson.version>2.0.57</fastjson.version>
         <oshi.version>6.8.2</oshi.version>
         <commons.io.version>2.19.0</commons.io.version>
@@ -41,6 +43,23 @@
     <!-- 依赖声明 -->
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.rocketmq</groupId>
+                        <artifactId>rocketmq-client</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-client</artifactId>
+                <version>${rocketmq.client.version}</version>
+            </dependency>
             <!-- hutool邮箱-->
             <dependency>
                 <groupId>cn.hutool</groupId>

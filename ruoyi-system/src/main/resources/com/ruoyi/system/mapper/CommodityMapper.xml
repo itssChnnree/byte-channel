@@ -97,6 +97,13 @@
         from commodity
         where id = #{id} and is_deleted = 0
     </select>
+
+    <select id="findNormalCommodity" resultMap="CommodityMap">
+        select
+            id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
+        from commodity
+        where id = #{id} and is_deleted = 0 and available_status = 1
+    </select>
     
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="CommodityVOMap">

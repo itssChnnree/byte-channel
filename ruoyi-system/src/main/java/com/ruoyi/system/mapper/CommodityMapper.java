@@ -64,4 +64,15 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
      * @return com.ruoyi.system.domain.vo.CommodityVo
      **/
     CommodityVo queryById(@Param("id") String id);
+
+
+    /**
+     * [查询正常商品]
+     * @author 陈湘岳 2025/8/1
+     * @param id
+     * @return com.ruoyi.system.domain.vo.CommodityVo
+     **/
+    Commodity findNormalCommodity(@Param("id") String id);
+
+
 }
