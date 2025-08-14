@@ -16,7 +16,7 @@ import com.ruoyi.system.domain.entity.ShoppingCart;
  * @version v1.0.0
  * @date 2025-08-06 23:43:08
  */
-@Mapper
+@Mapper(componentModel = "spring")
 public interface ShoppingCartMapstruct {
     ShoppingCartMapstruct INSTANCE = Mappers.getMapper(ShoppingCartMapstruct.class);
 

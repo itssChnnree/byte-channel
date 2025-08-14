@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 
 /**
@@ -36,12 +37,12 @@ private static final long serialVersionUID = 1L;
         * 价格
         */
     @TableField(value = "commodity_price")
-    private Double commodityPrice;
+    private BigDecimal commodityPrice;
     /**
         * 折后价
         */
     @TableField(value = "commodity_discounted_price")
-    private Double commodityDiscountedPrice;
+    private BigDecimal commodityDiscountedPrice;
     /**
         * 商品类别id
         */

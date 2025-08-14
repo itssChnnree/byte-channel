@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.vo;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -27,10 +28,10 @@ public class CommodityVo{
    private String commodityName;
     
     @ApiModelProperty("价格")
-   private Double commodityPrice;
+   private BigDecimal commodityPrice;
     
     @ApiModelProperty("折后价")
-   private Double commodityDiscountedPrice;
+   private BigDecimal commodityDiscountedPrice;
     
     @ApiModelProperty("商品类别id")
    private String categoryId;

@@ -2,6 +2,7 @@ package com.ruoyi.system.domain.dto;
 
 import java.util.Date;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,6 +30,9 @@ public class OrderDto{
     
     @ApiModelProperty("订单金额")
    private Double amount;
+
+    @ApiModelProperty(value = "交易描述")
+    private String description;
     
     @ApiModelProperty("订单状态")
    private String status;

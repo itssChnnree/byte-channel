@@ -30,5 +30,12 @@ public class OrderByCommodityDto {
     @Min(value = 1, message = "商品数量不能小于1")
     private Integer num;
 
+    @ApiModelProperty("推广码")
+    private String promoCode;
+
+    //付款周期
+    @ApiModelProperty("付款周期")
+    private String payCycle;
+
 
 }

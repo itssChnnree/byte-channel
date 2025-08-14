@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.vo;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -27,7 +28,10 @@ public class OrderVo{
    private String userId;
     
     @ApiModelProperty("订单金额")
-   private Double amount;
+   private BigDecimal amount;
+
+    @ApiModelProperty(value = "交易描述")
+    private String description;
     
     @ApiModelProperty("订单状态")
    private String status;

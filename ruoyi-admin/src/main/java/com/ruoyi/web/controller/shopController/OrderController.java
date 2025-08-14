@@ -34,8 +34,18 @@ public class OrderController {
 
 
     @PostMapping("/createOrderByCommodity")
-    @ApiOperation("直接从商品创建订单")
+    @ApiOperation("从商品创建订单")
     public Result createOrderByCommodity(@RequestBody @Validated(InsertGroup.class) OrderByCommodityDto orderByCommodityDto
+            , BindingResult bindingResult){
+        if (bindingResult.hasErrors()) {
+            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return orderService.createOrderByCommodity(orderByCommodityDto);
+    }
+
+    @PostMapping("/createOrderByShoppingCart")
+    @ApiOperation("从购物车创建订单")
+    public Result createOrderByShoppingCart(@RequestBody @Validated(InsertGroup.class) OrderByCommodityDto orderByCommodityDto
             , BindingResult bindingResult){
         if (bindingResult.hasErrors()) {
             return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());

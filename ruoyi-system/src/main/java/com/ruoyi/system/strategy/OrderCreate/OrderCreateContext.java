@@ -1,6 +1,10 @@
 package com.ruoyi.system.strategy.OrderCreate;
 
 import cn.hutool.extra.spring.SpringUtil;
+import com.ruoyi.system.domain.dto.OrderByCommodityDto;
+import com.ruoyi.system.domain.entity.Commodity;
+import com.ruoyi.system.domain.entity.Order;
+import com.ruoyi.system.domain.entity.PromoCodeRecords;
 import com.ruoyi.system.strategy.tournamentNotificationAppointmentsUser.NotificationStrategy;
 
 
@@ -17,6 +21,10 @@ public class OrderCreateContext {
 
     public OrderCreateContext(String orderCreateType) {
         orderCreateStrategy = SpringUtil.getBean(orderCreateType);
+    }
+
+    public Order createOrder(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {
+        return orderCreateStrategy.createOrder(orderByCommodityDto, normalCommodity, promoCodeRecords);
     }
 
 

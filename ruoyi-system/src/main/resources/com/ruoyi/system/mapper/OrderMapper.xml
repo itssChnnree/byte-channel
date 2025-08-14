@@ -7,6 +7,9 @@
                 <result property="userId" column="user_id" jdbcType="VARCHAR"/>
                 <result property="amount" column="amount" jdbcType="NUMERIC"/>
                 <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="description" column="description" jdbcType="VARCHAR"/>
+                <result property="paymentId" column="payment_id" jdbcType="VARCHAR"/>
+                <result property="paymentType" column="payment_type" jdbcType="INTEGER"/>
                 <result property="orderTime" column="order_time" jdbcType="TIMESTAMP"/>
                 <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
                 <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
@@ -20,6 +23,7 @@
                 <result property="userId" column="user_id" jdbcType="VARCHAR"/>
                 <result property="amount" column="amount" jdbcType="NUMERIC"/>
                 <result property="status" column="status" jdbcType="VARCHAR"/>
+                <result property="description" column="description" jdbcType="VARCHAR"/>
                 <result property="orderTime" column="order_time" jdbcType="TIMESTAMP"/>
                 <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
                 <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
@@ -28,18 +32,25 @@
                 <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <resultMap type="com.ruoyi.system.domain.vo.OrderSystemVo" id="OrderSystemVOMap" extends="OrderVOMap">
+        <result property="paymentId" column="payment_id" jdbcType="VARCHAR"/>
+        <result property="paymentType" column="payment_type" jdbcType="INTEGER"/>
+    </resultMap>
+
+
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="OrderVOMap">
         select
-id, user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time
-        from order
+            id, user_id, amount, status, description,order_time, is_deleted, create_user, update_user, create_time, update_time
+        from `order`
         where id = #{id} and is_deleted = 0
     </select>
     
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="OrderVOMap">
         select
-id, user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time        
+id, user_id, amount, status,description, order_time, is_deleted, create_user, update_user, create_time, update_time
         from `order`
         <where>
         1 = 1 and is_deleted = 0
@@ -79,7 +90,7 @@ id, user_id, amount, status, order_time, is_deleted, create_user, update_user, c
     <!--��ѯָ��������-->
     <select id="queryListLimit" resultMap="OrderVOMap">
         select
-id, user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time
+id, user_id, amount, status, description,order_time, is_deleted, create_user, update_user, create_time, update_time
         from `order`
         <where>
         1 = 1 and is_deleted = 0 
@@ -120,7 +131,7 @@ id, user_id, amount, status, order_time, is_deleted, create_user, update_user, c
     <!--��ѯ��ҳ����-->
     <select id="queryPage" resultMap="OrderVOMap">
         select
-id, user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time
+id, user_id, amount, status,description, order_time, is_deleted, create_user, update_user, create_time, update_time
         from `order`
         <where>
         1 = 1 and is_deleted = 0 
@@ -160,23 +171,27 @@ id, user_id, amount, status, order_time, is_deleted, create_user, update_user, c
     
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into `order`(id,user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{id},#{userId}, #{amount}, #{status}, #{orderTime}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        insert into `order`(id,user_id, amount, status,description,payment_id, payment_type,order_time, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{userId}, #{amount}, #{status},#{description},#{paymentId},#{paymentType}, #{orderTime}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into `order`(id,user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time)
+        insert into `order`(id,user_id, amount, status,description,payment_id, payment_type,
+                            order_time, is_deleted, create_user, update_user, create_time, update_time)
         values
              <foreach collection="entities" item="entity" separator=",">
-             (#{entity.id},#{entity.userId}, #{entity.amount}, #{entity.status}, #{entity.orderTime}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             (#{entity.id},#{entity.userId}, #{entity.amount}, #{entity.status},#{entity.description},#{entity.paymentId},#{entity.paymentType},
+              #{entity.orderTime}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
              </foreach>
     </insert>
 
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into `order`(id,user_id, amount, status, order_time, is_deleted, create_user, update_user, create_time, update_time)
+        insert into `order`(id,user_id, amount, status,description,payment_id, payment_type,
+                            order_time, is_deleted, create_user, update_user, create_time, update_time)
         values
             <foreach collection="entities" item="entity" separator=",">
-                (#{entity.id},#{entity.userId}, #{entity.amount}, #{entity.status}, #{entity.orderTime}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+                (#{entity.id},#{entity.userId}, #{entity.amount}, #{entity.status},#{entity.description},#{entity.paymentId},#{entity.paymentType},
+                 #{entity.orderTime}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
             </foreach>
             on duplicate key update
         user_id = values(user_id),

@@ -2,6 +2,7 @@ package com.ruoyi.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.system.domain.entity.PromoCodeRecords;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -16,5 +17,15 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 @Repository
 public interface PromoCodeRecordsMapper extends BaseMapper<PromoCodeRecords> {
+
+
+    /**
+     * [通过邀请码查询]
+     * @author 陈湘岳 2025/8/13
+     * @param code 邀请码
+     * @return com.ruoyi.system.domain.entity.PromoCodeRecords
+     **/
+    PromoCodeRecords selectPromoCode(@Param("code")String code);
+
 
 }

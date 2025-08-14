@@ -61,7 +61,7 @@ public class EmailSender {
         context.setVariable("expiryMinutes", expiryMinutes);
 
         // 使用模板引擎处理模板
-        String emailContent = templateEngine.process("mail", context);
+        String emailContent = templateEngine.process("verificationEmail", context);
 
         // 创建 MIME 邮件
         MimeMessage message = mailSender.createMimeMessage();

@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.entity;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -36,7 +37,25 @@ private static final long serialVersionUID = 1L;
             * 订单金额
             */
         @TableField(value = "amount")
-        private Double amount;
+        private BigDecimal amount;
+        /**
+         * 交易描述
+         */
+        @TableField(value = "description")
+        private String description;
+
+        /**
+         * 第三方支付id
+         */
+        @TableField(value = "payment_id")
+        private String paymentId;
+
+        /**
+         * 支付方式
+         */
+        @TableField(value = "payment_type")
+        private String paymentType;
+
         /**
             * 订单状态
             */
