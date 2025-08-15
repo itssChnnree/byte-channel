@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.dto.CommodityDto;
 import com.ruoyi.system.domain.vo.CommodityVo;
+import com.ruoyi.system.domain.vo.ShoppingCartCommodityVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
@@ -73,6 +74,15 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
      * @return com.ruoyi.system.domain.vo.CommodityVo
      **/
     Commodity findNormalCommodity(@Param("id") String id);
+
+    /**
+     * [查询购物车商品]
+     * @author 陈湘岳 2025/8/1
+     * @param userId 用户id
+     * @param ids 购物车id集合
+     * @return com.ruoyi.system.domain.vo.CommodityVo
+     **/
+    List<ShoppingCartCommodityVo> findNormalCommodityByCart(@Param("userId") String userId, @Param("ids") List<String> ids);
 
 
 }

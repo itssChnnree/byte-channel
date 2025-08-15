@@ -131,16 +131,9 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
     <!--��ѯ��ҳ����-->
     <select id="queryPage" resultMap="OrderVOMap">
         select
-id, user_id, amount, status,description, order_time, is_deleted, create_user, update_user, create_time, update_time
+        id, user_id, amount, status,description, order_time, is_deleted, create_user, update_user, create_time, update_time
         from `order`
-        <where>
-        1 = 1 and is_deleted = 0 
-            <if test="dto.id != null and dto.id != ''">
-                and id = #{dto.id}
-            </if>
-            <if test="dto.userId != null and dto.userId != ''">
-                and user_id = #{dto.userId}
-            </if>
+        where 1 = 1 and is_deleted = 0 and create_user = #{userId}
             <if test="dto.amount != null">
                 and amount = #{dto.amount}
             </if>
@@ -165,7 +158,7 @@ id, user_id, amount, status,description, order_time, is_deleted, create_user, up
             <if test="dto.updateTime != null">
                 and update_time = #{dto.updateTime}
             </if>
-        </where>
+        order by create_time
     </select>
     
     

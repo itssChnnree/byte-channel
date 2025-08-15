@@ -28,4 +28,13 @@ public interface PromoCodeRecordsMapper extends BaseMapper<PromoCodeRecords> {
     PromoCodeRecords selectPromoCode(@Param("code")String code);
 
 
+    /**
+     * [失效用户邀请码]
+     * @author 陈湘岳 2025/8/14
+     * @param userId
+     * @return int
+     **/
+    int invalidPromoCode(@Param("userId")String userId);
+
+
 }

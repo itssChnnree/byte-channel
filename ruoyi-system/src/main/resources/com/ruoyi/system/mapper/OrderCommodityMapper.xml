@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.OrderCommodityMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.OrderCommodity" id="OrderCommodityMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="orderId" column="order_id" jdbcType="VARCHAR"/>
+                <result property="purchaseQuantity" column="purchase_quantity" jdbcType="INTEGER"/>
+                <result property="orderQuantity" column="order_quantity" jdbcType="INTEGER"/>
+                <result property="commodityId" column="commodity_id" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.OrderCommodityVo" id="OrderCommodityVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="orderId" column="order_id" jdbcType="VARCHAR"/>
+                <result property="purchaseQuantity" column="purchase_quantity" jdbcType="INTEGER"/>
+                <result property="orderQuantity" column="order_quantity" jdbcType="INTEGER"/>
+                <result property="commodityId" column="commodity_id" jdbcType="VARCHAR"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="OrderCommodityVOMap">
+        select
+id, user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+        from order_commodity
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="OrderCommodityVOMap">
+        select
+id, user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_deleted, create_user, update_user, create_time, update_time        
+        from order_commodity
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="orderId != null and orderId != ''">
+                and order_id = #{orderId}
+            </if>
+            <if test="purchaseQuantity != null">
+                and purchase_quantity = #{purchaseQuantity}
+            </if>
+            <if test="orderQuantity != null">
+                and order_quantity = #{orderQuantity}
+            </if>
+            <if test="commodityId != null and commodityId != ''">
+                and commodity_id = #{commodityId}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="OrderCommodityVOMap">
+        select
+id, user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+        from order_commodity
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.orderId != null and dto.orderId != ''">
+                and order_id = #{dto.orderId}
+            </if>
+            <if test="dto.purchaseQuantity != null">
+                and purchase_quantity = #{dto.purchaseQuantity}
+            </if>
+            <if test="dto.orderQuantity != null">
+                and order_quantity = #{dto.orderQuantity}
+            </if>
+            <if test="dto.commodityId != null and dto.commodityId != ''">
+                and commodity_id = #{dto.commodityId}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="OrderCommodityVOMap">
+        select
+id, user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+        from order_commodity
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.orderId != null and dto.orderId != ''">
+                and order_id = #{dto.orderId}
+            </if>
+            <if test="dto.purchaseQuantity != null">
+                and purchase_quantity = #{dto.purchaseQuantity}
+            </if>
+            <if test="dto.orderQuantity != null">
+                and order_quantity = #{dto.orderQuantity}
+            </if>
+            <if test="dto.commodityId != null and dto.commodityId != ''">
+                and commodity_id = #{dto.commodityId}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into order_commodity(id,user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{entity.id},#{userId}, #{orderId}, #{purchaseQuantity}, #{orderQuantity}, #{commodityId}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into order_commodity(id,user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.userId}, #{entity.orderId}, #{entity.purchaseQuantity}, #{entity.orderQuantity}, #{entity.commodityId}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into order_commodity(id,user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.userId}, #{entity.orderId}, #{entity.purchaseQuantity}, #{entity.orderQuantity}, #{entity.commodityId}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+            </foreach>
+            on duplicate key update
+user_id = values(user_id),
+order_id = values(order_id),
+purchase_quantity = values(purchase_quantity),
+order_quantity = values(order_quantity),
+commodity_id = values(commodity_id),
+is_deleted = values(is_deleted),
+create_user = values(create_user),
+update_user = values(update_user),
+create_time = values(create_time),
+update_time = values(update_time)    </insert>
+
+</mapper>
+

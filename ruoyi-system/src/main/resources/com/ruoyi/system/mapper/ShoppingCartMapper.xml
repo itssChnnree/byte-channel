@@ -173,7 +173,9 @@
                c.commodity_discounted_price as commodityDiscountPrice,
                c.commodity_price            as commodityPrice,
                cc.category_name             as commodityCategoryName,
-               cc.id                        as commodityCategoryId
+               cc.id                        as commodityCategoryId,
+               IF(c.oversold_configurations = c.oversold, 'true', 'false') as isNoStock,
+               IF(sc.commodity_num &gt; c.oversold_configurations+c.inventory-c.oversold, 'true', 'false') as isBuyNumMoreThanStockNum
         from
            shopping_cart sc
            inner join commodity c on sc.commodity_id = c.id

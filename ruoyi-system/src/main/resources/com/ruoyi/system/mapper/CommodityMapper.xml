@@ -307,6 +307,29 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
 
 
 
+    <select id="findNormalCommodityByCart" resultType="com.ruoyi.system.domain.vo.ShoppingCartCommodityVo">
+        select sc.id as shoppingCartId,
+        c.id as commodityId,
+        c.commodity_name as commodityName,
+        sc.commodity_num as commodityNum,
+        c.commodity_discounted_price as commodityDiscountPrice,
+        c.commodity_price as commodityPrice,
+        cc.category_name as commodityCategoryName,
+        cc.id as commodityCategoryId,
+        IF(c.oversold_configurations = c.oversold, 'true', 'false') as isNoStock,
+        IF(sc.commodity_num &gt; c.oversold_configurations+c.inventory-c.oversold, 'true', 'false') as isBuyNumMoreThanStockNum
+        from
+        shopping_cart sc
+        inner join commodity c on sc.commodity_id = c.id
+        inner join commodity_category cc on c.category_id = cc.id
+        where sc.user_id = #{userId}
+        and c.available_status = 1
+        and sc.id in
+        <foreach item="item" collection="ids" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">

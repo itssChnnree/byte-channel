@@ -3,6 +3,7 @@ package com.ruoyi.system.domain.dto;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.ruoyi.system.domain.base.PageBase;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderDto{
+public class OrderDto extends PageBase {
 
     @ApiModelProperty("主键id")
    private String id;

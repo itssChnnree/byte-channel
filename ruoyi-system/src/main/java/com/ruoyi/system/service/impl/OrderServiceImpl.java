@@ -1,12 +1,20 @@
 package com.ruoyi.system.service.impl;
 
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.RedissonLockStatus;
+import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
+import com.ruoyi.system.domain.dto.OrderByShoppingCartDto;
+import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.domain.dto.OrderMessageDto;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.entity.PromoCodeRecords;
+import com.ruoyi.system.domain.vo.OrderVo;
+import com.ruoyi.system.domain.vo.ShoppingCartCommodityVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.CommodityMapper;
 import com.ruoyi.system.mapper.OrderMapper;
@@ -23,8 +31,10 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -104,10 +114,10 @@ public class OrderServiceImpl implements IOrderService {
         orderMessageDto.setOrderByCommodityDto(orderByCommodityDto);
         orderMessageDto.setPromoCodeRecordsDto(promoCodeRecords);
 
-        //消息队列： 邮箱发送
-        SendResult sendResult1 = rocketMqTemplate.syncSend("order-topic", orderMessageDto);
+        //消息队列： 创建orderCommodity,取消时关闭订单并释放资源
+        SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_TOPIC, orderMessageDto);
         if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){
-            SendResult sendResult2 = rocketMqTemplate.syncSend("order-topic", orderMessageDto);
+            SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_TOPIC, orderMessageDto);
             if (!sendResult2.getSendStatus().equals(SendStatus.SEND_OK)){
                 throw new RuntimeException("生成订单失败，请稍后再试");
             }
@@ -115,11 +125,11 @@ public class OrderServiceImpl implements IOrderService {
         // 设置延时级别为16 (对应30分钟)
         int delayLevel = 16;
 
-        //延迟队列   15分钟后提醒充值  30分钟后是否支付，未支付关闭订单
+        //延迟队列   15分钟后提醒充值  30分钟后是否支付，未支付关闭订单,，并退款
         // 发送延时消息
 
         Message<OrderMessageDto> message = MessageBuilder.withPayload(orderMessageDto).build();
-        rocketMqTemplate.syncSend("order-delay-topic", message, 3000, delayLevel);
+        rocketMqTemplate.syncSend(RocketMqConstant.ORDER_DELAY_TOPIC, message, 3000, delayLevel);
         return Result.success(order);
     }
 
@@ -147,4 +157,33 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
+    /**
+     * [分页查询订单]
+     *
+     * @param orderDto 分页查询订单
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/8/14
+     **/
+    @Override
+    public Result pageQuery(OrderDto orderDto) {
+        Page<Order> page = new Page<>(orderDto.getPageNum(), orderDto.getPageSize());
+        IPage<OrderVo> orderVoIPage = orderMapper.queryPage(page, orderDto, SecurityUtils.getStrUserId());
+        return Result.success(orderVoIPage);
+    }
+
+
+    /**
+     * [消息队列测试]
+     *
+     * @return java.lang.String
+     * @author 陈湘岳 2025/8/14
+     **/
+    @Override
+    public String test() {
+//        for (int i = 0; i < 300; i++){
+            OrderMessageDto orderMessageDto = new OrderMessageDto(20000, null, null, null);
+            SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_TOPIC, orderMessageDto);
+//        }
+        return "测试完毕";
+    }
 }

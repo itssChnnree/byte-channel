@@ -29,6 +29,12 @@ public class ShoppingCartCommodityVo {
     @ApiModelProperty("添加商品数量")
     private String commodityNum;
 
+    @ApiModelProperty("是否无库存")
+    private String isNoStock;
+
+    @ApiModelProperty("购买数是否大于库存数")
+    private String isBuyNumMoreThanStockNum;
+
     @ApiModelProperty("商品分类Id")
     private String commodityCategoryId;
 

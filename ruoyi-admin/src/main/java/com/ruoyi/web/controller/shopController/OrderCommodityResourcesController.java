@@ -17,7 +17,6 @@ import javax.annotation.Resource;
 @Api(tags = "订单商品资源")
 @RestController
 @RequestMapping("orderCommodityResources")
-
 public class OrderCommodityResourcesController{
 
     @Resource(name = "orderCommodityResourcesService")

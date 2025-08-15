@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 
+import com.ruoyi.system.http.Result;
 
 /**
  * 推广码记录表(PromoCodeRecords)�����ӿ�
@@ -10,6 +11,13 @@ package com.ruoyi.system.service;
  * @date 2025-07-20 23:24:13
  */
 public interface IPromoCodeRecordsService{
-    
 
+
+    /**
+     * [生成推广码]
+     * @author 陈湘岳 2025/8/14
+     * @param
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result createPromoCodeRecords();
 }

@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GenTableMapper">
+
+    <resultMap type="com.ruoyi.system.domain.GenTable" id="GenTableMap">
+                <result property="tableId" column="table_id" jdbcType="INTEGER"/>
+                <result property="tableName" column="table_name" jdbcType="VARCHAR"/>
+                <result property="tableComment" column="table_comment" jdbcType="VARCHAR"/>
+                <result property="subTableName" column="sub_table_name" jdbcType="VARCHAR"/>
+                <result property="subTableFkName" column="sub_table_fk_name" jdbcType="VARCHAR"/>
+                <result property="className" column="class_name" jdbcType="VARCHAR"/>
+                <result property="tplCategory" column="tpl_category" jdbcType="VARCHAR"/>
+                <result property="tplWebType" column="tpl_web_type" jdbcType="VARCHAR"/>
+                <result property="packageName" column="package_name" jdbcType="VARCHAR"/>
+                <result property="moduleName" column="module_name" jdbcType="VARCHAR"/>
+                <result property="businessName" column="business_name" jdbcType="VARCHAR"/>
+                <result property="functionName" column="function_name" jdbcType="VARCHAR"/>
+                <result property="functionAuthor" column="function_author" jdbcType="VARCHAR"/>
+                <result property="genType" column="gen_type" jdbcType="VARCHAR"/>
+                <result property="genPath" column="gen_path" jdbcType="VARCHAR"/>
+                <result property="options" column="options" jdbcType="VARCHAR"/>
+                <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="remark" column="remark" jdbcType="VARCHAR"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.GenTableVo" id="GenTableVOMap">
+                <result property="tableId" column="table_id" jdbcType="INTEGER"/>
+                <result property="tableName" column="table_name" jdbcType="VARCHAR"/>
+                <result property="tableComment" column="table_comment" jdbcType="VARCHAR"/>
+                <result property="subTableName" column="sub_table_name" jdbcType="VARCHAR"/>
+                <result property="subTableFkName" column="sub_table_fk_name" jdbcType="VARCHAR"/>
+                <result property="className" column="class_name" jdbcType="VARCHAR"/>
+                <result property="tplCategory" column="tpl_category" jdbcType="VARCHAR"/>
+                <result property="tplWebType" column="tpl_web_type" jdbcType="VARCHAR"/>
+                <result property="packageName" column="package_name" jdbcType="VARCHAR"/>
+                <result property="moduleName" column="module_name" jdbcType="VARCHAR"/>
+                <result property="businessName" column="business_name" jdbcType="VARCHAR"/>
+                <result property="functionName" column="function_name" jdbcType="VARCHAR"/>
+                <result property="functionAuthor" column="function_author" jdbcType="VARCHAR"/>
+                <result property="genType" column="gen_type" jdbcType="VARCHAR"/>
+                <result property="genPath" column="gen_path" jdbcType="VARCHAR"/>
+                <result property="options" column="options" jdbcType="VARCHAR"/>
+                <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="remark" column="remark" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="GenTableVOMap">
+        select
+table_id, table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, tpl_web_type, package_name, module_name, business_name, function_name, function_author, gen_type, gen_path, options, create_by, create_time, update_by, update_time, remark
+        from gen_table
+        where table_id = #{tableId} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="GenTableVOMap">
+        select
+table_id, table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, tpl_web_type, package_name, module_name, business_name, function_name, function_author, gen_type, gen_path, options, create_by, create_time, update_by, update_time, remark        
+        from gen_table
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="tableId != null">
+                and table_id = #{tableId}
+            </if>
+            <if test="tableName != null and tableName != ''">
+                and table_name = #{tableName}
+            </if>
+            <if test="tableComment != null and tableComment != ''">
+                and table_comment = #{tableComment}
+            </if>
+            <if test="subTableName != null and subTableName != ''">
+                and sub_table_name = #{subTableName}
+            </if>
+            <if test="subTableFkName != null and subTableFkName != ''">
+                and sub_table_fk_name = #{subTableFkName}
+            </if>
+            <if test="className != null and className != ''">
+                and class_name = #{className}
+            </if>
+            <if test="tplCategory != null and tplCategory != ''">
+                and tpl_category = #{tplCategory}
+            </if>
+            <if test="tplWebType != null and tplWebType != ''">
+                and tpl_web_type = #{tplWebType}
+            </if>
+            <if test="packageName != null and packageName != ''">
+                and package_name = #{packageName}
+            </if>
+            <if test="moduleName != null and moduleName != ''">
+                and module_name = #{moduleName}
+            </if>
+            <if test="businessName != null and businessName != ''">
+                and business_name = #{businessName}
+            </if>
+            <if test="functionName != null and functionName != ''">
+                and function_name = #{functionName}
+            </if>
+            <if test="functionAuthor != null and functionAuthor != ''">
+                and function_author = #{functionAuthor}
+            </if>
+            <if test="genType != null and genType != ''">
+                and gen_type = #{genType}
+            </if>
+            <if test="genPath != null and genPath != ''">
+                and gen_path = #{genPath}
+            </if>
+            <if test="options != null and options != ''">
+                and options = #{options}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and update_by = #{updateBy}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+            <if test="remark != null and remark != ''">
+                and remark = #{remark}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="GenTableVOMap">
+        select
+table_id, table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, tpl_web_type, package_name, module_name, business_name, function_name, function_author, gen_type, gen_path, options, create_by, create_time, update_by, update_time, remark
+        from gen_table
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.tableId != null">
+                and table_id = #{dto.tableId}
+            </if>
+            <if test="dto.tableName != null and dto.tableName != ''">
+                and table_name = #{dto.tableName}
+            </if>
+            <if test="dto.tableComment != null and dto.tableComment != ''">
+                and table_comment = #{dto.tableComment}
+            </if>
+            <if test="dto.subTableName != null and dto.subTableName != ''">
+                and sub_table_name = #{dto.subTableName}
+            </if>
+            <if test="dto.subTableFkName != null and dto.subTableFkName != ''">
+                and sub_table_fk_name = #{dto.subTableFkName}
+            </if>
+            <if test="dto.className != null and dto.className != ''">
+                and class_name = #{dto.className}
+            </if>
+            <if test="dto.tplCategory != null and dto.tplCategory != ''">
+                and tpl_category = #{dto.tplCategory}
+            </if>
+            <if test="dto.tplWebType != null and dto.tplWebType != ''">
+                and tpl_web_type = #{dto.tplWebType}
+            </if>
+            <if test="dto.packageName != null and dto.packageName != ''">
+                and package_name = #{dto.packageName}
+            </if>
+            <if test="dto.moduleName != null and dto.moduleName != ''">
+                and module_name = #{dto.moduleName}
+            </if>
+            <if test="dto.businessName != null and dto.businessName != ''">
+                and business_name = #{dto.businessName}
+            </if>
+            <if test="dto.functionName != null and dto.functionName != ''">
+                and function_name = #{dto.functionName}
+            </if>
+            <if test="dto.functionAuthor != null and dto.functionAuthor != ''">
+                and function_author = #{dto.functionAuthor}
+            </if>
+            <if test="dto.genType != null and dto.genType != ''">
+                and gen_type = #{dto.genType}
+            </if>
+            <if test="dto.genPath != null and dto.genPath != ''">
+                and gen_path = #{dto.genPath}
+            </if>
+            <if test="dto.options != null and dto.options != ''">
+                and options = #{dto.options}
+            </if>
+            <if test="dto.createBy != null and dto.createBy != ''">
+                and create_by = #{dto.createBy}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateBy != null and dto.updateBy != ''">
+                and update_by = #{dto.updateBy}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+            <if test="dto.remark != null and dto.remark != ''">
+                and remark = #{dto.remark}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="GenTableVOMap">
+        select
+table_id, table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, tpl_web_type, package_name, module_name, business_name, function_name, function_author, gen_type, gen_path, options, create_by, create_time, update_by, update_time, remark
+        from gen_table
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.tableId != null">
+                and table_id = #{dto.tableId}
+            </if>
+            <if test="dto.tableName != null and dto.tableName != ''">
+                and table_name = #{dto.tableName}
+            </if>
+            <if test="dto.tableComment != null and dto.tableComment != ''">
+                and table_comment = #{dto.tableComment}
+            </if>
+            <if test="dto.subTableName != null and dto.subTableName != ''">
+                and sub_table_name = #{dto.subTableName}
+            </if>
+            <if test="dto.subTableFkName != null and dto.subTableFkName != ''">
+                and sub_table_fk_name = #{dto.subTableFkName}
+            </if>
+            <if test="dto.className != null and dto.className != ''">
+                and class_name = #{dto.className}
+            </if>
+            <if test="dto.tplCategory != null and dto.tplCategory != ''">
+                and tpl_category = #{dto.tplCategory}
+            </if>
+            <if test="dto.tplWebType != null and dto.tplWebType != ''">
+                and tpl_web_type = #{dto.tplWebType}
+            </if>
+            <if test="dto.packageName != null and dto.packageName != ''">
+                and package_name = #{dto.packageName}
+            </if>
+            <if test="dto.moduleName != null and dto.moduleName != ''">
+                and module_name = #{dto.moduleName}
+            </if>
+            <if test="dto.businessName != null and dto.businessName != ''">
+                and business_name = #{dto.businessName}
+            </if>
+            <if test="dto.functionName != null and dto.functionName != ''">
+                and function_name = #{dto.functionName}
+            </if>
+            <if test="dto.functionAuthor != null and dto.functionAuthor != ''">
+                and function_author = #{dto.functionAuthor}
+            </if>
+            <if test="dto.genType != null and dto.genType != ''">
+                and gen_type = #{dto.genType}
+            </if>
+            <if test="dto.genPath != null and dto.genPath != ''">
+                and gen_path = #{dto.genPath}
+            </if>
+            <if test="dto.options != null and dto.options != ''">
+                and options = #{dto.options}
+            </if>
+            <if test="dto.createBy != null and dto.createBy != ''">
+                and create_by = #{dto.createBy}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateBy != null and dto.updateBy != ''">
+                and update_by = #{dto.updateBy}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+            <if test="dto.remark != null and dto.remark != ''">
+                and remark = #{dto.remark}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="tableId" useGeneratedKeys="true">
+        insert into gen_table(id,table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, tpl_web_type, package_name, module_name, business_name, function_name, function_author, gen_type, gen_path, options, create_by, create_time, update_by, update_time, remark)
+        values (#{entity.id},#{tableName}, #{tableComment}, #{subTableName}, #{subTableFkName}, #{className}, #{tplCategory}, #{tplWebType}, #{packageName}, #{moduleName}, #{businessName}, #{functionName}, #{functionAuthor}, #{genType}, #{genPath}, #{options}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime}, #{remark})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="tableId" useGeneratedKeys="true">
+        insert into gen_table(id,table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, tpl_web_type, package_name, module_name, business_name, function_name, function_author, gen_type, gen_path, options, create_by, create_time, update_by, update_time, remark)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.tableName}, #{entity.tableComment}, #{entity.subTableName}, #{entity.subTableFkName}, #{entity.className}, #{entity.tplCategory}, #{entity.tplWebType}, #{entity.packageName}, #{entity.moduleName}, #{entity.businessName}, #{entity.functionName}, #{entity.functionAuthor}, #{entity.genType}, #{entity.genPath}, #{entity.options}, #{entity.createBy}, #{entity.createTime}, #{entity.updateBy}, #{entity.updateTime}, #{entity.remark})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="tableId" useGeneratedKeys="true">
+        insert into gen_table(id,table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, tpl_web_type, package_name, module_name, business_name, function_name, function_author, gen_type, gen_path, options, create_by, create_time, update_by, update_time, remark)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.tableName}, #{entity.tableComment}, #{entity.subTableName}, #{entity.subTableFkName}, #{entity.className}, #{entity.tplCategory}, #{entity.tplWebType}, #{entity.packageName}, #{entity.moduleName}, #{entity.businessName}, #{entity.functionName}, #{entity.functionAuthor}, #{entity.genType}, #{entity.genPath}, #{entity.options}, #{entity.createBy}, #{entity.createTime}, #{entity.updateBy}, #{entity.updateTime}, #{entity.remark})
+            </foreach>
+            on duplicate key update
+table_name = values(table_name),
+table_comment = values(table_comment),
+sub_table_name = values(sub_table_name),
+sub_table_fk_name = values(sub_table_fk_name),
+class_name = values(class_name),
+tpl_category = values(tpl_category),
+tpl_web_type = values(tpl_web_type),
+package_name = values(package_name),
+module_name = values(module_name),
+business_name = values(business_name),
+function_name = values(function_name),
+function_author = values(function_author),
+gen_type = values(gen_type),
+gen_path = values(gen_path),
+options = values(options),
+create_by = values(create_by),
+create_time = values(create_time),
+update_by = values(update_by),
+update_time = values(update_time),
+remark = values(remark)    </insert>
+
+</mapper>
+

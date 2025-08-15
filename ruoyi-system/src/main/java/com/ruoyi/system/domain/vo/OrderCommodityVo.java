@@ -1,6 +1,5 @@
-package com.ruoyi.system.domain.dto;
+package com.ruoyi.system.domain.vo;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -9,42 +8,35 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-
 /**
- * 推广记录表(PromoRecords)
+ * 订单商品(OrderCommodity)
  *
  * @author chenxiangyue
  * @version v1.0.0
- * @date 2025-07-20 23:24:19
+ * @date 2025-08-15 10:01:36
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PromoRecordsDto{
+public class OrderCommodityVo{
 
     @ApiModelProperty("主键id")
    private String id;
     
-    @ApiModelProperty("推荐人用户id")
+    @ApiModelProperty("购买用户id")
    private String userId;
     
-    @ApiModelProperty("被推荐人用户id")
-   private String referralsUserId;
+    @ApiModelProperty("订单id")
+   private String orderId;
     
-    @ApiModelProperty("推广码记录id")
-    private String promoCodeRecordsId;
+    @ApiModelProperty("购买数量")
+   private Integer purchaseQuantity;
     
-    @ApiModelProperty("返现金额")
-    private BigDecimal cashbackAmount;
+    @ApiModelProperty("交付数量")
+   private Integer orderQuantity;
     
-    @ApiModelProperty("状态")
-    private String status;
-    
-    @ApiModelProperty("被推荐人购买金额")
-    private BigDecimal purchaseAmount;
-    
-    @ApiModelProperty("返现比例")
-   private String cashbackPercentage;
+    @ApiModelProperty("商品id")
+   private String commodityId;
     
     @ApiModelProperty("0为未删除，1为已删除")
    private Integer isDeleted;

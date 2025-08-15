@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GenTableColumnMapper">
+
+    <resultMap type="com.ruoyi.system.domain.GenTableColumn" id="GenTableColumnMap">
+                <result property="columnId" column="column_id" jdbcType="INTEGER"/>
+                <result property="tableId" column="table_id" jdbcType="INTEGER"/>
+                <result property="columnName" column="column_name" jdbcType="VARCHAR"/>
+                <result property="columnComment" column="column_comment" jdbcType="VARCHAR"/>
+                <result property="columnType" column="column_type" jdbcType="VARCHAR"/>
+                <result property="javaType" column="java_type" jdbcType="VARCHAR"/>
+                <result property="javaField" column="java_field" jdbcType="VARCHAR"/>
+                <result property="isPk" column="is_pk" jdbcType="VARCHAR"/>
+                <result property="isIncrement" column="is_increment" jdbcType="VARCHAR"/>
+                <result property="isRequired" column="is_required" jdbcType="VARCHAR"/>
+                <result property="isInsert" column="is_insert" jdbcType="VARCHAR"/>
+                <result property="isEdit" column="is_edit" jdbcType="VARCHAR"/>
+                <result property="isList" column="is_list" jdbcType="VARCHAR"/>
+                <result property="isQuery" column="is_query" jdbcType="VARCHAR"/>
+                <result property="queryType" column="query_type" jdbcType="VARCHAR"/>
+                <result property="htmlType" column="html_type" jdbcType="VARCHAR"/>
+                <result property="dictType" column="dict_type" jdbcType="VARCHAR"/>
+                <result property="sort" column="sort" jdbcType="INTEGER"/>
+                <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.GenTableColumnVo" id="GenTableColumnVOMap">
+                <result property="columnId" column="column_id" jdbcType="INTEGER"/>
+                <result property="tableId" column="table_id" jdbcType="INTEGER"/>
+                <result property="columnName" column="column_name" jdbcType="VARCHAR"/>
+                <result property="columnComment" column="column_comment" jdbcType="VARCHAR"/>
+                <result property="columnType" column="column_type" jdbcType="VARCHAR"/>
+                <result property="javaType" column="java_type" jdbcType="VARCHAR"/>
+                <result property="javaField" column="java_field" jdbcType="VARCHAR"/>
+                <result property="isPk" column="is_pk" jdbcType="VARCHAR"/>
+                <result property="isIncrement" column="is_increment" jdbcType="VARCHAR"/>
+                <result property="isRequired" column="is_required" jdbcType="VARCHAR"/>
+                <result property="isInsert" column="is_insert" jdbcType="VARCHAR"/>
+                <result property="isEdit" column="is_edit" jdbcType="VARCHAR"/>
+                <result property="isList" column="is_list" jdbcType="VARCHAR"/>
+                <result property="isQuery" column="is_query" jdbcType="VARCHAR"/>
+                <result property="queryType" column="query_type" jdbcType="VARCHAR"/>
+                <result property="htmlType" column="html_type" jdbcType="VARCHAR"/>
+                <result property="dictType" column="dict_type" jdbcType="VARCHAR"/>
+                <result property="sort" column="sort" jdbcType="INTEGER"/>
+                <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="GenTableColumnVOMap">
+        select
+column_id, table_id, column_name, column_comment, column_type, java_type, java_field, is_pk, is_increment, is_required, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort, create_by, create_time, update_by, update_time
+        from gen_table_column
+        where column_id = #{columnId} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="GenTableColumnVOMap">
+        select
+column_id, table_id, column_name, column_comment, column_type, java_type, java_field, is_pk, is_increment, is_required, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort, create_by, create_time, update_by, update_time        
+        from gen_table_column
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="columnId != null">
+                and column_id = #{columnId}
+            </if>
+            <if test="tableId != null">
+                and table_id = #{tableId}
+            </if>
+            <if test="columnName != null and columnName != ''">
+                and column_name = #{columnName}
+            </if>
+            <if test="columnComment != null and columnComment != ''">
+                and column_comment = #{columnComment}
+            </if>
+            <if test="columnType != null and columnType != ''">
+                and column_type = #{columnType}
+            </if>
+            <if test="javaType != null and javaType != ''">
+                and java_type = #{javaType}
+            </if>
+            <if test="javaField != null and javaField != ''">
+                and java_field = #{javaField}
+            </if>
+            <if test="isPk != null and isPk != ''">
+                and is_pk = #{isPk}
+            </if>
+            <if test="isIncrement != null and isIncrement != ''">
+                and is_increment = #{isIncrement}
+            </if>
+            <if test="isRequired != null and isRequired != ''">
+                and is_required = #{isRequired}
+            </if>
+            <if test="isInsert != null and isInsert != ''">
+                and is_insert = #{isInsert}
+            </if>
+            <if test="isEdit != null and isEdit != ''">
+                and is_edit = #{isEdit}
+            </if>
+            <if test="isList != null and isList != ''">
+                and is_list = #{isList}
+            </if>
+            <if test="isQuery != null and isQuery != ''">
+                and is_query = #{isQuery}
+            </if>
+            <if test="queryType != null and queryType != ''">
+                and query_type = #{queryType}
+            </if>
+            <if test="htmlType != null and htmlType != ''">
+                and html_type = #{htmlType}
+            </if>
+            <if test="dictType != null and dictType != ''">
+                and dict_type = #{dictType}
+            </if>
+            <if test="sort != null">
+                and sort = #{sort}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and update_by = #{updateBy}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="GenTableColumnVOMap">
+        select
+column_id, table_id, column_name, column_comment, column_type, java_type, java_field, is_pk, is_increment, is_required, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort, create_by, create_time, update_by, update_time
+        from gen_table_column
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.columnId != null">
+                and column_id = #{dto.columnId}
+            </if>
+            <if test="dto.tableId != null">
+                and table_id = #{dto.tableId}
+            </if>
+            <if test="dto.columnName != null and dto.columnName != ''">
+                and column_name = #{dto.columnName}
+            </if>
+            <if test="dto.columnComment != null and dto.columnComment != ''">
+                and column_comment = #{dto.columnComment}
+            </if>
+            <if test="dto.columnType != null and dto.columnType != ''">
+                and column_type = #{dto.columnType}
+            </if>
+            <if test="dto.javaType != null and dto.javaType != ''">
+                and java_type = #{dto.javaType}
+            </if>
+            <if test="dto.javaField != null and dto.javaField != ''">
+                and java_field = #{dto.javaField}
+            </if>
+            <if test="dto.isPk != null and dto.isPk != ''">
+                and is_pk = #{dto.isPk}
+            </if>
+            <if test="dto.isIncrement != null and dto.isIncrement != ''">
+                and is_increment = #{dto.isIncrement}
+            </if>
+            <if test="dto.isRequired != null and dto.isRequired != ''">
+                and is_required = #{dto.isRequired}
+            </if>
+            <if test="dto.isInsert != null and dto.isInsert != ''">
+                and is_insert = #{dto.isInsert}
+            </if>
+            <if test="dto.isEdit != null and dto.isEdit != ''">
+                and is_edit = #{dto.isEdit}
+            </if>
+            <if test="dto.isList != null and dto.isList != ''">
+                and is_list = #{dto.isList}
+            </if>
+            <if test="dto.isQuery != null and dto.isQuery != ''">
+                and is_query = #{dto.isQuery}
+            </if>
+            <if test="dto.queryType != null and dto.queryType != ''">
+                and query_type = #{dto.queryType}
+            </if>
+            <if test="dto.htmlType != null and dto.htmlType != ''">
+                and html_type = #{dto.htmlType}
+            </if>
+            <if test="dto.dictType != null and dto.dictType != ''">
+                and dict_type = #{dto.dictType}
+            </if>
+            <if test="dto.sort != null">
+                and sort = #{dto.sort}
+            </if>
+            <if test="dto.createBy != null and dto.createBy != ''">
+                and create_by = #{dto.createBy}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateBy != null and dto.updateBy != ''">
+                and update_by = #{dto.updateBy}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="GenTableColumnVOMap">
+        select
+column_id, table_id, column_name, column_comment, column_type, java_type, java_field, is_pk, is_increment, is_required, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort, create_by, create_time, update_by, update_time
+        from gen_table_column
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.columnId != null">
+                and column_id = #{dto.columnId}
+            </if>
+            <if test="dto.tableId != null">
+                and table_id = #{dto.tableId}
+            </if>
+            <if test="dto.columnName != null and dto.columnName != ''">
+                and column_name = #{dto.columnName}
+            </if>
+            <if test="dto.columnComment != null and dto.columnComment != ''">
+                and column_comment = #{dto.columnComment}
+            </if>
+            <if test="dto.columnType != null and dto.columnType != ''">
+                and column_type = #{dto.columnType}
+            </if>
+            <if test="dto.javaType != null and dto.javaType != ''">
+                and java_type = #{dto.javaType}
+            </if>
+            <if test="dto.javaField != null and dto.javaField != ''">
+                and java_field = #{dto.javaField}
+            </if>
+            <if test="dto.isPk != null and dto.isPk != ''">
+                and is_pk = #{dto.isPk}
+            </if>
+            <if test="dto.isIncrement != null and dto.isIncrement != ''">
+                and is_increment = #{dto.isIncrement}
+            </if>
+            <if test="dto.isRequired != null and dto.isRequired != ''">
+                and is_required = #{dto.isRequired}
+            </if>
+            <if test="dto.isInsert != null and dto.isInsert != ''">
+                and is_insert = #{dto.isInsert}
+            </if>
+            <if test="dto.isEdit != null and dto.isEdit != ''">
+                and is_edit = #{dto.isEdit}
+            </if>
+            <if test="dto.isList != null and dto.isList != ''">
+                and is_list = #{dto.isList}
+            </if>
+            <if test="dto.isQuery != null and dto.isQuery != ''">
+                and is_query = #{dto.isQuery}
+            </if>
+            <if test="dto.queryType != null and dto.queryType != ''">
+                and query_type = #{dto.queryType}
+            </if>
+            <if test="dto.htmlType != null and dto.htmlType != ''">
+                and html_type = #{dto.htmlType}
+            </if>
+            <if test="dto.dictType != null and dto.dictType != ''">
+                and dict_type = #{dto.dictType}
+            </if>
+            <if test="dto.sort != null">
+                and sort = #{dto.sort}
+            </if>
+            <if test="dto.createBy != null and dto.createBy != ''">
+                and create_by = #{dto.createBy}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateBy != null and dto.updateBy != ''">
+                and update_by = #{dto.updateBy}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="columnId" useGeneratedKeys="true">
+        insert into gen_table_column(id,table_id, column_name, column_comment, column_type, java_type, java_field, is_pk, is_increment, is_required, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort, create_by, create_time, update_by, update_time)
+        values (#{entity.id},#{tableId}, #{columnName}, #{columnComment}, #{columnType}, #{javaType}, #{javaField}, #{isPk}, #{isIncrement}, #{isRequired}, #{isInsert}, #{isEdit}, #{isList}, #{isQuery}, #{queryType}, #{htmlType}, #{dictType}, #{sort}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="columnId" useGeneratedKeys="true">
+        insert into gen_table_column(id,table_id, column_name, column_comment, column_type, java_type, java_field, is_pk, is_increment, is_required, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort, create_by, create_time, update_by, update_time)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.tableId}, #{entity.columnName}, #{entity.columnComment}, #{entity.columnType}, #{entity.javaType}, #{entity.javaField}, #{entity.isPk}, #{entity.isIncrement}, #{entity.isRequired}, #{entity.isInsert}, #{entity.isEdit}, #{entity.isList}, #{entity.isQuery}, #{entity.queryType}, #{entity.htmlType}, #{entity.dictType}, #{entity.sort}, #{entity.createBy}, #{entity.createTime}, #{entity.updateBy}, #{entity.updateTime})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="columnId" useGeneratedKeys="true">
+        insert into gen_table_column(id,table_id, column_name, column_comment, column_type, java_type, java_field, is_pk, is_increment, is_required, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort, create_by, create_time, update_by, update_time)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.tableId}, #{entity.columnName}, #{entity.columnComment}, #{entity.columnType}, #{entity.javaType}, #{entity.javaField}, #{entity.isPk}, #{entity.isIncrement}, #{entity.isRequired}, #{entity.isInsert}, #{entity.isEdit}, #{entity.isList}, #{entity.isQuery}, #{entity.queryType}, #{entity.htmlType}, #{entity.dictType}, #{entity.sort}, #{entity.createBy}, #{entity.createTime}, #{entity.updateBy}, #{entity.updateTime})
+            </foreach>
+            on duplicate key update
+table_id = values(table_id),
+column_name = values(column_name),
+column_comment = values(column_comment),
+column_type = values(column_type),
+java_type = values(java_type),
+java_field = values(java_field),
+is_pk = values(is_pk),
+is_increment = values(is_increment),
+is_required = values(is_required),
+is_insert = values(is_insert),
+is_edit = values(is_edit),
+is_list = values(is_list),
+is_query = values(is_query),
+query_type = values(query_type),
+html_type = values(html_type),
+dict_type = values(dict_type),
+sort = values(sort),
+create_by = values(create_by),
+create_time = values(create_time),
+update_by = values(update_by),
+update_time = values(update_time)    </insert>
+
+</mapper>
+
