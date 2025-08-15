@@ -19,8 +19,11 @@ public interface RocketMqConstant {
 //    -----------------------消费者组---------------------------------
 
     //创建订单商品
-    String CREATE_ORDER_COMMODITY_GROUP = "create-order-commodity-group";
+    String CREATE_ORDER_COMMODITY = "createOrderCommodity";
 
-    //创建延时消息
-    String CREATE_ORDER_DELAY_MESSAGE = "create-order-delay-message";
+    //创建推广记录
+    String CREATE_PROMO_CODE_RECORDS = "createPromoCodeRecords";
+
+    //创建延时订单关闭消息
+    String CREATE_ORDER_DELAY_MESSAGE = "createOrderDelayMessage";
 }
