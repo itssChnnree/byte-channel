@@ -1,9 +1,11 @@
 package com.ruoyi.system.service.impl;
 
 
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.system.Util.DefaultValueUtil;
 import com.ruoyi.system.constant.RedissonLockStatus;
 import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
@@ -80,6 +82,11 @@ public class OrderServiceImpl implements IOrderService {
         if (normalCommodity == null) {
             return Result.fail("商品不存在");
         }
+        try {
+            DefaultValueUtil.setDefaultData(orderByCommodityDto);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         RLock lock = redissonClient.getLock(RedissonLockStatus.COMMODITY_STOCK_CHANGE_LOCK + orderByCommodityDto.getCommodityId());
         try{
             boolean lockStatus = lock.tryLock(5, TimeUnit.SECONDS);
@@ -122,14 +129,6 @@ public class OrderServiceImpl implements IOrderService {
                 throw new RuntimeException("生成订单失败，请稍后再试");
             }
         }
-        // 设置延时级别为16 (对应30分钟)
-        int delayLevel = 16;
-
-        //延迟队列   15分钟后提醒充值  30分钟后是否支付，未支付关闭订单,，并退款
-        // 发送延时消息
-
-        Message<OrderMessageDto> message = MessageBuilder.withPayload(orderMessageDto).build();
-        rocketMqTemplate.syncSend(RocketMqConstant.ORDER_DELAY_TOPIC, message, 3000, delayLevel);
         return Result.success(order);
     }
 

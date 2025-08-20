@@ -25,4 +25,13 @@ public interface OrderMapper extends BaseMapper<Order> {
 
 
     IPage<OrderVo> queryPage(IPage<Order> page, @Param("dto") OrderDto orderDto, @Param("userId") String userId);
+
+
+    /**
+     * [通过订单id查询订单]
+     * @author 陈湘岳 2025/8/19
+     * @param id 订单id
+     * @return com.ruoyi.system.domain.entity.Order
+     **/
+    Order queryById(@Param("id") String id);
 }

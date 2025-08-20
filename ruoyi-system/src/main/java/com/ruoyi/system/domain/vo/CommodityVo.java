@@ -74,6 +74,9 @@ public class CommodityVo{
     
     @ApiModelProperty("修改时间")
    private Date updateTime;
+
+    @ApiModelProperty("是否有库存")
+    private Boolean hasStock;
     
 
 }

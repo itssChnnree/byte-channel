@@ -145,7 +145,7 @@ id, request_id, business_type, is_deleted, create_user, update_user, create_time
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into idempotency(id,request_id, business_type, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{entity.id},#{requestId}, #{businessType}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        values (#{id},#{requestId}, #{businessType}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">

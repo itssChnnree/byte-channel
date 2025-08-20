@@ -65,10 +65,7 @@ public class CommodityDto extends PageBase {
     @ApiModelProperty("描述")
     @NotBlank(message = "商品描述不能为空")
     private String description;
-    
-    @ApiModelProperty("类别")
-    @NotBlank(message = "商品类别不能为空")
-    private String category;
+
     
     @ApiModelProperty("为未删除，1为已删除")
     @InitializeWith(intValue = 0)

@@ -10,6 +10,6 @@ package com.ruoyi.system.constant;
 public interface RedissonLockStatus {
 
     //商品库存校验及变更锁
-    public static final String COMMODITY_STOCK_CHANGE_LOCK = "COMMODITY_STOCK_CHANGE_LOCK:";
+     String COMMODITY_STOCK_CHANGE_LOCK = "COMMODITY_STOCK_CHANGE_LOCK:";
 
 }

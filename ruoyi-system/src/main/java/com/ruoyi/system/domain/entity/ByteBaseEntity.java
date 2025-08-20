@@ -7,7 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.util.Date;
+
 
 /**
  * []
@@ -41,12 +42,12 @@ public class ByteBaseEntity {
      * 创建时间
      */
     @TableField(value = "create_time",fill = FieldFill.INSERT  )
-    private LocalDateTime createTime;
+    private Date createTime;
     /**
      * 修改时间
      */
     @TableField(value = "update_time",fill = FieldFill.INSERT_UPDATE  )
-    private LocalDateTime updateTime;
+    private Date updateTime;
 
     /**
      * 为未删除，1为已删除

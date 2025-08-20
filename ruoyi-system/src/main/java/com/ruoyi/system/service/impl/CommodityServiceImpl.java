@@ -1,6 +1,7 @@
 package com.ruoyi.system.service.impl;
 
 
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ruoyi.system.Util.DefaultValueUtil;
@@ -77,6 +78,12 @@ public class CommodityServiceImpl  implements ICommodityService {
     @Override
     public Result update(CommodityDto commodityDto) {
         Commodity commodity = commodityMapstruct.changeDto2(commodityDto);
+        if (!StrUtil.isBlank(commodityDto.getCategoryId())){
+            CommodityCategory commodityCategory = commodityCategoryMapper.selectById(commodityDto.getCategoryId());
+            if (commodityCategory == null||commodityCategory.getIsDeleted()==1){
+                return Result.fail("商品类别不存在");
+            }
+        }
         int i = commodityMapper.update(commodity);
         return i > 0 ? Result.success(commodity) : Result.fail("修改失败");
     }
@@ -101,7 +108,7 @@ public class CommodityServiceImpl  implements ICommodityService {
             }
             int delete = commodityMapper.deleteBatchIds(collect);
             if (delete > 0){
-                return Result.success("已删除未存在商品的类别");
+                return Result.success("已删除该商品");
             }else {
                 return Result.fail("删除失败");
             }

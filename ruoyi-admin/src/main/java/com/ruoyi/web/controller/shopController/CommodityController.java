@@ -2,8 +2,6 @@ package com.ruoyi.web.controller.shopController;
 
 
 import cn.hutool.core.util.StrUtil;
-import com.ruoyi.system.Util.DefaultValueUtil;
-import com.ruoyi.system.domain.dto.CommodityCategoryDto;
 import com.ruoyi.system.domain.dto.CommodityDto;
 import com.ruoyi.system.domain.dto.ListDto;
 import com.ruoyi.system.group.InsertGroup;
@@ -12,14 +10,11 @@ import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.ICommodityService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
@@ -69,7 +64,7 @@ public class CommodityController {
     @GetMapping("/page")
     @ApiOperation("分页查询商品")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
-    public Result deleteByIds(@RequestBody CommodityDto commodityDto){
+    public Result page(CommodityDto commodityDto){
         if (commodityDto.getPageNum()== null|| commodityDto.getPageNum() < 1L){
             commodityDto.setPageNum(1L);
         }

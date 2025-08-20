@@ -27,6 +27,6 @@ public interface IdempotencyMapper extends BaseMapper<Idempotency> {
      * @param type 类型
      * @return int
      **/
-    int getByIdAndType(@Param("id")String id, @Param("type") String type);
+    Integer getByIdAndType(@Param("requestId")String id, @Param("businessType") String type);
 
 }

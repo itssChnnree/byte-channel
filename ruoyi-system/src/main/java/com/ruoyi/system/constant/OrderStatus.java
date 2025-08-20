@@ -9,6 +9,22 @@ package com.ruoyi.system.constant;
  */
 public interface OrderStatus {
 
+    //-----------------------------------------------推广状态--------------------------------------------------------------------
+
+    //待确认
+    String WAIT_CONFIRM = "WAIT_CONFIRM";
+
+    //已返现
+    String RETURN_CASH = "RETURN_CASH";
+
+    //已退款
+    String REFUND = "REFUND";
+
+    //已取消
+    String CANCELED = "CANCELED";
+
+    //-----------------------------------------------订单状态--------------------------------------------------------------------
+
     // 待支付
      String WAIT_PAY = "WAIT_PAY";
 
@@ -22,7 +38,7 @@ public interface OrderStatus {
      String COMPLETED = "COMPLETED";
 
     //已取消 用户主动取消
-     String CANCELED = "CANCELED";
+     String USER_CANCELED = "USER_CANCELED";
 
     //已取消 超时系统取消
      String CANCELED_TIMEOUT = "CANCELED_TIMEOUT";

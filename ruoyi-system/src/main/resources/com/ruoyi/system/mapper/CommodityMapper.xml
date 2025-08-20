@@ -35,6 +35,7 @@
                 <result property="alarmThreshold" column="alarm_threshold" jdbcType="INTEGER"/>
                 <result property="description" column="description" jdbcType="VARCHAR"/>
                 <result property="category" column="category" jdbcType="VARCHAR"/>
+                <result property="hasStock" column="hasStock" jdbcType="BOOLEAN"/>
                 <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
                 <result property="status" column="status" jdbcType="VARCHAR"/>
                 <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
@@ -71,7 +72,7 @@
             <if test="alarmThreshold != null">
                 alarm_threshold = #{alarmThreshold},
             </if>
-            <if test="description != null">
+            <if test="description != null and description !=''">
                 `description` = #{description},
             </if>
             <if test="isDeleted != null">
@@ -93,9 +94,12 @@
     <!--��ѯ����-->
     <select id="queryById" resultMap="CommodityVOMap">
         select
-        id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
-        from commodity
-        where id = #{id} and is_deleted = 0
+        c.id, commodity_name, commodity_price, commodity_discounted_price,
+        category_id, oversold_configurations, oversold, inventory,
+        alarm_threshold, description, c.available_status,
+        cc.category_name as category
+        from commodity c left join commodity_category cc on c.category_id = cc.id
+        where c.id = #{id} and c.is_deleted = 0 and cc.is_deleted = 0
     </select>
 
     <select id="findNormalCommodity" resultMap="CommodityMap">
@@ -236,8 +240,13 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
     
     <!--��ѯ��ҳ����-->
     <select id="queryPage" resultMap="CommodityVOMap">
-        select
-    id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
+            select
+        id, commodity_name, commodity_price,
+        commodity_discounted_price, category_id,
+        oversold_configurations, oversold, inventory,
+        alarm_threshold, description, category, is_deleted,
+        status, available_status, create_user,
+        update_user, create_time, update_time,if(oversold=oversold_configurations,0,1) as hasStock
         from commodity
         <where>
         1 = 1 and is_deleted = 0 
@@ -245,7 +254,7 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
                 and id = #{dto.id}
             </if>
             <if test="dto.commodityName != null and dto.commodityName != ''">
-                and commodity_name = #{dto.commodityName}
+                and commodity_name like concat('%',#{dto.commodityName},'%')
             </if>
             <if test="dto.commodityPrice != null">
                 and commodity_price = #{dto.commodityPrice}
@@ -271,9 +280,6 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
             <if test="dto.description != null and dto.description != ''">
                 and description = #{dto.description}
             </if>
-            <if test="dto.category != null and dto.category != ''">
-                and category = #{dto.category}
-            </if>
             <if test="dto.isDeleted != null">
                 and is_deleted = #{dto.isDeleted}
             </if>
@@ -282,18 +288,6 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
             </if>
             <if test="dto.availableStatus != null">
                 and available_status = #{dto.availableStatus}
-            </if>
-            <if test="dto.createUser != null and dto.createUser != ''">
-                and create_user = #{dto.createUser}
-            </if>
-            <if test="dto.updateUser != null and dto.updateUser != ''">
-                and update_user = #{dto.updateUser}
-            </if>
-            <if test="dto.createTime != null">
-                and create_time = #{dto.createTime}
-            </if>
-            <if test="dto.updateTime != null">
-                and update_time = #{dto.updateTime}
             </if>
         </where>
     </select>

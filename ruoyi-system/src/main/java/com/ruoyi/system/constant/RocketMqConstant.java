@@ -9,21 +9,36 @@ package com.ruoyi.system.constant;
  */
 public interface RocketMqConstant {
 
+
+//    -----------------------topic类型---------------------------------
+
     //订单
     String ORDER_TOPIC = "order-topic";
-
 
     //订单延时
     String ORDER_DELAY_TOPIC = "order-delay-topic";
 
-//    -----------------------消费者组---------------------------------
+    //订单取消
+    String ORDER_CANCEL_TOPIC = "order-cancel-topic";
+
+//    -----------------------订单创建时-消费者组---------------------------------
 
     //创建订单商品
     String CREATE_ORDER_COMMODITY = "createOrderCommodity";
 
     //创建推广记录
-    String CREATE_PROMO_CODE_RECORDS = "createPromoCodeRecords";
+    String CREATE_PROMO_RECORDS = "createPromoRecords";
 
     //创建延时订单关闭消息
     String CREATE_ORDER_DELAY_MESSAGE = "createOrderDelayMessage";
+
+//    -----------------------订单30分钟后校验-消费者组---------------------------------
+
+    //30分钟订单状态校验
+    String ORDER_STATUS_VALID = "orderStatusValid";
+
+
+    //释放商品库存
+    String RELEASE_COMMODITY = "releaseCommodity";
+
 }
