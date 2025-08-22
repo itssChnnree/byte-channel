@@ -24,37 +24,34 @@ import lombok.NoArgsConstructor;
 public class OrderDto extends PageBase {
 
     @ApiModelProperty("主键id")
-   private String id;
+    private String id;
     
     @ApiModelProperty("购买用户id")
-   private String userId;
+    private String userId;
     
     @ApiModelProperty("订单金额")
-   private Double amount;
+    private Double amount;
 
     @ApiModelProperty(value = "交易描述")
     private String description;
     
     @ApiModelProperty("订单状态")
-   private String status;
+    private String status;
     
     @ApiModelProperty("下单时间")
-   private Date orderTime;
-    
-    @ApiModelProperty("0为未删除，1为已删除")
-   private Integer isDeleted;
-    
-    @ApiModelProperty("创建人")
-   private String createUser;
-    
-    @ApiModelProperty("修改人")
-   private String updateUser;
-    
-    @ApiModelProperty("创建时间")
-   private Date createTime;
-    
-    @ApiModelProperty("修改时间")
-   private Date updateTime;
+    private Date orderTime;
+
+    @ApiModelProperty("订单类型")
+    private String orderType;
+
+    @ApiModelProperty("付款周期")
+    private String paymentPeriod;
+
+    @ApiModelProperty(value = "第三方支付id")
+    private String paymentId;
+
+    @ApiModelProperty(value = "支付方式")
+    private String paymentType;
     
 
 }

@@ -54,7 +54,8 @@ public class ReleaseCommodityConsumer implements RocketMQListener<OrderMessageDt
                 if (lockStatus){
                     Commodity commodity = commodityMapper.findNormalCommodity(orderMessageDto.getOrderByCommodityDto().getCommodityId());
                     OrderByCommodityDto orderByCommodityDto = orderMessageDto.getOrderByCommodityDto();
-
+                    updateInventory(commodity,orderByCommodityDto);
+                    commodityMapper.update(commodity);
                 }else {
                     throw new RuntimeException("系统繁忙，请稍后再试");
                 }
@@ -69,6 +70,17 @@ public class ReleaseCommodityConsumer implements RocketMQListener<OrderMessageDt
 
     //获取新库存
     private void updateInventory(Commodity commodity,OrderByCommodityDto orderByCommodityDto){
-
+        //如果超卖数量为0则直接增加库存
+        if (commodity.getOversold()==0){
+            commodity.setInventory(commodity.getInventory()+orderByCommodityDto.getNum());
+        }else {
+            if(commodity.getOversold()>=orderByCommodityDto.getNum()){
+                commodity.setOversold(commodity.getOversold()-orderByCommodityDto.getNum());
+            }else {
+                int needInventory = orderByCommodityDto.getNum()-commodity.getOversold();
+                commodity.setOversold(0);
+                commodity.setInventory(commodity.getInventory()+needInventory);
+            }
+        }
     }
 }

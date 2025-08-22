@@ -1,4 +1,4 @@
-package com.ruoyi.system.strategy.tournamentNotificationAppointmentsUser;
+package com.ruoyi.system.strategy.NotificationUser;
 
 import cn.hutool.extra.spring.SpringUtil;
 

@@ -145,8 +145,20 @@ id, user_id, order_commodity_id, resources_id, is_deleted, create_user, update_u
             </if>
         </where>
     </select>
-    
-    
+    <select id="findByOrderId" resultType="com.ruoyi.system.domain.entity.OrderCommodityResources">
+        select
+            ocr.id,
+            ocr.user_id,
+            ocr.order_commodity_id,
+            ocr.resources_id
+        from order_commodity_resources ocr
+        join order_commodity oc on oc.id = ocr.order_commodity_id
+        join `order` o on o.id = oc.order_id
+        where o.id = #{orderId}
+          and ocr.is_deleted = 0
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into order_commodity_resources(id,user_id, order_commodity_id, resources_id, is_deleted, create_user, update_user, create_time, update_time)

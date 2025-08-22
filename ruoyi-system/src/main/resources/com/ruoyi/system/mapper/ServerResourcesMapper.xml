@@ -54,6 +54,17 @@
                 <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <update id="updateServerResourcesSaleStatus">
+        update server_resources
+        set sales_status = 'NOT_SALE',
+            resource_tenant = null,
+            lease_expiration_time=null
+        where  id in
+        <foreach item="item" index="index" collection="serverResourcesIds" separator="," close=")" open="(">
+            #{item}
+        </foreach>
+    </update>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesVOMap">
         select

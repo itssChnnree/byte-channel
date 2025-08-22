@@ -3,6 +3,7 @@ package com.ruoyi.system.strategy.OrderCreate;
 import cn.hutool.core.util.ObjectUtil;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.OrderStatus;
+import com.ruoyi.system.constant.PaymentPeriodConstant;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.Order;
@@ -23,7 +24,7 @@ import java.util.Date;
  * @date 2025/8/12
  */
 
-@Component(OrderConstant.MONTHLY)
+@Component(PaymentPeriodConstant.MONTHLY)
 public class MonthlyOrderCreateStrategy implements OrderCreateStrategy{
 
 

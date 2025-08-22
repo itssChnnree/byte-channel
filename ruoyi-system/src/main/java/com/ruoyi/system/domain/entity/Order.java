@@ -56,6 +56,20 @@ private static final long serialVersionUID = 1L;
         private String paymentType;
 
         /**
+         * 订单类型,参数值见 OrderTypeConstant
+         */
+        @TableField(value = "order_type")
+        private String orderType;
+
+
+        /**
+         * 付款周期,参数值详见 PaymentPeriodConstant
+         */
+        @TableField(value = "payment_period")
+        private String paymentPeriod;
+
+
+        /**
             * 订单状态
             */
         @TableField(value = "status")

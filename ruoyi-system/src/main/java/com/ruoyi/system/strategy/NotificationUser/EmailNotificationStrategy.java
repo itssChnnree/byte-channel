@@ -1,9 +1,7 @@
-package com.ruoyi.system.strategy.tournamentNotificationAppointmentsUser;
+package com.ruoyi.system.strategy.NotificationUser;
 
 
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
 
 /**
  * [短信通知策略实现]

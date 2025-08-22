@@ -31,6 +31,11 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
     List<String> haveServerResources(@Param("commodityIdList") List<String> commodityIdList);
 
 
-
-
+    /**
+     * [修改资源可售状态]
+     * @author 陈湘岳 2025/8/22
+     * @param serverResourcesIds 资源id集合
+     * @return int
+     **/
+    int updateServerResourcesSaleStatus(@Param("resourcesId") List<String> serverResourcesIds);
 }

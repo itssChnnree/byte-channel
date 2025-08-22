@@ -1,7 +1,7 @@
 package com.ruoyi.system.domain.dto;
 
 import com.ruoyi.system.anno.InitializeWith;
-import com.ruoyi.system.strategy.OrderCreate.OrderConstant;
+import com.ruoyi.system.constant.PaymentPeriodConstant;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,7 +37,7 @@ public class OrderByCommodityDto {
 
     //付款周期
     @ApiModelProperty("付款周期")
-    @InitializeWith(stringValue = OrderConstant.MONTHLY)
+    @InitializeWith(stringValue = PaymentPeriodConstant.MONTHLY)
     private String payCycle;
 
 

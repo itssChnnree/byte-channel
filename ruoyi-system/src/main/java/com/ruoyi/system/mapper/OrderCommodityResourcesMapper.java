@@ -2,8 +2,12 @@ package com.ruoyi.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.system.domain.entity.OrderCommodityResources;
+import com.ruoyi.system.domain.entity.ServerResources;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
 
 
 /**
@@ -17,4 +21,12 @@ import org.apache.ibatis.annotations.Mapper;
 @Repository
 public interface OrderCommodityResourcesMapper extends BaseMapper<OrderCommodityResources> {
 
+
+    /**
+     * [通过订单id查询资源]
+     * @author 陈湘岳 2025/8/21
+     * @param orderId 订单id查询资源
+     * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    List<OrderCommodityResources> findByOrderId(@Param("orderId")String orderId);
 }
