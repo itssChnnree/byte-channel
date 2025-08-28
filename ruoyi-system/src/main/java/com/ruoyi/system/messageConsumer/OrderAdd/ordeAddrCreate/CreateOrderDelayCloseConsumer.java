@@ -1,4 +1,4 @@
-package com.ruoyi.system.messageConsumer.orderCreate;
+package com.ruoyi.system.messageConsumer.OrderAdd.ordeAddrCreate;
 
 import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.dto.OrderMessageDto;
@@ -17,14 +17,14 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 
 /**
- * [创建订单延时校验的消费者]
+ * [创建订单延时校验订单状态的消费者]
  *
  * @author 陈湘岳
  * @version v1.0.0
  * @date 2025/8/14
  */
 @RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_ORDER_DELAY_MESSAGE,
-        topic = RocketMqConstant.ORDER_TOPIC)
+        topic = RocketMqConstant.ORDER_ADD_TOPIC)
 @Slf4j
 @Component
 public class CreateOrderDelayCloseConsumer implements RocketMQListener<OrderMessageDto> {
@@ -40,14 +40,14 @@ public class CreateOrderDelayCloseConsumer implements RocketMQListener<OrderMess
     @Override
     public void onMessage(OrderMessageDto orderMessageDto) {
         orderGeneral.orderGeneral(orderMessageDto, RocketMqConstant.CREATE_ORDER_DELAY_MESSAGE, () -> {
-            System.out.println("开始创建延迟订单");
+            // 设置延迟级别为16，即30分钟
             Message<OrderMessageDto> springMessage = MessageBuilder.withPayload(orderMessageDto)
-                    .setHeader(MessageConst.PROPERTY_DELAY_TIME_LEVEL, 16)  // 设置延迟级别为16，即30分钟
-                    .build();
+                    .setHeader(MessageConst.PROPERTY_DELAY_TIME_LEVEL, 16)
+                        .build();
 
-            SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_DELAY_TOPIC, springMessage);
+            SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_DELAY_TOPIC, springMessage);
             if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){
-                SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_DELAY_TOPIC, springMessage);
+                SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_DELAY_TOPIC, springMessage);
                 if (!sendResult2.getSendStatus().equals(SendStatus.SEND_OK)){
                     throw new RuntimeException("订单["+orderMessageDto.getOrder().getId()+"]发送延时消息失败，等待重试");
                 }

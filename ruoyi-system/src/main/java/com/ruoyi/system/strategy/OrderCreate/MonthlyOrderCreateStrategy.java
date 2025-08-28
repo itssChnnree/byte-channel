@@ -3,6 +3,7 @@ package com.ruoyi.system.strategy.OrderCreate;
 import cn.hutool.core.util.ObjectUtil;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.OrderStatus;
+import com.ruoyi.system.constant.OrderTypeConstant;
 import com.ruoyi.system.constant.PaymentPeriodConstant;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.entity.Commodity;
@@ -48,6 +49,8 @@ public class MonthlyOrderCreateStrategy implements OrderCreateStrategy{
         order.setStatus(OrderStatus.WAIT_PAY);
         order.setOrderTime(new Date());
         order.setDescription("按月订购节点");
+        order.setPaymentPeriod(PaymentPeriodConstant.MONTHLY);
+        order.setOrderType(OrderTypeConstant.ADD);
         return order;
     }
 }

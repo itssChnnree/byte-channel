@@ -65,6 +65,81 @@
         </foreach>
     </update>
 
+
+    <update id="updateLeaseExpirationTimeYear">
+        update server_resources
+        set
+        sales_status =
+            CASE
+            WHEN DATE_SUB(lease_expiration_time, INTERVAL 1 YEAR) &lt;= NOW() THEN 'NOT_SALE'
+            ELSE sales_status
+            END,
+        resource_tenant =
+            CASE
+            WHEN DATE_SUB(lease_expiration_time, INTERVAL 1 YEAR) &lt;= NOW() THEN NULL
+            ELSE resource_tenant
+            END,
+        lease_expiration_time=
+            CASE
+            WHEN DATE_SUB(lease_expiration_time, INTERVAL 1 YEAR) &lt;= NOW() THEN NULL
+            ELSE DATE_SUB(lease_expiration_time, INTERVAL 1 YEAR)
+            END
+        where  id in
+        <foreach item="item" index="index" collection="serverResourcesIds" separator="," close=")" open="(">
+            #{item}
+        </foreach>
+    </update>
+
+
+    <update id="updateLeaseExpirationTimeMonth">
+        update server_resources
+        set
+        sales_status =
+        CASE
+        WHEN DATE_SUB(lease_expiration_time, INTERVAL 1 MONTH ) &lt;= NOW() THEN 'NOT_SALE'
+        ELSE sales_status
+        END,
+        resource_tenant =
+        CASE
+        WHEN DATE_SUB(lease_expiration_time, INTERVAL 1 MONTH) &lt;= NOW() THEN NULL
+        ELSE resource_tenant
+        END,
+        lease_expiration_time=
+        CASE
+        WHEN DATE_SUB(lease_expiration_time, INTERVAL 1 MONTH) &lt;= NOW() THEN NULL
+        ELSE DATE_SUB(lease_expiration_time, INTERVAL 1 MONTH)
+        END
+        where  id in
+        <foreach item="item" index="index" collection="serverResourcesIds" separator="," close=")" open="(">
+            #{item}
+        </foreach>
+    </update>
+
+
+    <update id="updateLeaseExpirationTimeQuarter">
+        update server_resources
+        set
+        sales_status =
+        CASE
+        WHEN DATE_SUB(lease_expiration_time, INTERVAL 3 MONTH ) &lt;= NOW() THEN 'NOT_SALE'
+        ELSE sales_status
+        END,
+        resource_tenant =
+        CASE
+        WHEN DATE_SUB(lease_expiration_time, INTERVAL 3 MONTH) &lt;= NOW() THEN NULL
+        ELSE resource_tenant
+        END,
+        lease_expiration_time=
+        CASE
+        WHEN DATE_SUB(lease_expiration_time, INTERVAL 3 MONTH) &lt;= NOW() THEN NULL
+        ELSE DATE_SUB(lease_expiration_time, INTERVAL 3 MONTH)
+        END
+        where  id in
+        <foreach item="item" index="index" collection="serverResourcesIds" separator="," close=")" open="(">
+            #{item}
+        </foreach>
+    </update>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesVOMap">
         select

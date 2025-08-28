@@ -26,6 +26,13 @@
                 <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <update id="updateStatus">
+        update order_commodity_resources
+        set status = #{status}
+        where order_commodity_id
+        in (select id from order_commodity where order_commodity.is_deleted=0 and order_id = #{orderId})
+    </update>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="OrderCommodityResourcesVOMap">
         select
@@ -155,6 +162,21 @@ id, user_id, order_commodity_id, resources_id, is_deleted, create_user, update_u
         join order_commodity oc on oc.id = ocr.order_commodity_id
         join `order` o on o.id = oc.order_id
         where o.id = #{orderId}
+          and ocr.is_deleted = 0
+    </select>
+
+
+    <select id="findByOrderIdAndStatus" resultType="com.ruoyi.system.domain.entity.OrderCommodityResources">
+        select
+            ocr.id,
+            ocr.user_id,
+            ocr.order_commodity_id,
+            ocr.resources_id
+        from order_commodity_resources ocr
+                 join order_commodity oc on oc.id = ocr.order_commodity_id
+                 join `order` o on o.id = oc.order_id
+        where o.id = #{orderId}
+          and ocr.status = #{status}
           and ocr.is_deleted = 0
     </select>
 

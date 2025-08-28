@@ -2,6 +2,8 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ruoyi.system.domain.dto.OrderByCommodityDto;
+import com.ruoyi.system.domain.dto.OrderCommodityDto;
 import com.ruoyi.system.domain.entity.Order;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -27,4 +29,12 @@ public interface OrderCommodityMapper extends BaseMapper<OrderCommodity> {
      **/
     OrderCommodity queryById(@Param("id") String id);
 
+
+    /**
+     * [通过订单id查询订单关联商品信息]
+     * @author 陈湘岳 2025/8/20
+     * @param orderId
+     * @return com.ruoyi.system.domain.entity.OrderCommodity
+     **/
+    OrderByCommodityDto findCommodityByOrderId(@Param("orderId") String orderId);
 }

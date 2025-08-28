@@ -167,8 +167,17 @@ id, user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_delet
             </if>
         </where>
     </select>
-    
-    
+
+
+    <select id="findCommodityByOrderId" resultType="com.ruoyi.system.domain.dto.OrderByCommodityDto">
+        select
+            commodity_id as commodityId,
+            sum(purchase_quantity) as num
+        from order_commodity
+            where order_id = #{orderId} and is_deleted = 0
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into order_commodity(id,user_id, order_id, purchase_quantity, order_quantity, commodity_id, is_deleted, create_user, update_user, create_time, update_time)

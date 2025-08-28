@@ -43,4 +43,13 @@ public interface IOrderService{
      * @return java.lang.String
      **/
     String test();
+
+
+    /**
+     * [取消订单]
+     * @author 陈湘岳 2025/8/24
+     * @param orderId
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result cancelOrder(String orderId);
 }

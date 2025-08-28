@@ -32,10 +32,35 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
 
 
     /**
-     * [修改资源可售状态]
+     * [修改资源可售状态及释放租售人]
      * @author 陈湘岳 2025/8/22
      * @param serverResourcesIds 资源id集合
      * @return int
      **/
     int updateServerResourcesSaleStatus(@Param("resourcesId") List<String> serverResourcesIds);
+
+    /**
+     * [修改资源租赁时间-年]
+     * @author 陈湘岳 2025/8/22
+     * @param serverResourcesIds 资源id集合
+     * @return int
+     **/
+    int updateLeaseExpirationTimeYear(@Param("resourcesId") List<String> serverResourcesIds);
+
+    /**
+     * [修改资源租赁时间-月]
+     * @author 陈湘岳 2025/8/22
+     * @param serverResourcesIds 资源id集合
+     * @return int
+     **/
+    int updateLeaseExpirationTimeMonth(@Param("resourcesId") List<String> serverResourcesIds);
+
+
+    /**
+     * [修改资源租赁时间-季]
+     * @author 陈湘岳 2025/8/22
+     * @param serverResourcesIds 资源id集合
+     * @return int
+     **/
+    int updateLeaseExpirationTimeQuarter(@Param("resourcesId") List<String> serverResourcesIds);
 }

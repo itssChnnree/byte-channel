@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.shopController;
 
+import cn.hutool.core.util.StrUtil;
 import com.ruoyi.system.Util.DefaultValueUtil;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.dto.OrderByShoppingCartDto;
@@ -44,11 +45,23 @@ public class OrderController {
         return orderService.createOrderByCommodity(orderByCommodityDto);
     }
 
+
+    @GetMapping("/cancelOrder")
+    @ApiOperation("取消订单")
+    public Result cancelOrder(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.cancelOrder(orderId);
+    }
+
+
     @GetMapping("/pageQuery")
     @ApiOperation("分页查询订单")
     public Result pageQuery(@RequestBody OrderDto orderDto){
         return orderService.pageQuery(orderDto);
     }
+
 
 
     @GetMapping("/test")

@@ -1,4 +1,4 @@
-package com.ruoyi.system.messageConsumer.orderDelay;
+package com.ruoyi.system.messageConsumer.OrderAdd.orderAddDelay;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.ruoyi.system.constant.OrderStatus;
@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 
 /**
  * [订单状态校验消费者，用于在30分钟后校验订单是否是完成状态]
@@ -27,7 +26,7 @@ import java.time.LocalDateTime;
  * @date 2025/8/19
  */
 @RocketMQMessageListener(consumerGroup = RocketMqConstant.ORDER_STATUS_VALID,
-        topic = RocketMqConstant.ORDER_DELAY_TOPIC)
+        topic = RocketMqConstant.ORDER_ADD_DELAY_TOPIC)
 @Slf4j
 @Service
 public class OrderStatusValidConsumer implements RocketMQListener<OrderMessageDto> {
@@ -52,8 +51,6 @@ public class OrderStatusValidConsumer implements RocketMQListener<OrderMessageDt
     @Transactional
     public void onMessage(OrderMessageDto orderMessageDto) {
         orderGeneral.orderGeneral(orderMessageDto, RocketMqConstant.ORDER_STATUS_VALID, () -> {
-            System.out.println("当前时间"+ LocalDateTime.now());
-            System.out.println("订单创建时间"+ orderMessageDto.getOrder().getCreateTime());
             Order order = orderMapper.queryById(orderMessageDto.getOrder().getId());
             if (ObjectUtil.isEmpty( order)){
                 return;
@@ -64,9 +61,9 @@ public class OrderStatusValidConsumer implements RocketMQListener<OrderMessageDt
                 order.setStatus(OrderStatus.CANCELED_TIMEOUT);
                 orderMapper.updateById(order);
                 //若是待支付状态则取消订单并回退锁定资源
-                SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_CANCEL_TOPIC, orderMessageDto);
+                SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_CANCEL_TOPIC, orderMessageDto);
                 if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){
-                    SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_CANCEL_TOPIC, orderMessageDto);
+                    SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_CANCEL_TOPIC, orderMessageDto);
                     if (!sendResult2.getSendStatus().equals(SendStatus.SEND_OK)){
                         throw new RuntimeException("订单["+orderMessageDto.getOrder().getId()+"]发送取消消息失败，等待重试");
                     }

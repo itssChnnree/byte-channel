@@ -76,6 +76,14 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
     Commodity findNormalCommodity(@Param("id") String id);
 
     /**
+     * [查询]
+     * @author 陈湘岳 2025/8/1
+     * @param orderId 订单id
+     * @return com.ruoyi.system.domain.vo.CommodityVo
+     **/
+    Commodity findCommodityByOrderId(@Param("orderId") String orderId);
+
+    /**
      * [查询购物车商品]
      * @author 陈湘岳 2025/8/1
      * @param userId 用户id

@@ -1,5 +1,7 @@
-package com.ruoyi.system.messageConsumer.orderCancel;
+package com.ruoyi.system.messageConsumer.OrderAdd.orderAddCancel;
 
+import cn.hutool.core.util.ObjectUtil;
+import com.ruoyi.system.constant.OrderTypeConstant;
 import com.ruoyi.system.constant.RedissonLockStatus;
 import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
@@ -26,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2025/8/19
  */
 @RocketMQMessageListener(consumerGroup = RocketMqConstant.RELEASE_COMMODITY,
-        topic = RocketMqConstant.ORDER_CANCEL_TOPIC)
+        topic = RocketMqConstant.ORDER_ADD_CANCEL_TOPIC)
 @Slf4j
 @Service
 public class ReleaseCommodityConsumer implements RocketMQListener<OrderMessageDto> {
@@ -46,6 +48,11 @@ public class ReleaseCommodityConsumer implements RocketMQListener<OrderMessageDt
 
     @Override
     public void onMessage(OrderMessageDto orderMessageDto) {
+        OrderByCommodityDto commodityByOrderId = orderCommodityMapper.findCommodityByOrderId(orderMessageDto.getOrder().getId());
+        if (ObjectUtil.isEmpty(commodityByOrderId)){
+            throw new RuntimeException("订单商品关系尚未建立，等待重试");
+        }
+        orderMessageDto.setOrderByCommodityDto(commodityByOrderId);
         orderGeneral.orderGeneral(orderMessageDto, RocketMqConstant.RELEASE_COMMODITY, () -> {
             //获取商品锁
             RLock lock = redissonClient.getLock(RedissonLockStatus.COMMODITY_STOCK_CHANGE_LOCK + orderMessageDto.getOrderByCommodityDto().getCommodityId());

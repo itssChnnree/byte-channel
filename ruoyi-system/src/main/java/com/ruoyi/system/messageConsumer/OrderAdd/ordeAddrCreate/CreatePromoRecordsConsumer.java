@@ -1,4 +1,4 @@
-package com.ruoyi.system.messageConsumer.orderCreate;
+package com.ruoyi.system.messageConsumer.OrderAdd.ordeAddrCreate;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.ruoyi.system.constant.RocketMqConstant;
@@ -20,7 +20,7 @@ import javax.annotation.Resource;
  * @date 2025/8/15
  */
 @RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_PROMO_RECORDS,
-        topic = RocketMqConstant.ORDER_TOPIC)
+        topic = RocketMqConstant.ORDER_ADD_TOPIC)
 @Slf4j
 @Component
 public class CreatePromoRecordsConsumer implements RocketMQListener<OrderMessageDto> {

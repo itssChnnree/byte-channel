@@ -1,24 +1,25 @@
 package com.ruoyi.system.service.impl;
 
 
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.Util.DefaultValueUtil;
+import com.ruoyi.system.constant.OrderStatus;
 import com.ruoyi.system.constant.RedissonLockStatus;
 import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
-import com.ruoyi.system.domain.dto.OrderByShoppingCartDto;
 import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.domain.dto.OrderMessageDto;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.Order;
+import com.ruoyi.system.domain.entity.OrderCommodity;
 import com.ruoyi.system.domain.entity.PromoCodeRecords;
 import com.ruoyi.system.domain.vo.OrderVo;
-import com.ruoyi.system.domain.vo.ShoppingCartCommodityVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.CommodityMapper;
+import com.ruoyi.system.mapper.OrderCommodityMapper;
 import com.ruoyi.system.mapper.OrderMapper;
 import com.ruoyi.system.mapper.PromoCodeRecordsMapper;
 import com.ruoyi.system.service.IOrderService;
@@ -29,15 +30,13 @@ import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 订单表(Order)�����ʵ����
@@ -61,10 +60,19 @@ public class OrderServiceImpl implements IOrderService {
     private RedissonClient redissonClient;
 
     @Resource
+    private RedisTemplate redisTemplate;
+
+    @Resource
+    private OrderCommodityMapper orderCommodityMapper;
+
+    @Resource
     private RocketMQTemplate rocketMqTemplate;
 
     @Resource
     private PromoCodeRecordsMapper promoCodeRecordsMapper;
+
+    @Resource(name = "orderCache")
+    private Cache<String, ReentrantLock> orderCache;
 
 
     /**
@@ -85,20 +93,13 @@ public class OrderServiceImpl implements IOrderService {
         try {
             DefaultValueUtil.setDefaultData(orderByCommodityDto);
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            log.error("默认赋值失败"+e.getMessage());
+            throw new RuntimeException("默认赋值失败");
         }
         RLock lock = redissonClient.getLock(RedissonLockStatus.COMMODITY_STOCK_CHANGE_LOCK + orderByCommodityDto.getCommodityId());
         try{
-            boolean lockStatus = lock.tryLock(5, TimeUnit.SECONDS);
-            if (lockStatus){
-                Boolean commodityStockStatus = checkCommodityStock(orderByCommodityDto, normalCommodity);
-                if (!commodityStockStatus){
-                    return Result.fail("商品库存不足");
-                }
-                commodityMapper.update(normalCommodity);
-            }else {
-                return Result.fail("系统繁忙，请稍后再试");
-            }
+            //变更商品库存
+            updateCommodityStock(orderByCommodityDto, lock, normalCommodity);
         }catch (InterruptedException e){
             log.error("获取锁异常", e);
             throw new RuntimeException("系统繁忙，请稍后再试");
@@ -110,28 +111,50 @@ public class OrderServiceImpl implements IOrderService {
         //查询推广码
         PromoCodeRecords promoCodeRecords = promoCodeRecordsMapper.selectPromoCode(orderByCommodityDto.getPromoCode());
         Order order = orderCreateContext.createOrder(orderByCommodityDto, normalCommodity, promoCodeRecords);
-        //订单入库
+        //订单发送消息队列，进行订单商品数据创建，30分钟取消订单准备
         int insert = orderMapper.insert(order);
         if (insert<1){
             throw new RuntimeException("生成订单失败，请稍后再试");
         }
+        OrderMessageDto orderMessageDto = buildOrderMessageDto(orderByCommodityDto, order, promoCodeRecords);
+
+        //发送消息，若
+        sendMessage(orderMessageDto);
+        return Result.success(order);
+    }
+
+    private void updateCommodityStock(OrderByCommodityDto orderByCommodityDto, RLock lock, Commodity normalCommodity) throws InterruptedException {
+        boolean lockStatus = lock.tryLock(5, TimeUnit.SECONDS);
+        if (lockStatus){
+            Boolean commodityStockStatus = checkCommodityStock(orderByCommodityDto, normalCommodity);
+            if (!commodityStockStatus){
+                throw new RuntimeException("商品库存不足");
+            }
+            commodityMapper.update(normalCommodity);
+        }else {
+            throw new RuntimeException("系统繁忙，请稍后再试");
+        }
+    }
+
+
+    private void sendMessage(OrderMessageDto orderMessageDto) {
+        SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_TOPIC, orderMessageDto);
+        if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){
+            SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_TOPIC, orderMessageDto);
+            if (!sendResult2.getSendStatus().equals(SendStatus.SEND_OK)){
+                throw new RuntimeException("生成订单失败，请稍后再试");
+            }
+        }
+    }
+
+    private static OrderMessageDto buildOrderMessageDto(OrderByCommodityDto orderByCommodityDto, Order order, PromoCodeRecords promoCodeRecords) {
         //创建消息队列类
         OrderMessageDto orderMessageDto = new OrderMessageDto();
         orderMessageDto.setOrder(order);
         orderMessageDto.setOrderByCommodityDto(orderByCommodityDto);
         orderMessageDto.setPromoCodeRecordsDto(promoCodeRecords);
-
-        //消息队列： 创建orderCommodity,取消时关闭订单并释放资源
-        SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_TOPIC, orderMessageDto);
-        if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){
-            SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_TOPIC, orderMessageDto);
-            if (!sendResult2.getSendStatus().equals(SendStatus.SEND_OK)){
-                throw new RuntimeException("生成订单失败，请稍后再试");
-            }
-        }
-        return Result.success(order);
+        return orderMessageDto;
     }
-
 
 
     //校验商品库存
@@ -181,8 +204,43 @@ public class OrderServiceImpl implements IOrderService {
     public String test() {
 //        for (int i = 0; i < 300; i++){
             OrderMessageDto orderMessageDto = new OrderMessageDto(20000, null, null, null);
-            SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_TOPIC, orderMessageDto);
+            SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_TOPIC, orderMessageDto);
 //        }
         return "测试完毕";
+    }
+
+    /**
+     * [取消订单]
+     *
+     * @param orderId
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/8/24
+     **/
+    @Override
+    public Result cancelOrder(String orderId) {
+        Order order = orderMapper.queryById(orderId);
+        if (order == null){
+            return Result.fail("订单不存在");
+        }
+        if (OrderStatus.WAIT_REFUND.equals(order.getStatus())){
+            return Result.fail("订单正在退款中");
+        }
+        if (OrderStatus.USER_CANCELED.equals(order.getStatus())
+                || OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
+            return Result.fail("订单已取消");
+        }
+        if (OrderStatus.REFUND_SUCCESS.equals(order.getStatus())){
+            return Result.fail("订单已退款成功");
+        }
+        //订单取消标志位
+        String key = RedissonLockStatus.ORDER_CANCEL_STATUS_LOCK+orderId;
+        //
+        Boolean b = redisTemplate.opsForValue().setIfAbsent(key, "1");
+        if (b){
+
+        }
+
+
+        return null;
     }
 }

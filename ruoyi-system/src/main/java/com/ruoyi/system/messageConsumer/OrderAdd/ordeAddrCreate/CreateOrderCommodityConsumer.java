@@ -1,4 +1,4 @@
-package com.ruoyi.system.messageConsumer.orderCreate;
+package com.ruoyi.system.messageConsumer.OrderAdd.ordeAddrCreate;
 
 import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.dto.OrderMessageDto;
@@ -21,7 +21,7 @@ import javax.annotation.Resource;
  * @date 2025/8/13
  */
 @RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_ORDER_COMMODITY,
-        topic = RocketMqConstant.ORDER_TOPIC)
+        topic = RocketMqConstant.ORDER_ADD_TOPIC)
 @Slf4j
 @Service
 public class CreateOrderCommodityConsumer implements RocketMQListener<OrderMessageDto> {
@@ -44,7 +44,6 @@ public class CreateOrderCommodityConsumer implements RocketMQListener<OrderMessa
     @Transactional
     public void onMessage(OrderMessageDto orderMessageDto) {
         orderGeneral.orderGeneral(orderMessageDto, RocketMqConstant.CREATE_ORDER_COMMODITY, () -> {
-            //查入商品订单数据
             insertOrderCommodity(orderMessageDto);
         });
     }

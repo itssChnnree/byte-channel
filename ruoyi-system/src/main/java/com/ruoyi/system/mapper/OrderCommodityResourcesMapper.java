@@ -29,4 +29,21 @@ public interface OrderCommodityResourcesMapper extends BaseMapper<OrderCommodity
      * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
      **/
     List<OrderCommodityResources> findByOrderId(@Param("orderId")String orderId);
+
+    /**
+     * [查询续费成功的资源]
+     * @author 陈湘岳 2025/8/21
+     * @param orderId 订单id查询资源
+     * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    List<OrderCommodityResources> findByOrderIdAndStatus(@Param("orderId")String orderId,@Param("status")String status);
+
+
+    /**
+     * [修改订单商品资源状态]
+     * @author 陈湘岳 2025/8/21
+     * @param orderId 订单id查询资源
+     * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    int updateStatus(@Param("orderId")String orderId,@Param("status")String status);
 }

@@ -37,7 +37,7 @@ public class OrderGeneral {
 
 
     public void orderGeneral(OrderMessageDto orderMessageDto, String type, OrderFunction orderFunction){
-        //创建订单商品锁
+        //创建类型锁
         RLock lock = redissonClient.getLock(type + ":" + orderMessageDto.getOrder().getId());
         try {
             boolean getLock = lock.tryLock(5, TimeUnit.MILLISECONDS);

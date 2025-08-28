@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 
 /**
@@ -41,16 +42,22 @@ private static final long serialVersionUID = 1L;
     @TableField(value = "promo_code_records_id")
     private String promoCodeRecordsId;
     /**
+        * 订单id
+        */
+    @TableField(value = "order_id")
+    private String orderId;
+    /**
         * 返现金额
         */
     @TableField(value = "cashback_amount")
-    private Double cashbackAmount;
+    private BigDecimal cashbackAmount;
 
     /**
         * 被推荐人购买金额
         */
     @TableField(value = "Purchase_amount")
-    private Double purchaseAmount;
+    private BigDecimal purchaseAmount;
+    
     /**
         * 返现比例
         */

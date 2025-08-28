@@ -108,6 +108,20 @@
         from commodity
         where id = #{id} and is_deleted = 0 and available_status = 1
     </select>
+
+
+    <select id="findCommodityByOrderId" resultMap="CommodityMap">
+        select
+            c.id, commodity_name, commodity_price, commodity_discounted_price,
+            category_id, oversold_configurations, oversold, inventory,
+            alarm_threshold, c.description, category, c.is_deleted, c.status,
+            available_status
+        from `order` o
+            left join order_commodity oo on o.id=oo.order_id
+            left join commodity c on oo.commodity_id=c.id
+        where o.id = #{id}
+          and c.is_deleted = 0
+    </select>
     
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="CommodityVOMap">
