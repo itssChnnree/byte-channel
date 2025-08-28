@@ -1,7 +1,10 @@
 package com.ruoyi.web.controller.shopController;
 
+import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IWalletBalanceService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,5 +26,11 @@ public class WalletBalanceController{
     @Resource(name = "walletBalanceService")
     IWalletBalanceService walletBalanceService;
 
+
+    @ApiOperation("查询余额")
+    @GetMapping("/getWalletBalance")
+    public Result getWalletBalance() {
+        return walletBalanceService.getWalletBalance();
+    }
 
 }

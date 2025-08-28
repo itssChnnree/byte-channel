@@ -3,7 +3,9 @@ package com.ruoyi.framework.web.service;
 import com.ruoyi.common.core.dto.EmailRegisterDto;
 import com.ruoyi.common.helper.email.EmailConstant;
 import com.ruoyi.common.helper.email.EmailSender;
+import com.ruoyi.system.domain.entity.WalletBalance;
 import com.ruoyi.system.http.Result;
+import com.ruoyi.system.mapper.WalletBalanceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.constant.CacheConstants;
@@ -26,6 +28,7 @@ import com.ruoyi.system.service.ISysUserService;
 import javax.annotation.Resource;
 import javax.mail.MessagingException;
 import javax.validation.Valid;
+import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,6 +50,9 @@ public class SysRegisterService
 
     @Resource
     private EmailSender emailSender;
+
+    @Resource
+    private WalletBalanceMapper walletBalanceMapper;
 
 
     /**
@@ -75,6 +81,13 @@ public class SysRegisterService
             else
             {
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(sysUser.getUserName(), Constants.REGISTER, MessageUtils.message("user.register.success")));
+                //创建余额记录
+                WalletBalance walletBalance = new WalletBalance();
+                walletBalance.setBalance(BigDecimal.valueOf(0.0));
+                walletBalance.setUserId(sysUser.getUserId().toString());
+                walletBalance.setInviteesNumber(0);
+                walletBalance.setBalance(BigDecimal.valueOf(0.0));
+                walletBalanceMapper.insert(walletBalance);
             }
         }
         return msg;

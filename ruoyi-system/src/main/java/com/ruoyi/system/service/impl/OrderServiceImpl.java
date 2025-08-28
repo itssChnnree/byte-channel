@@ -60,7 +60,7 @@ public class OrderServiceImpl implements IOrderService {
     private RedissonClient redissonClient;
 
     @Resource
-    private RedisTemplate redisTemplate;
+    private RedisTemplate<String,String> redisTemplate;
 
     @Resource
     private OrderCommodityMapper orderCommodityMapper;
@@ -234,13 +234,25 @@ public class OrderServiceImpl implements IOrderService {
         }
         //订单取消标志位
         String key = RedissonLockStatus.ORDER_CANCEL_STATUS_LOCK+orderId;
-        //
-        Boolean b = redisTemplate.opsForValue().setIfAbsent(key, "1");
-        if (b){
-
+        //插入成功，说明订单未撤回，插入失败代表订单已撤回
+        Boolean isNotCancel = redisTemplate.opsForValue().setIfAbsent(key, "1",3600, TimeUnit.SECONDS);
+        if (Boolean.FALSE.equals(isNotCancel)){
+            //订单撤回标志位设置成功
+            //设置过期时间
+            order.setStatus(OrderStatus.USER_CANCELED);
+            orderMapper.updateById(order);
+            OrderByCommodityDto commodityByOrderId = orderCommodityMapper.findCommodityByOrderId(orderId);
+            OrderMessageDto orderMessageDto = buildOrderMessageDto(commodityByOrderId, order, null);
+            SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_CANCEL_TOPIC, orderMessageDto);
+            if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){
+                SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_CANCEL_TOPIC, orderMessageDto);
+                if (!sendResult2.getSendStatus().equals(SendStatus.SEND_OK)){
+                    throw new RuntimeException("订单["+orderMessageDto.getOrder().getId()+"]发送取消消息失败，等待重试");
+                }
+            }
+            return Result.success("订单取消成功");
+        }else {
+            return Result.fail("订单已取消");
         }
-
-
-        return null;
     }
 }

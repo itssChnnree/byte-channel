@@ -156,8 +156,12 @@ id, user_id, balance, invitees_number, referral_bonus_credits, is_deleted, creat
             </if>
         </where>
     </select>
-    
-    
+
+    <select id="findByUserId" resultType="java.math.BigDecimal">
+        select balance from wallet_balance where is_deleted = 0 and user_id=#{userId}
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into wallet_balance(id,user_id, balance, invitees_number, referral_bonus_credits, is_deleted, create_user, update_user, create_time, update_time)

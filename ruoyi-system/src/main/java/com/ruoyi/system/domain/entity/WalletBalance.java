@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 
 /**
@@ -34,7 +35,7 @@ private String userId;
     * 余额
     */
 @TableField(value = "balance")
-private Double balance;
+private BigDecimal balance;
 /**
     * 邀请人数
     */
@@ -44,7 +45,7 @@ private Integer inviteesNumber;
     * 邀请奖励金
     */
 @TableField(value = "referral_bonus_credits")
-private Double referralBonusCredits;
+private BigDecimal referralBonusCredits;
 
 
 }

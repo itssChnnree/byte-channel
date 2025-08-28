@@ -1,6 +1,8 @@
 package com.ruoyi.system.service;
 
 
+import com.ruoyi.system.http.Result;
+
 /**
  * 钱包余额表(WalletBalance)�����ӿ�
  *
@@ -9,7 +11,13 @@ package com.ruoyi.system.service;
  * @date 2025-07-20 23:24:32
  */
 public interface IWalletBalanceService{
-    
 
-    
+
+    /**
+     * [查询余额]
+     * @author 陈湘岳 2025/8/28
+     * @param
+     * @return java.lang.String
+     **/
+    Result getWalletBalance();
 }
