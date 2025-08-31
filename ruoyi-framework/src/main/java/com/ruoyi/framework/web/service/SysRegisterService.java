@@ -1,5 +1,6 @@
 package com.ruoyi.framework.web.service;
 
+import cn.hutool.core.util.StrUtil;
 import com.ruoyi.common.core.dto.EmailRegisterDto;
 import com.ruoyi.common.helper.email.EmailConstant;
 import com.ruoyi.common.helper.email.EmailSender;
@@ -61,12 +62,16 @@ public class SysRegisterService
     public String register(RegisterBody registerBody)
     {
         String msg = "", password = registerBody.getPassword();
+        String validEmail = validEmail(registerBody.getEmail(), registerBody.getEmailCode());
+        if (validEmail != null){
+            return validEmail;
+        }
         SysUser sysUser = new SysUser();
         sysUser.setUserName(registerBody.getEmail());
         sysUser.setEmail(registerBody.getEmail());
         if (!userService.checkEmailUnique(registerBody.getEmail()))
         {
-            msg = "保存用户'" + registerBody.getEmail() + "'失败，注册邮箱已存在";
+            msg = "邮箱已被注册，请登录";
         }
         else
         {
@@ -83,14 +88,27 @@ public class SysRegisterService
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(sysUser.getUserName(), Constants.REGISTER, MessageUtils.message("user.register.success")));
                 //创建余额记录
                 WalletBalance walletBalance = new WalletBalance();
-                walletBalance.setBalance(BigDecimal.valueOf(0.0));
                 walletBalance.setUserId(sysUser.getUserId().toString());
                 walletBalance.setInviteesNumber(0);
+                walletBalance.setCreateUser(sysUser.getUserId().toString());
+                walletBalance.setUpdateUser(sysUser.getUserId().toString());
                 walletBalance.setBalance(BigDecimal.valueOf(0.0));
                 walletBalanceMapper.insert(walletBalance);
             }
         }
         return msg;
+    }
+
+
+    private String validEmail(String email,String code) {
+        String cacheObject = redisCache.getCacheObject(CacheConstants.EMAIL_CAPTCHA_CODE_KEY + email);
+        if (StrUtil.isBlank(cacheObject)){
+            return "验证码已过期";
+        }
+        if (!code.equals(cacheObject)){
+            return "验证码错误";
+        }
+        return null;
     }
 
     /**

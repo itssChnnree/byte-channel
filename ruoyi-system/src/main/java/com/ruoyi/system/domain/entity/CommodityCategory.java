@@ -36,7 +36,10 @@ private static final long serialVersionUID = 1L;
         */
     private Integer availableStatus;
 
-
+    /**
+        * 排序
+        */
+    private Integer sort;
 
 
 }

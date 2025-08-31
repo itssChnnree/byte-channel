@@ -92,6 +92,46 @@ public class SysUser extends BaseEntity
     /** 角色ID */
     private Long roleId;
 
+    /**
+     * 创建人
+     */
+    private String createUser;
+    /**
+     * 修改人
+     */
+
+    private String updateUser;
+    /**
+     * 创建时间
+     */
+
+    private Date createTime;
+    /**
+     * 修改时间
+     */
+    private Date updateTime;
+
+
+    @Override
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    @Override
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    @Override
+    public Date getUpdateTime() {
+        return updateTime;
+    }
+
+    @Override
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
+
     public SysUser()
     {
 

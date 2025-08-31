@@ -40,6 +40,9 @@ public class CommodityCategoryDto extends PageBase {
     
     @ApiModelProperty("状态")
     private String status;
+
+    @ApiModelProperty("排序")
+    private Integer sort;
     
     @ApiModelProperty("可售状态，0为下架，1为上架")
     @NotNull(message = "可售状态不能为空")

@@ -40,7 +40,7 @@ public class SysRegisterController extends BaseController
         }
         if (!("true".equals(configService.selectConfigByKey("sys.account.registerUser"))))
         {
-            return error("当前系统没有开启注册功能！");
+            return error("注册功能暂不可用");
         }
         String msg = registerService.register(user);
         return StringUtils.isEmpty(msg) ? success() : error(msg);

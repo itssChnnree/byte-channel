@@ -41,9 +41,9 @@ public class EmailRegisterDto {
     @NotBlank(message = "邮箱为空")
     private String email;
 
-    /**
-     * 邮箱验证码
-     */
-    @NotBlank(message = "邮箱验证码为空")
-    private String emailCode;
+//    /**
+//     * 邮箱验证码
+//     */
+//    @NotBlank(message = "邮箱验证码为空")
+//    private String emailCode;
 }

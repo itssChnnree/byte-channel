@@ -35,5 +35,10 @@ public interface CommodityCategoryMapper extends BaseMapper<CommodityCategory> {
     List<CommodityCategoryVo> queryPage(@Param("dto") CommodityCategoryDto commodityCategoryDto);
 
 
-
+    /**
+     * [用户分页查询商品分类]
+     * @author 陈湘岳 2025/7/29
+     * @return com.baomidou.mybatisplus.core.metadata.IPage<com.ruoyi.system.domain.vo.CommodityCategoryVo>
+     **/
+    List<CommodityCategoryVo> userPage();
 }

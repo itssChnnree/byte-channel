@@ -1,6 +1,7 @@
 package com.ruoyi.system.config;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.uuid.UUID;
 import org.apache.ibatis.reflection.MetaObject;
@@ -19,6 +20,9 @@ public class FillMetaObjectHandle implements MetaObjectHandler {
 
     @Override
     public void insertFill(MetaObject metaObject) {
+        if (metaObject.getOriginalObject().getClass() == SysUser.class){
+            return;
+        }
         // 创建人
 //        this.strictInsertFill(metaObject, "id", String.class, UUID.fastUUID().toString(true));
         // 创建人

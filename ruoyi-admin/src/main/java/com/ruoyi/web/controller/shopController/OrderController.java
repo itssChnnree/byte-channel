@@ -63,6 +63,17 @@ public class OrderController {
     }
 
 
+    @PostMapping("/calculatePrice")
+    @ApiOperation("计算价格")
+    public Result calculatePrice(@RequestBody @Validated(InsertGroup.class) OrderByCommodityDto orderByCommodityDto
+            , BindingResult bindingResult){
+        if (bindingResult.hasErrors()) {
+            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return orderService.calculatePrice(orderByCommodityDto);
+    }
+
+
 
     @GetMapping("/test")
     public String test(){

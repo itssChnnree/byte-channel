@@ -34,6 +34,9 @@ public class CommodityCategoryVo{
     
     @ApiModelProperty("状态")
    private String status;
+
+    @ApiModelProperty("排序")
+    private Integer sort;
     
     @ApiModelProperty("可售zh")
    private Integer availableStatus;

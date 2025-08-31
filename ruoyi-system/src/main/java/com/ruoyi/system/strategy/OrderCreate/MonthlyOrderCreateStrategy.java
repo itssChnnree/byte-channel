@@ -31,17 +31,15 @@ public class MonthlyOrderCreateStrategy implements OrderCreateStrategy{
 
     @Override
     public Order createOrder(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {
-        BigDecimal total = new BigDecimal(0);
+        BigDecimal price = null;
         //存在折扣价则使用折扣价，不存在则使用原价
         if (ObjectUtil.isNotEmpty(normalCommodity.getCommodityDiscountedPrice())){
-            total = normalCommodity.getCommodityDiscountedPrice().multiply(new BigDecimal(orderByCommodityDto.getNum()));
+            price = normalCommodity.getCommodityDiscountedPrice();
         }else {
-            total = normalCommodity.getCommodityPrice().multiply(new BigDecimal(orderByCommodityDto.getNum()));
+            price = normalCommodity.getCommodityPrice();
         }
-        //存在优惠码则使用优惠码
-        if (ObjectUtil.isNotEmpty(promoCodeRecords)){
-            total = total.multiply(new BigDecimal("0.9"));
-        }
+        //计算价格
+        BigDecimal total = calculatePrice(orderByCommodityDto.getNum(), ObjectUtil.isNotEmpty(promoCodeRecords), price);
 
         Order order = new Order();
         order.setUserId(SecurityUtils.getStrUserId());
@@ -52,5 +50,28 @@ public class MonthlyOrderCreateStrategy implements OrderCreateStrategy{
         order.setPaymentPeriod(PaymentPeriodConstant.MONTHLY);
         order.setOrderType(OrderTypeConstant.ADD);
         return order;
+    }
+
+    /**
+     * [计算价格]
+     *
+     * @param num
+     * @param havePromoCode
+     * @param price
+     * @return java.math.BigDecimal
+     * @author 陈湘岳 2025/8/30
+     **/
+    @Override
+    public BigDecimal calculatePrice(int num, Boolean havePromoCode, BigDecimal price) {
+        BigDecimal total = new BigDecimal(0);
+        //如果价格为空或小于0，则返回0
+        if (price== null||price.compareTo(new BigDecimal(0)) < 0){
+            return total;
+        }
+        total = price.multiply(new BigDecimal(num));
+        if (havePromoCode){
+            total = total.multiply(new BigDecimal("0.9"));
+        }
+        return total;
     }
 }

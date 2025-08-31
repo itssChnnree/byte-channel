@@ -145,8 +145,17 @@ id, user_id, change_amount, type, is_deleted, create_user, update_user, create_t
             </if>
         </where>
     </select>
-    
-    
+
+
+    <select id="pageQuery" resultType="com.ruoyi.system.domain.vo.WalletBalanceDetailVo">
+        select
+        id, user_id, change_amount, type
+        from wallet_balance_detail
+        where 1 = 1 and is_deleted = 0 and user_id = #{userId}
+        order by create_time desc
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into wallet_balance_detail(id,user_id, change_amount, type, is_deleted, create_user, update_user, create_time, update_time)

@@ -63,7 +63,7 @@ public class CommodityCategoryController {
     @GetMapping("/page")
     @ApiOperation("分页查询商品类别")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
-    public Result deleteByIds(@RequestBody CommodityCategoryDto listDto){
+    public Result page(@RequestBody CommodityCategoryDto listDto){
         if (listDto.getPageNum()== null|| listDto.getPageNum() < 1L){
             listDto.setPageNum(1L);
         }
@@ -71,6 +71,13 @@ public class CommodityCategoryController {
             listDto.setPageSize(10L);
         }
         return commodityCategoryService.page(listDto);
+    }
+
+
+    @GetMapping("/userPage")
+    @ApiOperation("用户分页查询商品类别")
+    public Result userPage(){
+        return commodityCategoryService.userPage();
     }
 
 

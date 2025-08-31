@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -254,5 +255,35 @@ public class OrderServiceImpl implements IOrderService {
         }else {
             return Result.fail("订单已取消");
         }
+    }
+
+
+    /**
+     * [计算价格]
+     *
+     * @param orderByCommodityDto
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/8/24
+     **/
+    @Override
+    public Result calculatePrice(OrderByCommodityDto orderByCommodityDto) {
+        //校验商品是否存在
+        Commodity normalCommodity = commodityMapper.findNormalCommodity(orderByCommodityDto.getCommodityId());
+        if (normalCommodity == null) {
+            return Result.fail("商品不存在");
+        }
+        try {
+            DefaultValueUtil.setDefaultData(orderByCommodityDto);
+        } catch (IllegalAccessException e) {
+            log.error("默认赋值失败"+e.getMessage());
+            throw new RuntimeException("默认赋值失败");
+        }
+        //创建订单
+        OrderCreateContext orderCreateContext = new OrderCreateContext(orderByCommodityDto.getPayCycle());
+        //查询推广码
+        PromoCodeRecords promoCodeRecords = promoCodeRecordsMapper.selectPromoCode(orderByCommodityDto.getPromoCode());
+        //计算价格
+        java.math.BigDecimal price = orderCreateContext.calculatePrice(orderByCommodityDto, normalCommodity, promoCodeRecords);
+        return Result.success(price);
     }
 }

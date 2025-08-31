@@ -52,4 +52,13 @@ public interface IOrderService{
      * @return com.ruoyi.system.http.Result
      **/
     Result cancelOrder(String orderId);
+
+
+    /**
+     * [计算价格]
+     * @author 陈湘岳 2025/8/24
+     * @param orderByCommodityDto
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result calculatePrice(OrderByCommodityDto orderByCommodityDto);
 }
