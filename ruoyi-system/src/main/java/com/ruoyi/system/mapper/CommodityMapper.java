@@ -2,6 +2,7 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.dto.CommodityDto;
 import com.ruoyi.system.domain.vo.CommodityVo;
@@ -93,4 +94,11 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
     List<ShoppingCartCommodityVo> findNormalCommodityByCart(@Param("userId") String userId, @Param("ids") List<String> ids);
 
 
+    /**
+     * [用户分页查询商品信息]
+     * @author 陈湘岳 2025/8/1
+     * @param commodityDto 购物车信息
+     * @return java.util.List<com.ruoyi.system.domain.vo.CommodityVo>
+     **/
+    List<CommodityVo> userPage(@Param("dto") CommodityDto commodityDto);
 }

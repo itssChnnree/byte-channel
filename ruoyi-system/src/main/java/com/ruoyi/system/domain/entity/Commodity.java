@@ -4,6 +4,8 @@ package com.ruoyi.system.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,6 +13,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 
 /**
@@ -83,4 +86,17 @@ private static final long serialVersionUID = 1L;
         */
     @TableField(value = "available_status")
     private Integer availableStatus;
+
+    /**
+     * 适合业务
+     */
+    @TableField(value = "business_suitable")
+    private String businessSuitable;
+
+    /**
+     * 带宽
+     */
+    @TableField(value = "bandwidth")
+    private String bandwidth;
+
 }

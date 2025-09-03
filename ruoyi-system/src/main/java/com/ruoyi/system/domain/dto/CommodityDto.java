@@ -2,7 +2,9 @@ package com.ruoyi.system.domain.dto;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ruoyi.system.anno.InitializeWith;
 import com.ruoyi.system.domain.base.PageBase;
 import com.ruoyi.system.group.UpdateGroup;
@@ -77,4 +79,10 @@ public class CommodityDto extends PageBase {
     @ApiModelProperty("可售状态,0为下架，1为上架")
     @InitializeWith(intValue = 0)
     private Integer availableStatus;
+
+    @ApiModelProperty("带宽")
+    private String bandwidth;
+
+    @ApiModelProperty("商品适用业务")
+    private List<String> businessSuitableList;
 }

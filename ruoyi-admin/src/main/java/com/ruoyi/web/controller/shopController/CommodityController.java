@@ -85,5 +85,18 @@ public class CommodityController {
     }
 
 
+    @GetMapping("/userPage")
+    @ApiOperation("用户分页查询商品")
+    public Result userPage(CommodityDto commodityDto){
+        if (commodityDto.getPageNum()== null|| commodityDto.getPageNum() < 1L){
+            commodityDto.setPageNum(1L);
+        }
+        if (commodityDto.getPageSize()== null|| commodityDto.getPageSize() < 1L){
+            commodityDto.setPageSize(10L);
+        }
+        return commodityService.userPage(commodityDto);
+    }
+
+
 
 }

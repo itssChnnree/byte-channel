@@ -1,12 +1,15 @@
 package com.ruoyi.system.service.impl;
 
 
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.Util.DefaultValueUtil;
 import com.ruoyi.system.constant.OrderStatus;
+import com.ruoyi.system.constant.PaymentPeriodConstant;
 import com.ruoyi.system.constant.RedissonLockStatus;
 import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
@@ -17,6 +20,7 @@ import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.entity.OrderCommodity;
 import com.ruoyi.system.domain.entity.PromoCodeRecords;
 import com.ruoyi.system.domain.vo.OrderVo;
+import com.ruoyi.system.domain.vo.PriceCalculateVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.CommodityMapper;
 import com.ruoyi.system.mapper.OrderCommodityMapper;
@@ -36,6 +40,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -275,15 +282,60 @@ public class OrderServiceImpl implements IOrderService {
         try {
             DefaultValueUtil.setDefaultData(orderByCommodityDto);
         } catch (IllegalAccessException e) {
-            log.error("默认赋值失败"+e.getMessage());
+            log.error("默认赋值失败" + e.getMessage());
             throw new RuntimeException("默认赋值失败");
         }
-        //创建订单
-        OrderCreateContext orderCreateContext = new OrderCreateContext(orderByCommodityDto.getPayCycle());
+
         //查询推广码
-        PromoCodeRecords promoCodeRecords = promoCodeRecordsMapper.selectPromoCode(orderByCommodityDto.getPromoCode());
+        PromoCodeRecords promoCodeRecords;
+        if (StrUtil.isNotEmpty(orderByCommodityDto.getPromoCode())) {
+            promoCodeRecords = promoCodeRecordsMapper.selectPromoCode(orderByCommodityDto.getPromoCode());
+            if (promoCodeRecords == null){
+                return Result.fail("推广码不存在，请重试");
+            }
+        } else {
+            promoCodeRecords = null;
+        }
+        PriceCalculateVo priceCalculateVo = new PriceCalculateVo();
+        //按月价格计算
+        CompletableFuture<Void> monthlyCalculatePrice = CompletableFuture.runAsync(() -> {
+            //创建订单
+            OrderCreateContext orderCreateContext = new OrderCreateContext(PaymentPeriodConstant.MONTHLY);
+            BigDecimal price = orderCreateContext.calculatePrice(orderByCommodityDto, normalCommodity, promoCodeRecords);
+            priceCalculateVo.setMonthlyPrice(price.setScale(2, RoundingMode.HALF_UP).toString());
+            if (ObjectUtil.isNotEmpty(promoCodeRecords)) {
+                priceCalculateVo.setMonthlyDiscountPrice("10%");
+            }
+        });
+
+        //按季付款
+        CompletableFuture<Void> quarterlyCalculatePrice = CompletableFuture.runAsync(() -> {
+            //创建订单
+            OrderCreateContext orderCreateContext = new OrderCreateContext(PaymentPeriodConstant.QUARTERLY);
+            BigDecimal price = orderCreateContext.calculatePrice(orderByCommodityDto, normalCommodity, promoCodeRecords);
+            priceCalculateVo.setQuarterlyPrice(price.setScale(2, RoundingMode.HALF_UP).toString());
+            if (ObjectUtil.isNotEmpty(promoCodeRecords)) {
+                priceCalculateVo.setQuarterlyDiscountPrice("14.5%");
+            } else {
+                priceCalculateVo.setQuarterlyDiscountPrice("5.0%");
+            }
+        });
+
+        //按年付款
+        CompletableFuture<Void> yearCalculatePrice = CompletableFuture.runAsync(() -> {
+            //创建订单
+            OrderCreateContext orderCreateContext = new OrderCreateContext(PaymentPeriodConstant.YEARLY);
+            //价格保留两位小数
+            BigDecimal price = orderCreateContext.calculatePrice(orderByCommodityDto, normalCommodity, promoCodeRecords);
+            priceCalculateVo.setYearlyPrice(price.setScale(2, RoundingMode.HALF_UP).toString());
+            if (ObjectUtil.isNotEmpty(promoCodeRecords)) {
+                priceCalculateVo.setYearlyDiscountPrice("19.0%");
+            } else {
+                priceCalculateVo.setYearlyDiscountPrice("10.0%");
+            }
+        });
+        CompletableFuture.allOf(yearCalculatePrice,quarterlyCalculatePrice,monthlyCalculatePrice);
         //计算价格
-        java.math.BigDecimal price = orderCreateContext.calculatePrice(orderByCommodityDto, normalCommodity, promoCodeRecords);
-        return Result.success(price);
+        return Result.success(priceCalculateVo);
     }
 }

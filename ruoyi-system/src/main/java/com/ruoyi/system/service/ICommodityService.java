@@ -58,4 +58,13 @@ public interface ICommodityService {
      * @return com.ruoyi.system.http.Result
      **/
     Result findById(String id);
+
+
+    /**
+     * [分页查询商品]
+     * @author 陈湘岳 2025/8/31
+     * @param commodityDto 查询参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result userPage(CommodityDto commodityDto);
 }

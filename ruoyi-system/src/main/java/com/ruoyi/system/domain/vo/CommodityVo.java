@@ -2,7 +2,9 @@ package com.ruoyi.system.domain.vo;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,6 +34,15 @@ public class CommodityVo{
     
     @ApiModelProperty("折后价")
    private BigDecimal commodityDiscountedPrice;
+
+    @JsonIgnore
+    private String businessSuitable;
+
+    @ApiModelProperty("带宽")
+    private String bandwidth;
+
+    @ApiModelProperty("商品适用业务")
+    private List<String> businessSuitableList;
     
     @ApiModelProperty("商品类别id")
    private String categoryId;
@@ -50,30 +61,14 @@ public class CommodityVo{
     
     @ApiModelProperty("描述")
    private String description;
-    
-    @ApiModelProperty("类别")
-   private String category;
-    
-    @ApiModelProperty("为未删除，1为已删除")
-   private Integer isDeleted;
+
     
     @ApiModelProperty("状态")
    private String status;
     
     @ApiModelProperty("可售状态,0为下架，1为上架")
    private Integer availableStatus;
-    
-    @ApiModelProperty("创建人")
-   private String createUser;
-    
-    @ApiModelProperty("修改人")
-   private String updateUser;
-    
-    @ApiModelProperty("创建时间")
-   private Date createTime;
-    
-    @ApiModelProperty("修改时间")
-   private Date updateTime;
+
 
     @ApiModelProperty("是否有库存")
     private Boolean hasStock;

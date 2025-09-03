@@ -1,6 +1,7 @@
 package com.ruoyi.system.service.impl;
 
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -64,6 +65,10 @@ public class CommodityServiceImpl  implements ICommodityService {
             return Result.fail("商品类别不存在");
         }
         Commodity commodity = commodityMapstruct.changeDto2(commodityDto);
+        if (!CollectionUtils.isEmpty(commodityDto.getBusinessSuitableList())){
+            String businessSuitable = StrUtil.join(",", commodityDto.getBusinessSuitableList());
+            commodity.setBusinessSuitable(businessSuitable);
+        }
         int insert = commodityMapper.insert(commodity);
         return insert > 0 ? Result.success(commodity) : Result.fail("添加失败");
     }
@@ -83,6 +88,10 @@ public class CommodityServiceImpl  implements ICommodityService {
             if (commodityCategory == null||commodityCategory.getIsDeleted()==1){
                 return Result.fail("商品类别不存在");
             }
+        }
+        if (!CollectionUtils.isEmpty(commodityDto.getBusinessSuitableList())){
+            String businessSuitable = StrUtil.join(",", commodityDto.getBusinessSuitableList());
+            commodity.setBusinessSuitable(businessSuitable);
         }
         int i = commodityMapper.update(commodity);
         return i > 0 ? Result.success(commodity) : Result.fail("修改失败");
@@ -145,5 +154,23 @@ public class CommodityServiceImpl  implements ICommodityService {
             return Result.success(commodityVo);
         }
         return Result.fail("未查询到商品信息");
+    }
+
+
+    /**
+     * [用户分页查询商品]
+     *
+     * @param commodityDto 查询参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/8/31
+     **/
+    @Override
+    public Result userPage(CommodityDto commodityDto) {
+        List<CommodityVo> commodityCategoryVoIPage = commodityMapper.userPage(commodityDto);
+        commodityCategoryVoIPage.forEach(commodityVo -> {
+            List<String> split = StrUtil.split(commodityVo.getBusinessSuitable(), ",");
+            commodityVo.setBusinessSuitableList(split);
+        });
+        return Result.success(commodityCategoryVoIPage);
     }
 }

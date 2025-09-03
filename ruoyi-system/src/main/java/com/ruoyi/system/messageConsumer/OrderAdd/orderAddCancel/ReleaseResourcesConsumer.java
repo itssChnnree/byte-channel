@@ -77,6 +77,7 @@ public class ReleaseResourcesConsumer implements RocketMQListener<OrderMessageDt
     }
 
     private void releaseRenewResources(OrderMessageDto orderMessageDto) {
+        //todo 单独剥离出来成为续费取消消费者组
         //查询已完成续费的资源
         List<OrderCommodityResources> byOrderId
                 = orderCommodityResourcesMapper.findByOrderIdAndStatus(
