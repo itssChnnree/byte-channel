@@ -39,7 +39,7 @@ public class ServerResourcesDto{
     @NotBlank(message = "服务器ip不能为空")
     private String resourcesIp;
     
-    @ApiModelProperty("服务器端口")
+    @ApiModelProperty("ssh面板服务器端口")
     @NotBlank(message = "服务器端口不能为空")
     @Pattern(regexp = "^([1-9]\\d{0,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$",
             message = "端口号必须是1-65535之间的整数",

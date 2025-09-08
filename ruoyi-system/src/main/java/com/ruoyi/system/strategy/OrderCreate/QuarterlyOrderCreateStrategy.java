@@ -46,6 +46,9 @@ public class QuarterlyOrderCreateStrategy implements OrderCreateStrategy{
         order.setDescription("按季订购节点");
         order.setPaymentPeriod(PaymentPeriodConstant.QUARTERLY);
         order.setOrderType(OrderTypeConstant.ADD);
+        order.setCreateTime(new Date());
+        order.setUpdateTime(new Date());
+        order.setIsDeleted(0);
         return order;
     }
 

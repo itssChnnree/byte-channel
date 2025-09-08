@@ -130,4 +130,17 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
         List<CommodityCategoryVo> commodityCategoryVoIPage = commodityCategoryMapper.userPage();
         return Result.success(commodityCategoryVoIPage);
     }
+
+
+    /**
+     * [用户分页查询商品类别]
+     *
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/7/29
+     **/
+    @Override
+    public Result systemPage() {
+        List<CommodityCategoryVo> commodityCategoryVoIPage = commodityCategoryMapper.systemPage();
+        return Result.success(commodityCategoryVoIPage);
+    }
 }

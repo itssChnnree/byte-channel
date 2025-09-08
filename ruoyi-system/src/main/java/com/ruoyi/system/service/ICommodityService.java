@@ -67,4 +67,16 @@ public interface ICommodityService {
      * @return com.ruoyi.system.http.Result
      **/
     Result userPage(CommodityDto commodityDto);
+
+    
+    /**
+     * [] 
+     * @author 陈湘岳 2025/9/7
+     * @param commodityId
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result updateAvailableStatus(String commodityId);
+
+
+
 }

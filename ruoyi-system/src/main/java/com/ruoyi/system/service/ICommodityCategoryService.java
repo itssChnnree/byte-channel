@@ -59,4 +59,11 @@ public interface ICommodityCategoryService {
      * @return com.ruoyi.system.http.Result
      **/
     Result userPage();
+
+    /**
+     * [系统分页查询商品类别]
+     * @author 陈湘岳 2025/7/29
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result systemPage();
 }

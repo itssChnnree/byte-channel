@@ -50,6 +50,8 @@ public class OrderVo{
 
     @ApiModelProperty(value = "支付方式")
     private String paymentType;
+
+    private Integer isDeleted;
     
 
 }

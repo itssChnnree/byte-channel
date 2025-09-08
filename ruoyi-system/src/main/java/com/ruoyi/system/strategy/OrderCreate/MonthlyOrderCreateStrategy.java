@@ -46,9 +46,12 @@ public class MonthlyOrderCreateStrategy implements OrderCreateStrategy{
         order.setAmount(total);
         order.setStatus(OrderStatus.WAIT_PAY);
         order.setOrderTime(new Date());
+        order.setCreateTime(new Date());
+        order.setUpdateTime(new Date());
         order.setDescription("按月订购节点");
         order.setPaymentPeriod(PaymentPeriodConstant.MONTHLY);
         order.setOrderType(OrderTypeConstant.ADD);
+        order.setIsDeleted(0);
         return order;
     }
 

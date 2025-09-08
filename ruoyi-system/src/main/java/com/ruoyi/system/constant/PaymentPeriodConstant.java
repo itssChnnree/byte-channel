@@ -3,11 +3,11 @@ package com.ruoyi.system.constant;
 public interface PaymentPeriodConstant {
 
     /** 月付 */
-    String MONTHLY = "Monthly";
+    String MONTHLY = "monthly";
 
     /** 季付 */
-    String QUARTERLY = "Quarterly";
+    String QUARTERLY = "quarterly";
 
     /**年付 */
-    String YEARLY = "Yearly";
+    String YEARLY = "yearly";
 }

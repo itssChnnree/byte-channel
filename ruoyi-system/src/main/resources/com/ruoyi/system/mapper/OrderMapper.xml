@@ -26,10 +26,6 @@
                 <result property="description" column="description" jdbcType="VARCHAR"/>
                 <result property="orderTime" column="order_time" jdbcType="TIMESTAMP"/>
                 <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
-                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <resultMap type="com.ruoyi.system.domain.vo.OrderSystemVo" id="OrderSystemVOMap" extends="OrderVOMap">
@@ -160,12 +156,28 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
             </if>
         order by create_time
     </select>
-    
-    
+
+
+    <select id="getOrderInfoById" resultType="com.ruoyi.system.domain.vo.OrderInfoVo">
+        select o.id as orderId,
+               o.status,
+               payment_period as payCycle,
+               amount as price,
+               c.commodity_name as commodityName,
+               c.description as commodityDesc,
+               c.bandwidth as bandwidth,
+               o.order_type
+               from `order` o
+               join order_commodity oc on o.id = oc.order_id
+               join commodity c on oc.commodity_id = c.id
+               where o.id = #{id} and o.user_id = #{userId} and o.is_deleted = 0
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into `order`(id,user_id, amount, status,description,payment_id, payment_type,order_time, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{id},#{userId}, #{amount}, #{status},#{description},#{paymentId},#{paymentType}, #{orderTime}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        insert into `order`(id,user_id, amount, status,description,order_type,payment_period,payment_id, payment_type,order_time, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{userId}, #{amount}, #{status},#{description},#{orderType},#{paymentPeriod},#{paymentId},#{paymentType}, #{orderTime}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">

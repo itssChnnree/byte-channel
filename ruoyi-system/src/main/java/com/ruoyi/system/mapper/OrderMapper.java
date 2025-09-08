@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.domain.entity.Order;
+import com.ruoyi.system.domain.vo.OrderInfoVo;
 import com.ruoyi.system.domain.vo.OrderVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.security.core.parameters.P;
@@ -34,4 +35,13 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return com.ruoyi.system.domain.entity.Order
      **/
     Order queryById(@Param("id") String id);
+
+    /**
+     * 查询订单信息
+     * @author 陈湘岳 2025/9/3
+     * @param id 订单id
+     * @param userId 用户id
+     * @return com.ruoyi.system.domain.vo.OrderInfoVo
+     **/
+    OrderInfoVo getOrderInfoById(@Param("id") String id, @Param("userId") String userId);
 }

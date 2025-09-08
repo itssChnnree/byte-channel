@@ -34,15 +34,9 @@
                 <result property="inventory" column="inventory" jdbcType="INTEGER"/>
                 <result property="alarmThreshold" column="alarm_threshold" jdbcType="INTEGER"/>
                 <result property="description" column="description" jdbcType="VARCHAR"/>
-                <result property="category" column="category" jdbcType="VARCHAR"/>
                 <result property="hasStock" column="hasStock" jdbcType="BOOLEAN"/>
-                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
                 <result property="status" column="status" jdbcType="VARCHAR"/>
                 <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
-                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <update id="update">
@@ -94,9 +88,13 @@
     <!--��ѯ����-->
     <select id="queryById" resultMap="CommodityVOMap">
         select
-        c.id, commodity_name, commodity_price, commodity_discounted_price,
-        category_id, oversold_configurations, oversold, inventory,
-        alarm_threshold, description, c.available_status,
+            c.id, commodity_name, commodity_price,
+            commodity_discounted_price, category_id,
+            oversold_configurations, oversold, inventory,
+            alarm_threshold, description, category,bandwidth,
+            c.status, c.available_status,business_suitable as businessSuitable,
+            if(oversold=oversold_configurations,0,1) as hasStock,
+            (select count(1) from server_resources where commodity_id=c.id and is_deleted = 0) as resourceNum,
         cc.category_name as category
         from commodity c left join commodity_category cc on c.category_id = cc.id
         where c.id = #{id} and c.is_deleted = 0 and cc.is_deleted = 0
@@ -253,28 +251,20 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
     </select>
     
     <!--��ѯ��ҳ����-->
-    <select id="queryPage" resultMap="CommodityVOMap">
+    <select id="queryPage" resultType="com.ruoyi.system.domain.vo.CommodityVo">
             select
         id, commodity_name, commodity_price,
         commodity_discounted_price, category_id,
         oversold_configurations, oversold, inventory,
-        alarm_threshold, description, category, is_deleted,
-        status, available_status, create_user,
-        update_user, create_time, update_time,if(oversold=oversold_configurations,0,1) as hasStock
+        alarm_threshold, description, category,
+        status, available_status,business_suitable as businessSuitable,
+        if(oversold=oversold_configurations,0,1) as hasStock,
+        (select count(1) from server_resources where commodity_id=commodity.id and is_deleted = 0) as resourceNum
         from commodity
         <where>
-        1 = 1 and is_deleted = 0 
-            <if test="dto.id != null and dto.id != ''">
-                and id = #{dto.id}
-            </if>
+        1 = 1 and is_deleted = 0
             <if test="dto.commodityName != null and dto.commodityName != ''">
                 and commodity_name like concat('%',#{dto.commodityName},'%')
-            </if>
-            <if test="dto.commodityPrice != null">
-                and commodity_price = #{dto.commodityPrice}
-            </if>
-            <if test="dto.commodityDiscountedPrice != null">
-                and commodity_discounted_price = #{dto.commodityDiscountedPrice}
             </if>
             <if test="dto.categoryId != null and dto.categoryId != ''">
                 and category_id = #{dto.categoryId}
@@ -291,19 +281,26 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
             <if test="dto.alarmThreshold != null">
                 and alarm_threshold = #{dto.alarmThreshold}
             </if>
-            <if test="dto.description != null and dto.description != ''">
-                and description = #{dto.description}
-            </if>
-            <if test="dto.isDeleted != null">
-                and is_deleted = #{dto.isDeleted}
-            </if>
             <if test="dto.status != null and dto.status != ''">
-                and status = #{dto.status}
+                and `status` = #{dto.status}
             </if>
             <if test="dto.availableStatus != null">
                 and available_status = #{dto.availableStatus}
             </if>
+            <if test="dto.inventoryNum == 1">
+                and inventory &gt; alarm_threshold
+            </if>
+            <if test="dto.inventoryNum == 2">
+                and inventory &lt;= alarm_threshold
+            </if>
+            <if test="dto.inventoryNum == 3">
+                and inventory = 0
+            </if>
+            <if test="dto.inventoryNum == 4">
+                and oversold &gt; 0
+            </if>
         </where>
+            order by create_time desc
     </select>
 
     <select id="haveCommodity" resultType="java.lang.String">

@@ -19,8 +19,8 @@ import javax.annotation.Resource;
  * @version v1.0.0
  * @date 2025/8/15
  */
-@RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_PROMO_RECORDS,
-        topic = RocketMqConstant.ORDER_ADD_TOPIC)
+//@RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_PROMO_RECORDS,
+//        topic = RocketMqConstant.ORDER_ADD_TOPIC)
 @Slf4j
 @Component
 public class CreatePromoRecordsConsumer implements RocketMQListener<OrderMessageDto> {

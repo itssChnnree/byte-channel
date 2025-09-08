@@ -15,17 +15,12 @@ import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.domain.dto.OrderMessageDto;
-import com.ruoyi.system.domain.entity.Commodity;
-import com.ruoyi.system.domain.entity.Order;
-import com.ruoyi.system.domain.entity.OrderCommodity;
-import com.ruoyi.system.domain.entity.PromoCodeRecords;
+import com.ruoyi.system.domain.entity.*;
+import com.ruoyi.system.domain.vo.OrderInfoVo;
 import com.ruoyi.system.domain.vo.OrderVo;
 import com.ruoyi.system.domain.vo.PriceCalculateVo;
 import com.ruoyi.system.http.Result;
-import com.ruoyi.system.mapper.CommodityMapper;
-import com.ruoyi.system.mapper.OrderCommodityMapper;
-import com.ruoyi.system.mapper.OrderMapper;
-import com.ruoyi.system.mapper.PromoCodeRecordsMapper;
+import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.service.IOrderService;
 import com.ruoyi.system.strategy.OrderCreate.OrderCreateContext;
 import lombok.extern.slf4j.Slf4j;
@@ -79,6 +74,9 @@ public class OrderServiceImpl implements IOrderService {
     @Resource
     private PromoCodeRecordsMapper promoCodeRecordsMapper;
 
+    @Resource
+    private PromoRecordsMapper  promoRecordsMapper;
+
     @Resource(name = "orderCache")
     private Cache<String, ReentrantLock> orderCache;
 
@@ -125,11 +123,46 @@ public class OrderServiceImpl implements IOrderService {
             throw new RuntimeException("生成订单失败，请稍后再试");
         }
         OrderMessageDto orderMessageDto = buildOrderMessageDto(orderByCommodityDto, order, promoCodeRecords);
-
+        insertOrderCommodity(orderMessageDto);
+        insertPromoRecords(orderMessageDto);
         //发送消息，若
         sendMessage(orderMessageDto);
         return Result.success(order);
     }
+
+
+    private void insertOrderCommodity(OrderMessageDto orderMessageDto) {
+        OrderCommodity orderCommodity = new OrderCommodity();
+        orderCommodity.setOrderId(orderMessageDto.getOrder().getId());
+        orderCommodity.setCommodityId(orderMessageDto.getOrderByCommodityDto().getCommodityId());
+        orderCommodity.setUserId(orderMessageDto.getOrder().getUserId());
+        orderCommodity.setOrderQuantity(0);
+        orderCommodity.setPurchaseQuantity(orderMessageDto.getOrderByCommodityDto().getNum());
+        orderCommodity.setCreateUser(orderMessageDto.getOrder().getUserId());
+        orderCommodity.setUpdateUser(orderMessageDto.getOrder().getUserId());
+        orderCommodityMapper.insert(orderCommodity);
+    }
+
+
+    private void insertPromoRecords(OrderMessageDto orderMessageDto) {
+        PromoCodeRecords promoCodeRecordsDto = orderMessageDto.getPromoCodeRecordsDto();
+        if (promoCodeRecordsDto== null){
+            return;
+        }
+        PromoRecords promoRecords = new PromoRecords();
+        promoRecords.setUserId(promoCodeRecordsDto.getUserId());
+        promoRecords.setReferralsUserId(SecurityUtils.getStrUserId());
+        promoRecords.setPromoCodeRecordsId(promoCodeRecordsDto.getId());
+        promoRecords.setOrderId(orderMessageDto.getOrder().getId());
+        BigDecimal amount = orderMessageDto.getOrder().getAmount();
+        promoRecords.setCashbackAmount(amount.multiply(new BigDecimal("0.1")));
+        promoRecords.setPurchaseAmount(amount);
+        promoRecords.setStatus(OrderStatus.WAIT_CONFIRM);
+        promoRecords.setCashbackPercentage("10%");
+        promoRecordsMapper.insert(promoRecords);
+    }
+
+
 
     private void updateCommodityStock(OrderByCommodityDto orderByCommodityDto, RLock lock, Commodity normalCommodity) throws InterruptedException {
         boolean lockStatus = lock.tryLock(5, TimeUnit.SECONDS);
@@ -337,5 +370,40 @@ public class OrderServiceImpl implements IOrderService {
         CompletableFuture.allOf(yearCalculatePrice,quarterlyCalculatePrice,monthlyCalculatePrice);
         //计算价格
         return Result.success(priceCalculateVo);
+    }
+
+    /**
+     * [获取订单信息]
+     *
+     * @param orderId
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/8/24
+     **/
+    @Override
+    public Result getOrderInfo(String orderId) {
+        OrderInfoVo order = orderMapper.getOrderInfoById(orderId,SecurityUtils.getStrUserId());
+        if (order == null){
+            return Result.fail("订单不存在");
+        }
+        PromoCodeRecords byOrderId = promoCodeRecordsMapper.findByOrderId(orderId);
+        order.setPromoCode(byOrderId == null ? "" : byOrderId.getPromoCode());
+        if (PaymentPeriodConstant.YEARLY.equals(order.getPayCycle())){
+            if (ObjectUtil.isNotEmpty(byOrderId)) {
+                order.setDiscountPrice("19.0%");
+            } else {
+                order.setDiscountPrice("10.0%");
+            }
+        } else if (PaymentPeriodConstant.QUARTERLY.equals(order.getPayCycle())) {
+            if (ObjectUtil.isNotEmpty(byOrderId)) {
+                order.setDiscountPrice("14.5%");
+            } else {
+                order.setDiscountPrice("5.0%");
+            }
+        }else {
+            if (ObjectUtil.isNotEmpty(byOrderId)) {
+                order.setDiscountPrice("10.0%");
+            }
+        }
+        return Result.success(order);
     }
 }

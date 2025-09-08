@@ -2,6 +2,7 @@ package com.ruoyi.system.service.impl;
 
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -45,6 +46,7 @@ public class CommodityServiceImpl  implements ICommodityService {
 
     @Resource
     private ServerResourcesMapper serverResourcesMapper;
+
 
     /**
      * [创建商品]
@@ -137,8 +139,14 @@ public class CommodityServiceImpl  implements ICommodityService {
         //        Page<CommodityCategory> page = new Page<>(listDto.getCurrentPage(), listDto.getPageSize());
         PageHelper.startPage(commodityDto);
         List<CommodityVo> commodityCategoryVoIPage = commodityMapper.queryPage(commodityDto);
+        commodityCategoryVoIPage.forEach(commodityVo -> {
+            List<String> split = StrUtil.split(commodityVo.getBusinessSuitable(), ",");
+            commodityVo.setBusinessSuitableList(split);
+        });
         return Result.success(new PageInfo<>(commodityCategoryVoIPage));
     }
+
+
 
     /**
      * [通过商品id查询商品信息]
@@ -150,10 +158,14 @@ public class CommodityServiceImpl  implements ICommodityService {
     @Override
     public Result findById(String id) {
         CommodityVo commodityVo = commodityMapper.queryById(id);
-        if (commodityVo != null){
-            return Result.success(commodityVo);
+        if (commodityVo == null){
+            return Result.fail("未查询到商品信息");
         }
-        return Result.fail("未查询到商品信息");
+        if(!StrUtil.isEmpty(commodityVo.getBusinessSuitable())){
+            List<String> split = StrUtil.split(commodityVo.getBusinessSuitable(), ",");
+            commodityVo.setBusinessSuitableList(split);
+        }
+        return Result.success(commodityVo);
     }
 
 
@@ -172,5 +184,28 @@ public class CommodityServiceImpl  implements ICommodityService {
             commodityVo.setBusinessSuitableList(split);
         });
         return Result.success(commodityCategoryVoIPage);
+    }
+
+    /**
+     * []
+     *
+     * @param commodityId
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/7
+     **/
+    @Override
+    public Result updateAvailableStatus(String commodityId) {
+        Commodity commodity = commodityMapper.selectById(commodityId);
+        if (commodity == null){
+            return Result.fail("商品不存在");
+        }
+
+        if (commodity.getAvailableStatus() == 1){
+            commodity.setAvailableStatus(0);
+        }else {
+            commodity.setAvailableStatus(1);
+        }
+        commodityMapper.updateById( commodity);
+        return Result.success("变更状态成功");
     }
 }

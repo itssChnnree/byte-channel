@@ -46,6 +46,9 @@ public class YearOrderCreateStrategy implements OrderCreateStrategy{
         order.setDescription("按年订购节点");
         order.setPaymentPeriod(PaymentPeriodConstant.YEARLY);
         order.setOrderType(OrderTypeConstant.ADD);
+        order.setIsDeleted(0);
+        order.setCreateTime(new Date());
+        order.setUpdateTime(new Date());
         return order;
     }
 

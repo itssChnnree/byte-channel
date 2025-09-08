@@ -81,4 +81,12 @@ public class CommodityCategoryController {
     }
 
 
+    @GetMapping("/systemPage")
+    @ApiOperation("后台分页查询商品类别")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result systemPage(){
+        return commodityCategoryService.systemPage();
+    }
+
+
 }

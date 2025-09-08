@@ -193,8 +193,8 @@ id, user_id, referrals_user_id, promo_code_records_id, cashback_amount, status, 
     
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into promo_records(id,user_id, referrals_user_id, promo_code_records_id, cashback_amount, status, purchase_amount, cashback_percentage, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{id},#{userId}, #{referralsUserId}, #{promoCodeRecordsId}, #{cashbackAmount}, #{status}, #{purchaseAmount}, #{cashbackPercentage}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        insert into promo_records(id,user_id, referrals_user_id, promo_code_records_id,order_id, cashback_amount, status, purchase_amount, cashback_percentage, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{userId}, #{referralsUserId}, #{promoCodeRecordsId},  #{orderId},#{cashbackAmount}, #{status}, #{purchaseAmount}, #{cashbackPercentage}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">

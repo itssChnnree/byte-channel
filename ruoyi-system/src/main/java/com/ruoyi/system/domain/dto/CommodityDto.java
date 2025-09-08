@@ -59,6 +59,11 @@ public class CommodityDto extends PageBase {
     @ApiModelProperty("库存")
     @InitializeWith(intValue = 0)
     private Integer inventory;
+
+    @ApiModelProperty("库存筛选状态")
+    @InitializeWith(intValue = 0)
+    private Integer inventoryNum;
+
     
     @ApiModelProperty("告警阈值")
     @InitializeWith(intValue = 5)
@@ -85,4 +90,7 @@ public class CommodityDto extends PageBase {
 
     @ApiModelProperty("商品适用业务")
     private List<String> businessSuitableList;
+
+    @ApiModelProperty("商品适用业务")
+    private String businessSuitable;
 }

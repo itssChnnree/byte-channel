@@ -63,6 +63,16 @@ public class OrderController {
     }
 
 
+    @GetMapping("/getOrderInfo")
+    @ApiOperation("获取订单信息")
+    public Result getOrderInfo(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.getOrderInfo(orderId);
+    }
+
+
     @PostMapping("/calculatePrice")
     @ApiOperation("计算价格")
     public Result calculatePrice(@RequestBody @Validated(InsertGroup.class) OrderByCommodityDto orderByCommodityDto

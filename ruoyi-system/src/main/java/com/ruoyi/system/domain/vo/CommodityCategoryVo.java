@@ -56,5 +56,7 @@ public class CommodityCategoryVo{
     @ApiModelProperty("修改时间")
    private Date updateTime;
     
-
+    public String getCategoryId(){
+        return id;
+    }
 }

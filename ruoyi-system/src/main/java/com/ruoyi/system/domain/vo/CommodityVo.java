@@ -35,7 +35,6 @@ public class CommodityVo{
     @ApiModelProperty("折后价")
    private BigDecimal commodityDiscountedPrice;
 
-    @JsonIgnore
     private String businessSuitable;
 
     @ApiModelProperty("带宽")
@@ -72,6 +71,9 @@ public class CommodityVo{
 
     @ApiModelProperty("是否有库存")
     private Boolean hasStock;
+
+    @ApiModelProperty("所属资源数量")
+    private Integer resourceNum;
     
 
 }

@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
 import com.ruoyi.system.domain.dto.CommodityDto;
+import com.ruoyi.system.domain.dto.IdDto;
 import com.ruoyi.system.domain.dto.ListDto;
 import com.ruoyi.system.group.InsertGroup;
 import com.ruoyi.system.group.UpdateGroup;
@@ -85,6 +86,18 @@ public class CommodityController {
     }
 
 
+    @ApiOperation("商品上（下）架")
+    @PutMapping("/updateAvailableStatus")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result updateAvailableStatus(@RequestBody IdDto commodityIdDto ){
+        String commodityId = commodityIdDto.getId();
+        if (StrUtil.isBlank(commodityId)){
+            return Result.fail("商品编号不能为空");
+        }
+        return commodityService.updateAvailableStatus(commodityId);
+    }
+
+
     @GetMapping("/userPage")
     @ApiOperation("用户分页查询商品")
     public Result userPage(CommodityDto commodityDto){
@@ -96,7 +109,6 @@ public class CommodityController {
         }
         return commodityService.userPage(commodityDto);
     }
-
 
 
 }

@@ -61,4 +61,12 @@ public interface IOrderService{
      * @return com.ruoyi.system.http.Result
      **/
     Result calculatePrice(OrderByCommodityDto orderByCommodityDto);
+
+    /**
+     * [获取订单信息]
+     * @author 陈湘岳 2025/8/24
+     * @param orderId
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getOrderInfo(String orderId);
 }

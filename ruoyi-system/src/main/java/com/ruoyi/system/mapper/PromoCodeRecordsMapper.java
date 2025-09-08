@@ -37,4 +37,12 @@ public interface PromoCodeRecordsMapper extends BaseMapper<PromoCodeRecords> {
     int invalidPromoCode(@Param("userId")String userId);
 
 
+    /**
+     * [通过订单ID查询该订单所用邀请码]
+     * @author 陈湘岳 2025/8/14
+     * @param orderId
+     * @return com.ruoyi.system.domain.entity.PromoCodeRecords
+     **/
+    PromoCodeRecords findByOrderId(@Param("orderId")String orderId);
+
 }
