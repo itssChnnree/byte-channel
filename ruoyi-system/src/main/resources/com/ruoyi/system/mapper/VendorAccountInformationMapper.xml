@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.VendorAccountInformationMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.VendorAccountInformation" id="VendorAccountInformationMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="vendorId" column="vendor_id" jdbcType="VARCHAR"/>
+        <result property="account" column="account" jdbcType="VARCHAR"/>
+        <result property="password" column="password" jdbcType="VARCHAR"/>
+        <result property="vendorEmail" column="vendor_email" jdbcType="VARCHAR"/>
+        <result property="vendorPhone" column="vendor_phone" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.VendorAccountInformationVo" id="VendorAccountInformationVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="vendorId" column="vendor_id" jdbcType="VARCHAR"/>
+        <result property="account" column="account" jdbcType="VARCHAR"/>
+        <result property="password" column="password" jdbcType="VARCHAR"/>
+        <result property="vendorEmail" column="vendor_email" jdbcType="VARCHAR"/>
+        <result property="vendorPhone" column="vendor_phone" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultType="com.ruoyi.system.domain.vo.VendorAccountInformationVo">
+        select vai.id,
+               vendor_id,
+               account,
+               vi.vendor_description,
+               password,
+               vendor_email,
+               vendor_phone,
+               vendor_url,
+               vendor_name
+        from vendor_account_information vai
+        left join vendor_information vi on vai.vendor_id = vi.id
+        where vai.id = #{id}
+          and vai.is_deleted = 0
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="VendorAccountInformationVOMap">
+        select
+        id, vendor_id, account, password, vendor_email, vendor_phone, is_deleted, create_user, update_user,
+        create_time, update_time
+        from vendor_account_information
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="vendorId != null and vendorId != ''">
+                and vendor_id = #{vendorId}
+            </if>
+        </where>
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="VendorAccountInformationVOMap">
+        select
+        id, vendor_id, account, password, vendor_email, vendor_phone, is_deleted, create_user, update_user,
+        create_time, update_time
+        from vendor_account_information
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.vendorId != null and dto.vendorId != ''">
+                and vendor_id = #{dto.vendorId}
+            </if>
+            <if test="dto.account != null and dto.account != ''">
+                and account = #{dto.account}
+            </if>
+            <if test="dto.password != null and dto.password != ''">
+                and password = #{dto.password}
+            </if>
+            <if test="dto.vendorEmail != null and dto.vendorEmail != ''">
+                and vendor_email = #{dto.vendorEmail}
+            </if>
+            <if test="dto.vendorPhone != null and dto.vendorPhone != ''">
+                and vendor_phone = #{dto.vendorPhone}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="VendorAccountInformationVOMap">
+        select
+        id, vendor_id, account, password, vendor_email, vendor_phone, is_deleted, create_user, update_user,
+        create_time, update_time
+        from vendor_account_information
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.vendorId != null and dto.vendorId != ''">
+                and vendor_id = #{dto.vendorId}
+            </if>
+            <if test="dto.account != null and dto.account != ''">
+                and account = #{dto.account}
+            </if>
+            <if test="dto.password != null and dto.password != ''">
+                and password = #{dto.password}
+            </if>
+            <if test="dto.vendorEmail != null and dto.vendorEmail != ''">
+                and vendor_email = #{dto.vendorEmail}
+            </if>
+            <if test="dto.vendorPhone != null and dto.vendorPhone != ''">
+                and vendor_phone = #{dto.vendorPhone}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into vendor_account_information(id, vendor_id, account, password, vendor_email, vendor_phone,
+                                               is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id}, #{vendorId}, #{account}, #{password}, #{vendorEmail}, #{vendorPhone},
+                #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into vendor_account_information(id,vendor_id, account, password, vendor_email, vendor_phone,
+        is_deleted, create_user, update_user, create_time, update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.vendorId}, #{entity.account}, #{entity.password}, #{entity.vendorEmail},
+            #{entity.vendorPhone}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser},
+            #{entity.createTime}, #{entity.updateTime})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into vendor_account_information(id,vendor_id, account, password, vendor_email, vendor_phone,
+        is_deleted, create_user, update_user, create_time, update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.vendorId}, #{entity.account}, #{entity.password}, #{entity.vendorEmail},
+            #{entity.vendorPhone}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser},
+            #{entity.createTime}, #{entity.updateTime})
+        </foreach>
+        on duplicate key update
+        vendor_id = values(vendor_id),
+        account = values(account),
+        password = values(password),
+        vendor_email = values(vendor_email),
+        vendor_phone = values(vendor_phone),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time)
+    </insert>
+
+</mapper>
+

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.VendorInformationMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.VendorInformation" id="VendorInformationMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="vendorName" column="vendor_name" jdbcType="VARCHAR"/>
+        <result property="vendorUrl" column="vendor_url" jdbcType="VARCHAR"/>
+        <result property="vendorDescription" column="vendor_description" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.VendorInformationVo" id="VendorInformationVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="vendorName" column="vendor_name" jdbcType="VARCHAR"/>
+        <result property="vendorUrl" column="vendor_url" jdbcType="VARCHAR"/>
+        <result property="vendorDescription" column="vendor_description" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="VendorInformationVOMap">
+        select id,
+               vendor_name,
+               vendor_url,
+               vendor_description,
+               is_deleted,
+               create_user,
+               update_user,
+               create_time,
+               update_time
+        from vendor_information
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultType="com.ruoyi.system.domain.vo.VendorInformationVo">
+        select
+        id, vendor_name, vendor_url, vendor_description,
+        (select count(1) from vendor_account_information
+        where vendor_id = vendor_information.id and is_deleted = 0) as account_count
+        from vendor_information
+        <where>
+            1 = 1 and is_deleted = 0
+        </where>
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="VendorInformationVOMap">
+        select
+        id, vendor_name, vendor_url, vendor_description, is_deleted, create_user, update_user, create_time, update_time
+        from vendor_information
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.vendorName != null and dto.vendorName != ''">
+                and vendor_name = #{dto.vendorName}
+            </if>
+            <if test="dto.vendorUrl != null and dto.vendorUrl != ''">
+                and vendor_url = #{dto.vendorUrl}
+            </if>
+            <if test="dto.vendorDescription != null and dto.vendorDescription != ''">
+                and vendor_description = #{dto.vendorDescription}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="VendorInformationVOMap">
+        select
+        id, vendor_name, vendor_url, vendor_description, is_deleted, create_user, update_user, create_time, update_time
+        from vendor_information
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.vendorName != null and dto.vendorName != ''">
+                and vendor_name = #{dto.vendorName}
+            </if>
+            <if test="dto.vendorUrl != null and dto.vendorUrl != ''">
+                and vendor_url = #{dto.vendorUrl}
+            </if>
+            <if test="dto.vendorDescription != null and dto.vendorDescription != ''">
+                and vendor_description = #{dto.vendorDescription}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="queryCountVendorAccountNum" resultType="java.lang.Integer">
+        select count(1) from vendor_account_information where vendor_id = #{vendorId} and is_deleted = 0
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into vendor_information(id, vendor_name, vendor_url, vendor_description, is_deleted, create_user,
+                                       update_user, create_time, update_time)
+        values (#{id}, #{vendorName}, #{vendorUrl}, #{vendorDescription}, #{isDeleted}, #{createUser},
+                #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into vendor_information(id,vendor_name, vendor_url, vendor_description, is_deleted, create_user,
+        update_user, create_time, update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.vendorName}, #{entity.vendorUrl}, #{entity.vendorDescription}, #{entity.isDeleted},
+            #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into vendor_information(id,vendor_name, vendor_url, vendor_description, is_deleted, create_user,
+        update_user, create_time, update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.vendorName}, #{entity.vendorUrl}, #{entity.vendorDescription}, #{entity.isDeleted},
+            #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+        </foreach>
+        on duplicate key update
+        vendor_name = values(vendor_name),
+        vendor_url = values(vendor_url),
+        vendor_description = values(vendor_description),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time)
+    </insert>
+
+</mapper>
+
