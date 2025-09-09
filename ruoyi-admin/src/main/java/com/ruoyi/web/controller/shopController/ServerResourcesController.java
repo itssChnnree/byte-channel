@@ -62,8 +62,6 @@ public class ServerResourcesController{
             serverResources.setLeaseExpirationTime(new Date());
             serverResources.setSalesStatus("normal");
             serverResources.setAvailableStatus(1);
-            serverResources.setCloudServiceProvider("aliyun");
-            serverResources.setCloudUser("admin");
             serverResources.setNodeUrl("http://192.168.1."+i+":8080");
             list.add(serverResources);
         }

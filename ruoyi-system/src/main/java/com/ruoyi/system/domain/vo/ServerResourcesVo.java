@@ -47,11 +47,8 @@ public class ServerResourcesVo{
     @ApiModelProperty("可售状态，可售状态,0为下架，1为上架")
     private Integer availableStatus;
 
-    @ApiModelProperty("资源所属云服务商")
-    private String cloudServiceProvider;
-
-    @ApiModelProperty("资源所属云服务商账号")
-    private String cloudUser;
+    @ApiModelProperty("资源所属云服务商账号id")
+    private String vendorAccountId;
 
     @ApiModelProperty("节点导入链接")
     private String nodeUrl;

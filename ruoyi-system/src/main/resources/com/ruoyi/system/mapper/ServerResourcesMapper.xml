@@ -12,8 +12,6 @@
                 <result property="leaseExpirationTime" column="lease_expiration_time" jdbcType="TIMESTAMP"/>
                 <result property="salesStatus" column="sales_status" jdbcType="VARCHAR"/>
                 <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
-                <result property="cloudServiceProvider" column="cloud_service_provider" jdbcType="VARCHAR"/>
-                <result property="cloudUser" column="cloud_user" jdbcType="VARCHAR"/>
                 <result property="nodeUrl" column="node_url" jdbcType="VARCHAR"/>
                 <result property="nodePort" column="node_port" jdbcType="VARCHAR"/>
                 <result property="publicBrokerKey" column="public_broker_key" jdbcType="VARCHAR"/>
@@ -38,8 +36,7 @@
                 <result property="leaseExpirationTime" column="lease_expiration_time" jdbcType="TIMESTAMP"/>
                 <result property="salesStatus" column="sales_status" jdbcType="VARCHAR"/>
                 <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
-                <result property="cloudServiceProvider" column="cloud_service_provider" jdbcType="VARCHAR"/>
-                <result property="cloudUser" column="cloud_user" jdbcType="VARCHAR"/>
+                <result property="vendorAccountId" column="vendor_account_id" jdbcType="VARCHAR"/>
                 <result property="nodeUrl" column="node_url" jdbcType="VARCHAR"/>
                 <result property="nodePort" column="node_port" jdbcType="VARCHAR"/>
                 <result property="publicBrokerKey" column="public_broker_key" jdbcType="VARCHAR"/>
@@ -143,7 +140,7 @@
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesVOMap">
         select
-id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+         id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status,  vendor_account_id, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
         from server_resources
         where id = #{id} and is_deleted = 0
     </select>
@@ -151,7 +148,7 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="ServerResourcesVOMap">
         select
-id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time        
+        id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status,  vendor_account_id, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
         from server_resources
         <where>
         1 = 1 and is_deleted = 0
@@ -182,11 +179,9 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
             <if test="availableStatus != null">
                 and available_status = #{availableStatus}
             </if>
-            <if test="cloudServiceProvider != null and cloudServiceProvider != ''">
-                and cloud_service_provider = #{cloudServiceProvider}
-            </if>
-            <if test="cloudUser != null and cloudUser != ''">
-                and cloud_user = #{cloudUser}
+
+            <if test="vendorAccountId != null and vendorAccountId != ''">
+                and vendor_account_id = #{vendorAccountId}
             </if>
             <if test="nodeUrl != null and nodeUrl != ''">
                 and node_url = #{nodeUrl}
@@ -230,7 +225,7 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
     <!--��ѯָ��������-->
     <select id="queryListLimit" resultMap="ServerResourcesVOMap">
         select
-id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
         from server_resources
         <where>
         1 = 1 and is_deleted = 0 
@@ -261,11 +256,8 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
             <if test="dto.availableStatus != null">
                 and available_status = #{dto.availableStatus}
             </if>
-            <if test="dto.cloudServiceProvider != null and dto.cloudServiceProvider != ''">
-                and cloud_service_provider = #{dto.cloudServiceProvider}
-            </if>
-            <if test="dto.cloudUser != null and dto.cloudUser != ''">
-                and cloud_user = #{dto.cloudUser}
+            <if test="dto.vendorAccountId != null and dto.vendorAccountId != ''">
+                and vendor_account_id = #{dto.vendorAccountId}
             </if>
             <if test="dto.nodeUrl != null and dto.nodeUrl != ''">
                 and node_url = #{dto.nodeUrl}
@@ -310,7 +302,7 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
     <!--��ѯ��ҳ����-->
     <select id="queryPage" resultMap="ServerResourcesVOMap">
         select
-id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
+id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
         from server_resources
         <where>
         1 = 1 and is_deleted = 0 
@@ -341,11 +333,9 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
             <if test="dto.availableStatus != null">
                 and available_status = #{dto.availableStatus}
             </if>
-            <if test="dto.cloudServiceProvider != null and dto.cloudServiceProvider != ''">
-                and cloud_service_provider = #{dto.cloudServiceProvider}
-            </if>
-            <if test="dto.cloudUser != null and dto.cloudUser != ''">
-                and cloud_user = #{dto.cloudUser}
+
+            <if test="dto.vendorAccountId != null and dto.vendorAccountId != ''">
+                and vendor_account_id = #{dto.vendorAccountId}
             </if>
             <if test="dto.nodeUrl != null and dto.nodeUrl != ''">
                 and node_url = #{dto.nodeUrl}
@@ -393,26 +383,30 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         </foreach>
     </select>
 
+    <select id="haveServerResourcesByAccount" resultType="java.lang.Integer">
+        select count(1) from server_resources where is_deleted = 0 and vendor_account_id = #{accountId}
+    </select>
+
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{entity.id},#{resourcesIp}, #{resourcesPort}, #{resourcesPassword}, #{resourcesStatus}, #{resourceTenant}, #{leaseExpirationTime}, #{salesStatus}, #{availableStatus}, #{cloudServiceProvider}, #{cloudUser}, #{nodeUrl}, #{nodePort}, #{publicBrokerKey}, #{sni}, #{shortId}, #{userId}, #{commodityId}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{entity.id},#{resourcesIp}, #{resourcesPort}, #{resourcesPassword}, #{resourcesStatus}, #{resourceTenant}, #{leaseExpirationTime}, #{salesStatus}, #{availableStatus},  #{vendorAccountId}, #{nodeUrl}, #{nodePort}, #{publicBrokerKey}, #{sni}, #{shortId}, #{userId}, #{commodityId}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
         values
              <foreach collection="entities" item="entity" separator=",">
-             (#{entity.id},#{entity.resourcesIp}, #{entity.resourcesPort}, #{entity.resourcesPassword}, #{entity.resourcesStatus}, #{entity.resourceTenant}, #{entity.leaseExpirationTime}, #{entity.salesStatus}, #{entity.availableStatus}, #{entity.cloudServiceProvider}, #{entity.cloudUser}, #{entity.nodeUrl}, #{entity.nodePort}, #{entity.publicBrokerKey}, #{entity.sni}, #{entity.shortId}, #{entity.userId}, #{entity.commodityId}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             (#{entity.id},#{entity.resourcesIp}, #{entity.resourcesPort}, #{entity.resourcesPassword}, #{entity.resourcesStatus}, #{entity.resourceTenant}, #{entity.leaseExpirationTime}, #{entity.salesStatus}, #{entity.availableStatus},  #{entity.vendorAccountId}, #{entity.nodeUrl}, #{entity.nodePort}, #{entity.publicBrokerKey}, #{entity.sni}, #{entity.shortId}, #{entity.userId}, #{entity.commodityId}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
              </foreach>
     </insert>
 
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, cloud_service_provider, cloud_user, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
+        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, node_url, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
         values
             <foreach collection="entities" item="entity" separator=",">
-                (#{entity.id},#{entity.resourcesIp}, #{entity.resourcesPort}, #{entity.resourcesPassword}, #{entity.resourcesStatus}, #{entity.resourceTenant}, #{entity.leaseExpirationTime}, #{entity.salesStatus}, #{entity.availableStatus}, #{entity.cloudServiceProvider}, #{entity.cloudUser}, #{entity.nodeUrl}, #{entity.nodePort}, #{entity.publicBrokerKey}, #{entity.sni}, #{entity.shortId}, #{entity.userId}, #{entity.commodityId}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+                (#{entity.id},#{entity.resourcesIp}, #{entity.resourcesPort}, #{entity.resourcesPassword}, #{entity.resourcesStatus}, #{entity.resourceTenant}, #{entity.leaseExpirationTime}, #{entity.salesStatus}, #{entity.availableStatus},  #{entity.vendorAccountId}, #{entity.nodeUrl}, #{entity.nodePort}, #{entity.publicBrokerKey}, #{entity.sni}, #{entity.shortId}, #{entity.userId}, #{entity.commodityId}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
             </foreach>
             on duplicate key update
         resources_ip = values(resources_ip),
@@ -423,8 +417,7 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         lease_expiration_time = values(lease_expiration_time),
         sales_status = values(sales_status),
         available_status = values(available_status),
-        cloud_service_provider = values(cloud_service_provider),
-        cloud_user = values(cloud_user),
+        vendor_account_id = values(vendor_account_id),
         node_url = values(node_url),
         node_port = values(node_port),
         public_broker_key = values(public_broker_key),

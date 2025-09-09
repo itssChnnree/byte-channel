@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -67,16 +68,13 @@ private static final long serialVersionUID = 1L;
      */
     @TableField(value = "available_status")
     private Integer availableStatus;
+
     /**
-     * 资源所属云服务商
+     * 资源所属云服务商账号id
      */
-    @TableField(value = "cloud_service_provider")
-    private String cloudServiceProvider;
-    /**
-     * 资源所属云服务商账号
-     */
-    @TableField(value = "cloud_user")
-    private String cloudUser;
+    @TableField("vendor_account_id")
+    private String vendorAccountId;
+
     /**
      * 节点导入链接
      */

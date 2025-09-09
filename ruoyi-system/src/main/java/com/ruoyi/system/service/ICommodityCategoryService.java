@@ -66,4 +66,13 @@ public interface ICommodityCategoryService {
      * @return com.ruoyi.system.http.Result
      **/
     Result systemPage();
+
+
+    /**
+     * [商品分类状态变更]
+     * @author 陈湘岳 2025/9/8
+     * @param commodityCategoryId 商品分类id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result updateAvailableStatus(String commodityCategoryId);
 }

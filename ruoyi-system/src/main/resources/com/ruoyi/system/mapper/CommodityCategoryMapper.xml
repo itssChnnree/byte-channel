@@ -169,7 +169,8 @@ id, category_name, summary, status, available_status, is_deleted, create_user, u
 
     <select id="systemPage" resultType="com.ruoyi.system.domain.vo.CommodityCategoryVo">
         select
-            id, category_name, summary, status, available_status
+            id, category_name, summary, status, available_status,sort,
+            (select count(*) from commodity where category_id = commodity_category.id and is_deleted = 0) as commodity_count
         from commodity_category
         where 1 = 1 and is_deleted = 0
         order by  sort, create_time desc
@@ -178,8 +179,8 @@ id, category_name, summary, status, available_status, is_deleted, create_user, u
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into commodity_category(id,category_name, summary, status, available_status, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{id},#{categoryName}, #{summary}, #{status}, #{availableStatus}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        insert into commodity_category(id,category_name, summary, status, available_status,sort, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{categoryName}, #{summary}, #{status}, #{availableStatus}, #{sort}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">

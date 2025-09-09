@@ -65,16 +65,9 @@ public class ServerResourcesDto{
     @ApiModelProperty("可售状态，可售状态,0为下架，1为上架")
     @NotNull(message = "可售状态不能为空")
     private Integer availableStatus;
-    
-    @ApiModelProperty("资源所属云服务商")
-    @NotBlank(message = "资源所属云服务商不能为空")
-    //存储云服务商id
-    private String cloudServiceProvider;
-    
-    @ApiModelProperty("资源所属云服务商账号")
-    @NotBlank(message = "资源所属云服务商不能为空")
-    //存储云服务商账户id
-    private String cloudUser;
+
+    @ApiModelProperty("资源所属云服务商账号id")
+    private String vendorAccountId;
     
     @ApiModelProperty("节点导入链接")
     @NotBlank(message = "导入链接不能为空")

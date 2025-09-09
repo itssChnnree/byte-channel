@@ -4,6 +4,7 @@ package com.ruoyi.system.service.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.CommodityCategory;
 import com.ruoyi.system.domain.dto.CommodityCategoryDto;
 import com.ruoyi.system.domain.dto.ListDto;
@@ -142,5 +143,29 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
     public Result systemPage() {
         List<CommodityCategoryVo> commodityCategoryVoIPage = commodityCategoryMapper.systemPage();
         return Result.success(commodityCategoryVoIPage);
+    }
+
+
+    /**
+     * [商品分类状态变更]
+     *
+     * @param commodityCategoryId 商品分类id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/8
+     **/
+    @Override
+    public Result updateAvailableStatus(String commodityCategoryId) {
+        CommodityCategory commodityCategory = commodityCategoryMapper.selectById(commodityCategoryId);
+        if (commodityCategory == null){
+            return Result.fail("商品分类不存在");
+        }
+
+        if (commodityCategory.getAvailableStatus() == 1){
+            commodityCategory.setAvailableStatus(0);
+        }else {
+            commodityCategory.setAvailableStatus(1);
+        }
+        commodityCategoryMapper.updateById( commodityCategory);
+        return Result.success("变更状态成功");
     }
 }

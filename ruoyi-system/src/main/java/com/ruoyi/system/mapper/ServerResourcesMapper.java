@@ -32,6 +32,15 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
 
 
     /**
+     * [查询存在资源的账号]
+     * @author 陈湘岳 2025/8/1
+     * @param accountId 商品id集合
+     * @return java.util.List<java.lang.String>
+     **/
+    Integer haveServerResourcesByAccount(@Param("accountId") String accountId);
+
+
+    /**
      * [修改资源可售状态及释放租售人]
      * @author 陈湘岳 2025/8/22
      * @param serverResourcesIds 资源id集合

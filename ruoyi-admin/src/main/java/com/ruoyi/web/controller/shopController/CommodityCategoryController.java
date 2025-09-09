@@ -1,7 +1,9 @@
 package com.ruoyi.web.controller.shopController;
 
 
+import cn.hutool.core.util.StrUtil;
 import com.ruoyi.system.domain.dto.CommodityCategoryDto;
+import com.ruoyi.system.domain.dto.IdDto;
 import com.ruoyi.system.domain.dto.ListDto;
 import com.ruoyi.system.group.InsertGroup;
 import com.ruoyi.system.group.UpdateGroup;
@@ -43,6 +45,20 @@ public class CommodityCategoryController {
         return commodityCategoryService.insert(commodityCategoryDto);
     }
 
+
+    @ApiOperation("分类上（下）架")
+    @PutMapping("/updateAvailableStatus")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result updateAvailableStatus(@RequestBody IdDto dto ){
+        String commodityCategoryId = dto.getId();
+        if (StrUtil.isBlank(commodityCategoryId)){
+            return Result.fail("商品分类编号不能为空");
+        }
+        return commodityCategoryService.updateAvailableStatus(commodityCategoryId);
+    }
+
+
+
     @PostMapping("/update")
     @ApiOperation("修改商品类别")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
@@ -53,7 +69,7 @@ public class CommodityCategoryController {
         return commodityCategoryService.update(commodityCategoryDto);
     }
 
-    @DeleteMapping("/deleteByIds")
+    @PostMapping("/deleteByIds")
     @ApiOperation("删除类别")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
     public Result deleteByIds(@RequestBody ListDto listDto){
