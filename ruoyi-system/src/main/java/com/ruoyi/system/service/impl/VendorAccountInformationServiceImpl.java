@@ -17,6 +17,7 @@ import com.ruoyi.system.domain.vo.CommodityVo;
 import com.ruoyi.system.domain.vo.VendorAccountInformationVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.ServerResourcesMapper;
+import com.ruoyi.system.mapper.SysUserMapper;
 import com.ruoyi.system.mapper.VendorAccountInformationMapper;
 import com.ruoyi.system.mapper.VendorInformationMapper;
 import com.ruoyi.system.mapstruct.VendorAccountInformationMapstruct;
@@ -50,6 +51,10 @@ public class VendorAccountInformationServiceImpl  implements IVendorAccountInfor
 
     @Resource
     private VendorInformationMapper vendorInformationMapper;
+
+
+    @Resource
+    private SysUserMapper sysUserMapper;
 
 
     /**

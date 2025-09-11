@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ResourceAllocationTemporaryStorageMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage"
+               id="ResourceAllocationTemporaryStorageMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="resourcesIp" column="resources_ip" jdbcType="VARCHAR"/>
+        <result property="nodePort" column="node_port" jdbcType="INTEGER"/>
+        <result property="publicKey" column="public_key" jdbcType="VARCHAR"/>
+        <result property="shortId" column="short_id" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="sni" column="sni" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.ResourceAllocationTemporaryStorageVo"
+               id="ResourceAllocationTemporaryStorageVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="resourcesIp" column="resources_ip" jdbcType="VARCHAR"/>
+        <result property="nodePort" column="node_port" jdbcType="INTEGER"/>
+        <result property="publicKey" column="public_key" jdbcType="VARCHAR"/>
+        <result property="shortId" column="short_id" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="sni" column="sni" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="ResourceAllocationTemporaryStorageVOMap">
+        select id,
+               resources_ip,
+               node_port,
+               public_key,
+               short_id,
+               user_id,
+               sni
+        from resource_allocation_temporary_storage
+        where id = #{id}
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="ResourceAllocationTemporaryStorageVOMap">
+        select
+        id, resources_ip, node_port, public_key, short_id, user_id, sni
+        from resource_allocation_temporary_storage
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="resourcesIp != null and resourcesIp != ''">
+                and resources_ip = #{resourcesIp}
+            </if>
+            <if test="nodePort != null">
+                and node_port = #{nodePort}
+            </if>
+            <if test="publicKey != null and publicKey != ''">
+                and public_key = #{publicKey}
+            </if>
+            <if test="shortId != null and shortId != ''">
+                and short_id = #{shortId}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="sni != null and sni != ''">
+                and sni = #{sni}
+            </if>
+        </where>
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="ResourceAllocationTemporaryStorageVOMap">
+        select
+        id, resources_ip, node_port, public_key, short_id, user_id, sni
+        from resource_allocation_temporary_storage
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.resourcesIp != null and dto.resourcesIp != ''">
+                and resources_ip = #{dto.resourcesIp}
+            </if>
+            <if test="dto.nodePort != null">
+                and node_port = #{dto.nodePort}
+            </if>
+            <if test="dto.publicKey != null and dto.publicKey != ''">
+                and public_key = #{dto.publicKey}
+            </if>
+            <if test="dto.shortId != null and dto.shortId != ''">
+                and short_id = #{dto.shortId}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.sni != null and dto.sni != ''">
+                and sni = #{dto.sni}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="ResourceAllocationTemporaryStorageVOMap">
+        select
+        id, resources_ip, node_port, public_key, short_id, user_id, sni
+        from resource_allocation_temporary_storage
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.resourcesIp != null and dto.resourcesIp != ''">
+                and resources_ip = #{dto.resourcesIp}
+            </if>
+            <if test="dto.nodePort != null">
+                and node_port = #{dto.nodePort}
+            </if>
+            <if test="dto.publicKey != null and dto.publicKey != ''">
+                and public_key = #{dto.publicKey}
+            </if>
+            <if test="dto.shortId != null and dto.shortId != ''">
+                and short_id = #{dto.shortId}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.sni != null and dto.sni != ''">
+                and sni = #{dto.sni}
+            </if>
+        </where>
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into resource_allocation_temporary_storage(id, resources_ip, node_port, public_key, short_id, user_id, sni)
+        values (#{entity.id}, #{resourcesIp}, #{nodePort}, #{publicKey}, #{shortId}, #{userId}, #{sni})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into resource_allocation_temporary_storage(id,resources_ip, node_port, public_key, short_id, user_id,
+        sni)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.resourcesIp}, #{entity.nodePort}, #{entity.publicKey}, #{entity.shortId},
+            #{entity.userId}, #{entity.sni})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into resource_allocation_temporary_storage(id,resources_ip, node_port, public_key, short_id, user_id,
+        sni)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.resourcesIp}, #{entity.nodePort}, #{entity.publicKey}, #{entity.shortId},
+            #{entity.userId}, #{entity.sni})
+        </foreach>
+        on duplicate key update
+        resources_ip = values(resources_ip),
+        node_port = values(node_port),
+        public_key = values(public_key),
+        short_id = values(short_id),
+        user_id = values(user_id),
+        sni = values(sni)
+    </insert>
+
+</mapper>
+

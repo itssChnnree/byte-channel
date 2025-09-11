@@ -47,4 +47,7 @@ public class VendorAccountInformationVo {
     @ApiModelProperty("厂商描述")
     private String vendorDescription;
 
+    @ApiModelProperty("管理人")
+    private String manager;
+
 }

@@ -31,13 +31,15 @@
                vendor_id,
                account,
                vi.vendor_description,
-               password,
+               vai.password,
                vendor_email,
                vendor_phone,
                vendor_url,
-               vendor_name
+               vendor_name,
+               nick_name as manager
         from vendor_account_information vai
         left join vendor_information vi on vai.vendor_id = vi.id
+        left join sys_user on vai.create_user = sys_user.user_id
         where vai.id = #{id}
           and vai.is_deleted = 0
     </select>
@@ -45,9 +47,9 @@
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="VendorAccountInformationVOMap">
         select
-        id, vendor_id, account, password, vendor_email, vendor_phone, is_deleted, create_user, update_user,
-        create_time, update_time
-        from vendor_account_information
+        id, vendor_id, account, vai.password, vendor_email, vendor_phone, nick_name as  manager
+        from vendor_account_information vai
+        left join sys_user on vai.create_user = sys_user.user_id
         <where>
             1 = 1 and is_deleted = 0
             <if test="vendorId != null and vendorId != ''">

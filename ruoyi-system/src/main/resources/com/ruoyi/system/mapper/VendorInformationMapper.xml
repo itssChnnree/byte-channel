@@ -19,11 +19,6 @@
         <result property="vendorName" column="vendor_name" jdbcType="VARCHAR"/>
         <result property="vendorUrl" column="vendor_url" jdbcType="VARCHAR"/>
         <result property="vendorDescription" column="vendor_description" jdbcType="VARCHAR"/>
-        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
-        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <!--��ѯ����-->

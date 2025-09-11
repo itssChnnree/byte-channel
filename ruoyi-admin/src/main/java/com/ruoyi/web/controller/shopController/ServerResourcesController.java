@@ -26,7 +26,7 @@ import java.util.List;
  **/
 @Api(tags = "服务器资源表")
 @RestController
-@RequestMapping("serverResources")
+@RequestMapping("/serverResources")
 
 public class ServerResourcesController{
 
