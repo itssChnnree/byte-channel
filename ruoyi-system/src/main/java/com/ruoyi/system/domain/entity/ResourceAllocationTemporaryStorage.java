@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.Date;
 
 
 /**
@@ -61,6 +62,12 @@ public class ResourceAllocationTemporaryStorage  implements Serializable {
     @TableField(value = "sni")
     private String sni;
 
+    @TableField(value = "remark")
+    private String remark;
+
+
+    @TableField(value = "create_time")
+    private Date createTime;
 
 
 }

@@ -43,7 +43,7 @@ spring:
     # 国际化资源文件路径
     basename: i18n/messages
   profiles:
-    active: dev
+    active: prod
   # 文件上传
   servlet:
     multipart:
@@ -119,7 +119,7 @@ shop:
 
 rocketmq:
   # rocketMq的nameServer地址
-  name-server: localhost:9876
+  name-server: 47.121.127.158:9876
   producer:
     # 生产者组别
     group: order-create

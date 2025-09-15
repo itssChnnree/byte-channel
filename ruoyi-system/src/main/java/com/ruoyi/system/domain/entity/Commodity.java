@@ -99,4 +99,10 @@ private static final long serialVersionUID = 1L;
     @TableField(value = "bandwidth")
     private String bandwidth;
 
+    @TableField("dest")
+    private String dest;
+
+    @TableField("server_names")
+    private String serverNames;
+
 }

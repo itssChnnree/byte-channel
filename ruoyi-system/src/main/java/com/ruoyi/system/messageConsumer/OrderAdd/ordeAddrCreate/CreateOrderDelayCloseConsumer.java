@@ -23,8 +23,9 @@ import javax.annotation.Resource;
  * @version v1.0.0
  * @date 2025/8/14
  */
-@RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_ORDER_DELAY_MESSAGE,
-        topic = RocketMqConstant.ORDER_ADD_TOPIC)
+//todo 暂时注释增加重启速度
+//@RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_ORDER_DELAY_MESSAGE,
+//        topic = RocketMqConstant.ORDER_ADD_TOPIC)
 @Slf4j
 @Component
 public class CreateOrderDelayCloseConsumer implements RocketMQListener<OrderMessageDto> {

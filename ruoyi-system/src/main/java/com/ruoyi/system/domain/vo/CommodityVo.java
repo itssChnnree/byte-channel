@@ -74,6 +74,12 @@ public class CommodityVo{
 
     @ApiModelProperty("所属资源数量")
     private Integer resourceNum;
-    
+
+
+    @ApiModelProperty("劫持域名")
+    private String dest;
+
+    @ApiModelProperty("可用域名")
+    private String serverNames;
 
 }

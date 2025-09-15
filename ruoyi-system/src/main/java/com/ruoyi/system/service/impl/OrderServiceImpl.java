@@ -38,6 +38,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -367,7 +368,13 @@ public class OrderServiceImpl implements IOrderService {
                 priceCalculateVo.setYearlyDiscountPrice("10.0%");
             }
         });
-        CompletableFuture.allOf(yearCalculatePrice,quarterlyCalculatePrice,monthlyCalculatePrice);
+        CompletableFuture<Void> voidCompletableFuture = CompletableFuture.allOf(yearCalculatePrice, quarterlyCalculatePrice, monthlyCalculatePrice);
+        try {
+            voidCompletableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("计算价格失败" + e.getMessage());
+            throw new RuntimeException("等待计算价格失败，请稍后再试");
+        }
         //计算价格
         return Result.success(priceCalculateVo);
     }

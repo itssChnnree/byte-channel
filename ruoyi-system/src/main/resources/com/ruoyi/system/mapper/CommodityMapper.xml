@@ -21,6 +21,8 @@
                 <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
                 <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
                 <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="serverNames" column="server_names" jdbcType="VARCHAR"/>
+                <result property="dest" column="dest" jdbcType="VARCHAR"/>
     </resultMap>
     
     <resultMap type="com.ruoyi.system.domain.vo.CommodityVo" id="CommodityVOMap">
@@ -37,6 +39,10 @@
                 <result property="hasStock" column="hasStock" jdbcType="BOOLEAN"/>
                 <result property="status" column="status" jdbcType="VARCHAR"/>
                 <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+                <result property="bandwidth" column="bandwidth" jdbcType="VARCHAR"/>
+                <result property="businessSuitable" column="business_suitable" jdbcType="VARCHAR"/>
+                <result property="serverNames" column="server_names" jdbcType="VARCHAR"/>
+                <result property="dest" column="dest" jdbcType="VARCHAR"/>
     </resultMap>
 
     <update id="update">
@@ -66,6 +72,18 @@
             <if test="alarmThreshold != null">
                 alarm_threshold = #{alarmThreshold},
             </if>
+            <if test="dest != null and dest !=''">
+                dest = #{dest},
+            </if>
+            <if test="serverNames != null and serverNames !=''">
+                server_names = #{serverNames},
+            </if>
+            <if test="bandwidth != null and bandwidth !=''">
+                bandwidth = #{bandwidth},
+            </if>
+            <if test="businessSuitable != null and businessSuitable !=''">
+                business_suitable = #{businessSuitable},
+            </if>
             <if test="description != null and description !=''">
                 `description` = #{description},
             </if>
@@ -92,8 +110,8 @@
             commodity_discounted_price, category_id,
             oversold_configurations, oversold, inventory,
             alarm_threshold, description, category,bandwidth,
-            c.status, c.available_status,business_suitable as businessSuitable,
-            if(oversold=oversold_configurations,0,1) as hasStock,
+            c.status, c.available_status,business_suitable,
+            if(oversold=oversold_configurations,0,1) as hasStock,dest,server_names,
             (select count(1) from server_resources where commodity_id=c.id and is_deleted = 0) as resourceNum,
         cc.category_name as category
         from commodity c left join commodity_category cc on c.category_id = cc.id
@@ -113,7 +131,7 @@
             c.id, commodity_name, commodity_price, commodity_discounted_price,
             category_id, oversold_configurations, oversold, inventory,
             alarm_threshold, c.description, category, c.is_deleted, c.status,
-            available_status
+            available_status,dest,server_names
         from `order` o
             left join order_commodity oo on o.id=oo.order_id
             left join commodity c on oo.commodity_id=c.id
@@ -259,6 +277,7 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
         alarm_threshold, description, category,
         status, available_status,business_suitable as businessSuitable,
         if(oversold=oversold_configurations,0,1) as hasStock,
+        dest, server_names,
         (select count(1) from server_resources where commodity_id=commodity.id and is_deleted = 0) as resourceNum
         from commodity
         <where>
@@ -356,15 +375,16 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time)
-        values (#{id},#{commodityName}, #{commodityPrice}, #{commodityDiscountedPrice}, #{categoryId}, #{oversoldConfigurations}, #{oversold}, #{inventory}, #{alarmThreshold}, #{description}, #{category}, #{isDeleted}, #{status}, #{availableStatus}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status,dest,server_names, create_user, update_user, create_time, update_time)
+        values (#{id},#{commodityName}, #{commodityPrice}, #{commodityDiscountedPrice}, #{categoryId}, #{oversoldConfigurations}, #{oversold}, #{inventory}, #{alarmThreshold}, #{description}, #{category}, #{isDeleted}, #{status}, #{availableStatus},#{dest},#{serverNames}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time)
+        insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status,dest,server_names, create_user, update_user, create_time, update_time)
         values
              <foreach collection="entities" item="entity" separator=",">
-             (#{entity.id},#{entity.commodityName}, #{entity.commodityPrice}, #{entity.commodityDiscountedPrice}, #{entity.categoryId}, #{entity.oversoldConfigurations}, #{entity.oversold}, #{entity.inventory}, #{entity.alarmThreshold}, #{entity.description}, #{entity.category}, #{entity.isDeleted}, #{entity.status}, #{entity.availableStatus}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             (#{entity.id},#{entity.commodityName}, #{entity.commodityPrice}, #{entity.commodityDiscountedPrice}, #{entity.categoryId}, #{entity.oversoldConfigurations}, #{entity.oversold}, #{entity.inventory}, #{entity.alarmThreshold}, #{entity.description}, #{entity.category}, #{entity.isDeleted}, #{entity.status},
+              #{entity.availableStatus}, #{entity.availableStatus},#{entity.dest}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
              </foreach>
     </insert>
 

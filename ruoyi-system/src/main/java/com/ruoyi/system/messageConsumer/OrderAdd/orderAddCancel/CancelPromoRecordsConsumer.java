@@ -18,8 +18,9 @@ import javax.annotation.Resource;
  * @version v1.0.0
  * @date 2025/8/23
  */
-@RocketMQMessageListener(consumerGroup = RocketMqConstant.CANCEL_PROMO_RECORDS,
-        topic = RocketMqConstant.ORDER_ADD_CANCEL_TOPIC)
+//todo 暂时注释增加重启速度
+//@RocketMQMessageListener(consumerGroup = RocketMqConstant.CANCEL_PROMO_RECORDS,
+//        topic = RocketMqConstant.ORDER_ADD_CANCEL_TOPIC)
 @Slf4j
 @Service
 public class CancelPromoRecordsConsumer implements RocketMQListener<OrderMessageDto> {

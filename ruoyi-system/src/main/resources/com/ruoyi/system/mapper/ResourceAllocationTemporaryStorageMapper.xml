@@ -132,10 +132,22 @@
     </select>
 
 
+    <select id="page" resultType="com.ruoyi.system.domain.vo.ResourceAllocationTemporaryStorageVo">
+        select
+        id, resources_ip,remark
+        from resource_allocation_temporary_storage
+        where  1 = 1
+        <if test="ip != null and ip != ''">
+            and resources_ip like concat('%',#{ip},'%')
+        </if>
+        order by create_time limit 40
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into resource_allocation_temporary_storage(id, resources_ip, node_port, public_key, short_id, user_id, sni)
-        values (#{entity.id}, #{resourcesIp}, #{nodePort}, #{publicKey}, #{shortId}, #{userId}, #{sni})
+        insert into resource_allocation_temporary_storage(id, resources_ip, node_port, public_key, short_id, user_id, sni,remark,create_time)
+        values (#{id}, #{resourcesIp}, #{nodePort}, #{publicKey}, #{shortId}, #{userId}, #{sni},#{remark},#{createTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">

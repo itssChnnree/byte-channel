@@ -93,4 +93,10 @@ public class CommodityDto extends PageBase {
 
     @ApiModelProperty("商品适用业务")
     private String businessSuitable;
+
+    @ApiModelProperty("劫持域名")
+    private String dest;
+
+    @ApiModelProperty("可用域名")
+    private String serverNames;
 }

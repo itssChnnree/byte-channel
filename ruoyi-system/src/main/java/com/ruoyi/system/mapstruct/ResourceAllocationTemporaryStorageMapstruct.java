@@ -16,7 +16,7 @@ import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
  * @version v1.0.0
  * @date 2025-09-11 15:28:58
  */
-@Mapper
+@Mapper(componentModel = "spring")
 public interface ResourceAllocationTemporaryStorageMapstruct {
     ResourceAllocationTemporaryStorageMapstruct INSTANCE = Mappers.getMapper(ResourceAllocationTemporaryStorageMapstruct.class);
 

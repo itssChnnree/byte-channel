@@ -4,7 +4,11 @@ package com.ruoyi.system.domain.dto;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 
 /**
@@ -14,18 +18,21 @@ import lombok.NoArgsConstructor;
  * @version v1.0.0
  * @date 2025-09-11 15:28:58
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResourceAllocationTemporaryStorageDto {
+public class ResourceAllocationTemporaryStorageDto extends AuthDto{
 
     @ApiModelProperty("主键")
     private String id;
 
     @ApiModelProperty("服务器ip")
+    @NotBlank(message = "服务器ip不能为空")
     private String resourcesIp;
 
     @ApiModelProperty("节点端口")
+    @NotNull(message = "节点端口不能为空")
     private Integer nodePort;
 
     @ApiModelProperty("公钥")
@@ -39,6 +46,9 @@ public class ResourceAllocationTemporaryStorageDto {
 
     @ApiModelProperty("vless协议劫持域名")
     private String sni;
+
+    @ApiModelProperty("备注")
+    private String remark;
 
 
 }

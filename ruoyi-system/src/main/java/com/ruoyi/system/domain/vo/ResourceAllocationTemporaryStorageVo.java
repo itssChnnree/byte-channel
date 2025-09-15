@@ -39,5 +39,9 @@ public class ResourceAllocationTemporaryStorageVo {
     @ApiModelProperty("vless协议劫持域名")
     private String sni;
 
+    @ApiModelProperty("备注")
+    private String remark;
+
+
 
 }
