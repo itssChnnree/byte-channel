@@ -2,7 +2,10 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.entity.ServerResources;
+import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
+import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
@@ -72,4 +75,32 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return int
      **/
     int updateLeaseExpirationTimeQuarter(@Param("resourcesId") List<String> serverResourcesIds);
+
+
+    /**
+     * [通过ip查询暂存数据及资源数据]
+     * @author 陈湘岳 2025/9/16
+     * @param ip
+     * @return ResourceAllocationTemporaryStorage
+     **/
+    ResourceAllocationTemporaryStorage findByIp(@Param("ip") String ip);
+
+
+    /**
+     * [通过ip查询相关数据]
+     * @author 陈湘岳 2025/9/16
+     * @param ip
+     * @return ResourceAllocationTemporaryStorage
+     **/
+    ServerResources findByIpServerResources(@Param("ip") String ip);
+
+
+    /**
+     * [服务器资源管理分页查询]
+     * @author 陈湘岳 2025/9/17
+     * @param serverResourcesPageDto 查询入参
+     * @return java.util.List<com.ruoyi.system.domain.vo.ServerResourcesPageVo>
+     **/
+    List<ServerResourcesPageVo> findPage(@Param("dto") ServerResourcesPageDto serverResourcesPageDto);
+
 }

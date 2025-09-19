@@ -2,17 +2,28 @@ package com.ruoyi.web.controller.shopController;
 
 import com.github.pagehelper.Page;
 import com.ruoyi.common.utils.uuid.UUID;
+import com.ruoyi.system.domain.dto.ResourceProcessingDto;
+import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IServerResourcesService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.Cleanup;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,28 +55,28 @@ public class ServerResourcesController{
     }
 
 
-
-    @GetMapping("/test")
-    public Result<Page<ServerResources>> test() {
-        //随机生成一个返回对象
-        Page<ServerResources> page = new Page<>(1, 10);
-        page.setTotal(100);
-        List<ServerResources> list = new ArrayList<>();
-        //模拟数据
-        for (int i = 0; i < 10; i++) {
-            ServerResources serverResources = new ServerResources();
-            serverResources.setId(UUID.fastUUID().toString());
-            serverResources.setResourcesIp("192.168.1."+i);
-            serverResources.setResourcesPort("8080");
-            serverResources.setResourcesStatus("normal");
-            serverResources.setResourceTenant("admin");
-            serverResources.setLeaseExpirationTime(new Date());
-            serverResources.setSalesStatus("normal");
-            serverResources.setAvailableStatus(1);
-            serverResources.setNodeUrl("http://192.168.1."+i+":8080");
-            list.add(serverResources);
+    @PostMapping("/resourceProcessing")
+    @ApiOperation("处理从节点上报的资源")
+    public Result<ServerResources> resourceProcessing(@RequestBody @Valid ResourceProcessingDto resourceProcessingDto, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
         }
-        page.addAll(list);
-        return Result.success(page);
+        return serverResourcesService.resourceProcessing(resourceProcessingDto);
     }
+
+
+    @PostMapping("/getResourcesPage")
+    @ApiOperation("资源分页查询")
+    public Result getResourcesPage(@RequestBody ServerResourcesPageDto serverResourcesPageDto) {
+        return serverResourcesService.getResourcesPage(serverResourcesPageDto);
+    }
+
+
+    //下载clash配置文件
+    @GetMapping("/download")
+    @ApiOperation("下载clash配置文件")
+    public ResponseEntity download(String resourcesId){
+        return serverResourcesService.download(resourcesId);
+    }
+
 }

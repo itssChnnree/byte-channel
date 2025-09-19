@@ -11,8 +11,8 @@ public interface AvailableStatus {
 
 
     //上架
-    String AVAILABLE_STATUS_UP = "1";
+    Integer AVAILABLE_STATUS_UP = 1;
 
     //下架
-    String AVAILABLE_STATUS_DOWN = "0";
+    Integer AVAILABLE_STATUS_DOWN = 0;
 }

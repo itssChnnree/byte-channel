@@ -7,7 +7,9 @@ import com.ruoyi.common.helper.email.EmailSender;
 import com.ruoyi.system.domain.entity.WalletBalance;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.WalletBalanceMapper;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import com.ruoyi.common.constant.CacheConstants;
 import com.ruoyi.common.constant.Constants;
@@ -25,6 +27,7 @@ import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.framework.manager.factory.AsyncFactory;
 import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysUserService;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.annotation.Resource;
 import javax.mail.MessagingException;

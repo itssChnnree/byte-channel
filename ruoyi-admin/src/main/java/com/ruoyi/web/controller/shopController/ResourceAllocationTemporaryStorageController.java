@@ -52,4 +52,9 @@ public class ResourceAllocationTemporaryStorageController  {
         return resourceAllocationTemporaryStorageService.deleteById(id);
     }
 
+
+
+
+
+
 }

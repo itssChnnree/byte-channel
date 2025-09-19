@@ -9,6 +9,9 @@ public interface ResourcesStatus {
     //正常
     public static final String NORMAL = "NORMAL";
 
+    //异常
+    public static final String ERROR = "ERROR";
+
     //服务器下线
     public static final String OFFLINE = "OFFLINE";
 
@@ -20,5 +23,8 @@ public interface ResourcesStatus {
 
     //待获取通知数据
     public static final String WAIT_NOTICE_DATA = "WAIT_NOTICE_DATA";
+
+    //待检测
+    public static final String WAIT_CHECK = "WAIT_CHECK";
 
 }

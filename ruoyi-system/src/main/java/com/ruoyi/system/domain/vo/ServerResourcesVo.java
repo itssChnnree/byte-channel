@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotBlank;
+
 
 /**
  * 服务器资源表(ServerResources)
@@ -29,6 +31,10 @@ public class ServerResourcesVo{
     @ApiModelProperty("服务器端口")
     private String resourcesPort;
 
+    @ApiModelProperty("服务器账号")
+    @NotBlank(message = "服务器账号不能为空")
+    private String resourcesUserName;
+
     @ApiModelProperty("服务器密码")
     private String resourcesPassword;
 
@@ -50,8 +56,6 @@ public class ServerResourcesVo{
     @ApiModelProperty("资源所属云服务商账号id")
     private String vendorAccountId;
 
-    @ApiModelProperty("节点导入链接")
-    private String nodeUrl;
 
     @ApiModelProperty("节点端口")
     private String nodePort;

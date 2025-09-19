@@ -8,11 +8,11 @@ package com.ruoyi.system.constant;
  **/
 public interface SalesStatus {
 
-    //在售中
-    String SALES_STATUS_ON_SALE = "SALE";
+    //已售出
+    String ON_SALE = "SALE";
 
     //未售出
-    String SALES_STATUS_NOT_ON_SALE = "NOT_SALE";
+    String NOT_SALE = "NOT_SALE";
 
 
 }

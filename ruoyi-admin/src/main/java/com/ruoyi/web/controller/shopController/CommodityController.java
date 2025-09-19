@@ -86,6 +86,18 @@ public class CommodityController {
     }
 
 
+    @GetMapping("/findResourcesById")
+    @ApiOperation("查询资源管理中的商品详情")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result findResourcesById(String id){
+        if (StrUtil.isBlank( id)){
+            return Result.fail("商品编号不能为空");
+        }
+        return commodityService.findById(id);
+    }
+
+
+
     @ApiOperation("商品上（下）架")
     @PutMapping("/updateAvailableStatus")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")

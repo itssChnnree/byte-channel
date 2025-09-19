@@ -4,6 +4,7 @@ import com.ruoyi.system.domain.dto.ResourceAllocationTemporaryStorageDto;
 import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.ResourceAllocationTemporaryStorageMapper;
+import com.ruoyi.system.mapper.ServerResourcesMapper;
 import com.ruoyi.system.mapstruct.ResourceAllocationTemporaryStorageMapstruct;
 import com.ruoyi.system.service.IResourceAllocationTemporaryStorageService;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,9 @@ public class ResourceAllocationTemporaryStorageServiceImpl  implements IResource
     @Resource
     private ResourceAllocationTemporaryStorageMapstruct resourceAllocationTemporaryStorageMapstruct;
 
+    @Resource
+    private ServerResourcesMapper serverResourcesMapper;
+
     /**
      * [新增资源暂存数据]
      *
@@ -36,6 +40,10 @@ public class ResourceAllocationTemporaryStorageServiceImpl  implements IResource
      **/
     @Override
     public Result add(ResourceAllocationTemporaryStorageDto resourceAllocationTemporaryStorageDto) {
+        ResourceAllocationTemporaryStorage byIp = serverResourcesMapper.findByIp(resourceAllocationTemporaryStorageDto.getResourcesIp());
+        if (byIp != null){
+            return Result.success(byIp);
+        }
         ResourceAllocationTemporaryStorage resourceAllocationTemporaryStorage = resourceAllocationTemporaryStorageMapstruct.changeDto2(resourceAllocationTemporaryStorageDto);
         resourceAllocationTemporaryStorage.setCreateTime(new Date());
         resourceAllocationTemporaryStorageMapper.insert(resourceAllocationTemporaryStorage);

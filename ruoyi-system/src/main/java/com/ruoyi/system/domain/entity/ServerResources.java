@@ -38,6 +38,13 @@ private static final long serialVersionUID = 1L;
      */
     @TableField(value = "resources_port")
     private String resourcesPort;
+
+    /**
+     * 服务器账号
+     */
+    @TableField(value = "resources_user_name")
+    private String resourcesUserName;
+
     /**
      * 服务器密码
      */
@@ -76,11 +83,6 @@ private static final long serialVersionUID = 1L;
     private String vendorAccountId;
 
     /**
-     * 节点导入链接
-     */
-    @TableField(value = "node_url")
-    private String nodeUrl;
-    /**
      * 节点端口
      */
     @TableField(value = "node_port")
@@ -91,11 +93,7 @@ private static final long serialVersionUID = 1L;
      */
     @TableField(value = "public_broker_key")
     private String publicBrokerKey;
-    /**
-     * vless协议publicKey
-     */
-    @TableField(value = "public_key")
-    private String publicKey;
+
     /**
      * vless协议劫持域名
      */

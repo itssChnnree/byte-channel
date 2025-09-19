@@ -30,4 +30,21 @@ public interface ResourceAllocationTemporaryStorageMapper extends BaseMapper<Res
      * @return java.util.List<com.ruoyi.system.domain.vo.ResourceAllocationTemporaryStorageVo>
      **/
     List<ResourceAllocationTemporaryStorageVo> page(@Param("ip") String ip);
+
+    /**
+     * [根据ip查询]
+     * @author 陈湘岳 2025/9/12
+     * @param ip
+     * @return com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage
+     **/
+    ResourceAllocationTemporaryStorage selectByIp(@Param("ip") String ip);
+
+
+    /**
+     * [根据ip删除]
+     * @author 陈湘岳 2025/9/12
+     * @param ip
+     * @return int
+     **/
+    int deleteByIp(@Param("ip") String ip);
 }

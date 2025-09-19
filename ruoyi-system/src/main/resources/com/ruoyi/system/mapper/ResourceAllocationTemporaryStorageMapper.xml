@@ -24,6 +24,11 @@
         <result property="sni" column="sni" jdbcType="VARCHAR"/>
     </resultMap>
 
+
+    <delete id="deleteByIp">
+        delete from resource_allocation_temporary_storage where resources_ip = #{ip}
+    </delete>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="ResourceAllocationTemporaryStorageVOMap">
         select id,
@@ -141,6 +146,10 @@
             and resources_ip like concat('%',#{ip},'%')
         </if>
         order by create_time limit 40
+    </select>
+
+    <select id="selectByIp" resultType="com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage">
+        select * from resource_allocation_temporary_storage where resources_ip = #{ip}
     </select>
 
 

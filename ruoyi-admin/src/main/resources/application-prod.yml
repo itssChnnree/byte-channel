@@ -96,3 +96,6 @@ ruoyi:
     addressEnabled: false
     # 验证码类型 math 数字计算 char 字符验证
     captchaType: math
+
+resources:
+  clashUrl: http://8.155.17.11:${server.port}/serverResources/download

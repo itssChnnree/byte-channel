@@ -1,4 +1,4 @@
-package com.ruoyi.system.Util;
+package com.ruoyi.system.util;
 
 import com.ruoyi.system.anno.InitializeWith;
 import org.springframework.util.CollectionUtils;

@@ -2,6 +2,7 @@ package com.ruoyi.system.domain.dto;
 
 import java.util.Date;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.ruoyi.system.group.InsertGroup;
 import com.ruoyi.system.group.UpdateGroup;
 import io.swagger.annotations.ApiModelProperty;
@@ -46,6 +47,12 @@ public class ServerResourcesDto{
             groups = {InsertGroup.class})
     private String resourcesPort;
 
+
+    @ApiModelProperty("服务器账号")
+    @NotBlank(message = "服务器账号不能为空")
+    private String resourcesUserName;
+
+
     @ApiModelProperty("服务器密码")
     @NotBlank(message = "服务器密码不能为空")
     private String resourcesPassword;
@@ -68,10 +75,7 @@ public class ServerResourcesDto{
 
     @ApiModelProperty("资源所属云服务商账号id")
     private String vendorAccountId;
-    
-    @ApiModelProperty("节点导入链接")
-    @NotBlank(message = "导入链接不能为空")
-    private String nodeUrl;
+
 
     @ApiModelProperty("vless协议publickey")
     private String publicBrokerKey;

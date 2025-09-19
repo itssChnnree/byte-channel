@@ -1,9 +1,14 @@
 package com.ruoyi.system.service;
 
 
+import com.ruoyi.system.domain.dto.ResourceProcessingDto;
+import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
 import com.ruoyi.system.http.Result;
+import org.springframework.http.ResponseEntity;
+
+import javax.validation.Valid;
 
 /**
  * 服务器资源表(ServerResources)�����ӿ�
@@ -24,4 +29,31 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.domain.entity.ServerResources
      **/
     Result<ServerResources> insert(ServerResourcesDto serverResources);
+
+    /**
+     * [处理节点上报资源]
+     * @author 陈湘岳 2025/9/16
+     * @param resourceProcessingDto 上报参数
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    Result<ServerResources> resourceProcessing(@Valid ResourceProcessingDto resourceProcessingDto);
+
+    /**
+     * [资源分页查询]
+     * @author 陈湘岳 2025/9/17
+     * @param serverResourcesPageDto
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getResourcesPage(ServerResourcesPageDto serverResourcesPageDto);
+
+
+
+
+    /**
+     * [下载clash配置文件]
+     * @author 陈湘岳 2025/9/17
+     * @param resourceId 资源id
+     * @return org.springframework.http.ResponseEntity
+     **/
+    ResponseEntity download(String resourceId);
 }

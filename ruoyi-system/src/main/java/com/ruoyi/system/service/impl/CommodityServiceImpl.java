@@ -1,12 +1,10 @@
 package com.ruoyi.system.service.impl;
 
 
-import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.ruoyi.system.Util.DefaultValueUtil;
+import com.ruoyi.system.util.DefaultValueUtil;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.CommodityCategory;
 import com.ruoyi.system.domain.dto.CommodityDto;
