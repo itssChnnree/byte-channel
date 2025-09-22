@@ -5,11 +5,11 @@ mode: global
 log-level: info
 external-controller: 9090
 proxies:
-- name: 美西
+- name: ${commodityName}
   type: vless
-  server: 38.107.169.12
-  port: 52548
-  uuid: 566c6bc0-703f-4fcb-a51d-f52ec3ae82bb
+  server: ${ip}
+  port: ${port}
+  uuid: ${uuid}
   encryption: none
   udp: true
   skip-cert-verify: true
@@ -17,9 +17,9 @@ proxies:
   flow: xtls-rprx-vision
   tls: true
   reality-opts:
-    public-key: vvRTOvsgjLk74nMxjpzgIEJwSRG9fBHaDmMDWsdYmkE
-    short-id: e10320fa78ef
-  servername: lacity.gov
+    public-key: ${publicKey}
+    short-id: ${shortId}
+  servername: ${serverName}
   client-fingerprint: chrome
   network: tcp
 rules: []

@@ -78,5 +78,11 @@ public interface ICommodityService {
     Result updateAvailableStatus(String commodityId);
 
 
-
+    /**
+     * [资源管理商品详情查询]
+     * @author 陈湘岳 2025/9/19
+     * @param id 商品id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result findResourcesById(String id);
 }

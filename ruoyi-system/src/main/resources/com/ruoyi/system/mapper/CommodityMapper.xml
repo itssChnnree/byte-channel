@@ -373,6 +373,28 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
     </select>
 
 
+    <select id="findResourcesById" resultType="com.ruoyi.system.domain.vo.ResourcesCommodityVo">
+        select category_name as commodityCategory,
+               commodity_name as commodityName,
+               description as commodityDescription,
+               if(commodity_discounted_price is not null,commodity_discounted_price,commodity_price) as commodityPrice,
+               cc.id as commodityCategoryId,
+               category_name as commodityCategory,
+               cc.summary as commodityCategorySummary,
+               c.available_status as availableStatus
+        from commodity c
+        left join commodity_category cc on c.category_id=cc.id
+        where c.id = #{id} and c.is_deleted = 0
+    </select>
+
+
+
+    <select id="findCommodityNameByResourcesId" resultType="java.lang.String">
+        select commodity_name from server_resources sr left join commodity c on sr.commodity_id = c.id
+        where c.is_deleted=0 and sr.id=#{resourcesId}
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status,dest,server_names, create_user, update_user, create_time, update_time)

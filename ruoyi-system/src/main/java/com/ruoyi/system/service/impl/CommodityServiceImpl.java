@@ -4,6 +4,7 @@ package com.ruoyi.system.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.ruoyi.system.domain.vo.ResourcesCommodityVo;
 import com.ruoyi.system.util.DefaultValueUtil;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.CommodityCategory;
@@ -205,5 +206,21 @@ public class CommodityServiceImpl  implements ICommodityService {
         }
         commodityMapper.updateById( commodity);
         return Result.success("变更状态成功");
+    }
+
+    /**
+     * [资源管理商品详情查询]
+     *
+     * @param id 商品id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/19
+     **/
+    @Override
+    public Result findResourcesById(String id) {
+        ResourcesCommodityVo resourcesCommodityVo = commodityMapper.findResourcesById(id);
+        if (resourcesCommodityVo == null){
+            return Result.fail("未查询到商品信息");
+        }
+        return Result.success(resourcesCommodityVo);
     }
 }

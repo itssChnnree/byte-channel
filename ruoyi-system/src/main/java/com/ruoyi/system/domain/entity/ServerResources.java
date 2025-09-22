@@ -114,6 +114,10 @@ private static final long serialVersionUID = 1L;
      */
     @TableField(value = "commodity_id")
     private String commodityId;
-
+    /**
+     * 导入链接时的随机密码
+     */
+    @TableField(value = "password")
+    private String password;
 
 }

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.dto.CommodityDto;
 import com.ruoyi.system.domain.vo.CommodityVo;
+import com.ruoyi.system.domain.vo.ResourcesCommodityVo;
 import com.ruoyi.system.domain.vo.ShoppingCartCommodityVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -101,4 +102,22 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
      * @return java.util.List<com.ruoyi.system.domain.vo.CommodityVo>
      **/
     List<CommodityVo> userPage(@Param("dto") CommodityDto commodityDto);
+
+
+    /**
+     * [根据商品id查询资源管理商品详情]
+     * @author 陈湘岳 2025/9/19
+     * @param id 商品id
+     * @return com.ruoyi.system.domain.vo.ResourcesCommodityVo
+     **/
+    ResourcesCommodityVo findResourcesById(@Param("id") String id);
+
+
+    /**
+     * [根据资源id查询商品名称]
+     * @author 陈湘岳 2025/9/19
+     * @param resourcesId 资源id
+     * @return java.lang.String
+     **/
+    String findCommodityNameByResourcesId(@Param("resourcesId") String resourcesId);
 }

@@ -55,5 +55,14 @@ public interface IServerResourcesService{
      * @param resourceId 资源id
      * @return org.springframework.http.ResponseEntity
      **/
-    ResponseEntity download(String resourceId);
+    ResponseEntity download(String resourceId,String password);
+
+
+    /**
+     * [获取导入链接]
+     * @author 陈湘岳 2025/9/22
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getImportUrl(String resourcesId,Boolean hasAuth);
 }

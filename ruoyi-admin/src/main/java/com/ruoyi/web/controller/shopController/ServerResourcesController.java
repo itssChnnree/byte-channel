@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.shopController;
 
 import com.github.pagehelper.Page;
 import com.ruoyi.common.utils.uuid.UUID;
+import com.ruoyi.framework.web.service.PermissionService;
 import com.ruoyi.system.domain.dto.ResourceProcessingDto;
 import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.entity.ServerResources;
@@ -15,6 +16,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +46,9 @@ public class ServerResourcesController{
     @Resource(name = "serverResourcesService")
     IServerResourcesService serverResourcesService;
 
+    @Resource
+    private PermissionService permissionService;
+
 
     @PostMapping("/insert")
     @ApiOperation("添加服务器资源")
@@ -57,6 +62,7 @@ public class ServerResourcesController{
 
     @PostMapping("/resourceProcessing")
     @ApiOperation("处理从节点上报的资源")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
     public Result<ServerResources> resourceProcessing(@RequestBody @Valid ResourceProcessingDto resourceProcessingDto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
@@ -67,6 +73,7 @@ public class ServerResourcesController{
 
     @PostMapping("/getResourcesPage")
     @ApiOperation("资源分页查询")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
     public Result getResourcesPage(@RequestBody ServerResourcesPageDto serverResourcesPageDto) {
         return serverResourcesService.getResourcesPage(serverResourcesPageDto);
     }
@@ -75,8 +82,16 @@ public class ServerResourcesController{
     //下载clash配置文件
     @GetMapping("/download")
     @ApiOperation("下载clash配置文件")
-    public ResponseEntity download(String resourcesId){
-        return serverResourcesService.download(resourcesId);
+    public ResponseEntity download(String resourcesId,String password){
+        return serverResourcesService.download(resourcesId,password);
+    }
+
+
+    //下载clash配置文件
+    @GetMapping("/getImportUrl")
+    @ApiOperation("获取导入链接")
+    public Result getImportUrl(String resourcesId){
+        return serverResourcesService.getImportUrl(resourcesId, permissionService.hasPermi("shop:background:admin"));
     }
 
 }

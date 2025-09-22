@@ -2,6 +2,7 @@ package com.ruoyi.system.service.impl;
 
 
 import cn.hutool.core.lang.Dict;
+import cn.hutool.core.net.url.UrlPath;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.template.Template;
 import cn.hutool.extra.template.TemplateConfig;
@@ -12,6 +13,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.exception.base.BaseException;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.AvailableStatus;
 import com.ruoyi.system.constant.ResourcesStatus;
 import com.ruoyi.system.constant.SalesStatus;
@@ -21,6 +23,7 @@ import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
+import com.ruoyi.system.domain.vo.ResourcesImportVo;
 import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
 import com.ruoyi.system.domain.vo.VendorAccountInformationVo;
 import com.ruoyi.system.domain.vo.XrayRestartVo;
@@ -33,6 +36,8 @@ import com.ruoyi.system.mapstruct.ServerResourcesMapstruct;
 import com.ruoyi.system.service.IServerResourcesService;
 import com.ruoyi.system.util.XrayManager;
 import lombok.Cleanup;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -45,6 +50,10 @@ import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -73,6 +82,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
     @Resource
     private ResourceAllocationTemporaryStorageMapper resourceAllocationTemporaryStorageMapper;
+
+    @Value("${resources.clashUrl}")
+    private String clashDownloadUrl;
 
 
 
@@ -204,6 +216,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResources.setPublicBrokerKey(xrayRestartVo.getPublicKey());
         serverResources.setSni(commodity.getServerNames());
         serverResources.setShortId(xrayRestartVo.getShortId());
+        serverResources.setPassword(generateSecureRandomString(20));
         serverResources.setUserId(userId);
         serverResources.setCommodityId(commodity.getId());
         return serverResources;
@@ -216,6 +229,23 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     }
 
 
+    // 方法1: 使用SecureRandom生成安全随机字符串
+    public static String generateSecureRandomString(int length) {
+        if (length <= 0) {
+            throw new IllegalArgumentException("长度必须大于0");
+        }
+
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[length];
+        random.nextBytes(bytes);
+
+        // 使用Base64编码确保可打印字符
+        String base64 = Base64.getEncoder().encodeToString(bytes);
+
+        // 移除Base64的填充字符并截取所需长度
+        return base64.replace("=", "").substring(0, length);
+    }
+
     /**
      * [下载clash配置文件]
      *
@@ -224,13 +254,13 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      * @author 陈湘岳 2025/9/17
      **/
     @Override
-    public ResponseEntity download(String resourceId) {
-        ServerResources serverResources = serverResourcesMapper.selectById(resourceId);
+    public ResponseEntity download(String resourceId,String password) {
+        ServerResources serverResources = serverResourcesMapper.selectByIdAndResourceTenant(resourceId,password);
         if (ObjectUtils.isEmpty(serverResources)){
             throw new BaseException("资源不存在");
         }
         try {
-            ClassPathResource resource = new ClassPathResource("templates/Config1.yaml");
+            ClassPathResource resource = new ClassPathResource("templates/Config.yaml");
             if (resource.exists()) {
                 @Cleanup
                 InputStream inputStream = resource.getInputStream();
@@ -247,7 +277,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
                 // 设置响应头，包括文件名等信息，让浏览器能正确识别并下载文件
                 HttpHeaders headers = new HttpHeaders();
-                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Config1.yaml");
+                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Config.yaml");
                 headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
                 // 返回响应实体，包含文件字节数据、响应头以及状态码
                 return ResponseEntity.ok()
@@ -260,12 +290,87 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         return ResponseEntity.notFound().build();
     }
 
+    /**
+     * [获取导入链接]
+     *
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/22
+     **/
+    @Override
+    public Result getImportUrl(String resourcesId,Boolean hasAuth) {
+        ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
+        if (ObjectUtils.isEmpty(serverResources)){
+            throw new BaseException("资源不存在");
+        }
+        if (!SecurityUtils.getStrUserId().equals(serverResources.getResourceTenant())){
+            if (!hasAuth){
+                throw new BaseException("没有权限查询该资源导入信息");
+            }
+        }
+        ResourcesImportVo resourcesImportVo = new ResourcesImportVo();
+        String clashDownloadUrl1 = getClashDownloadUrl(serverResources);
+        resourcesImportVo.setClashDownloadUrl(clashDownloadUrl1);
+        resourcesImportVo.setVlessUrl(getVlessUrl(serverResources));
+        return Result.success(resourcesImportVo);
+    }
+
+
+    private String getClashDownloadUrl(ServerResources serverResources) {
+        return clashDownloadUrl+"?resourcesId="+serverResources.getId()+"&password="+serverResources.getPassword();
+    }
+
+
+    private String getVlessUrl(ServerResources serverResources){
+// 构建基础 URL
+        StringBuilder url = new StringBuilder("vless://");
+
+        // 添加用户ID和服务器地址
+        url.append(serverResources.getUserId())
+                .append("@")
+                .append(serverResources.getResourcesIp())
+                .append(":")
+                .append(serverResources.getNodePort())
+                .append("?");
+
+        List<String> split = StrUtil.split(serverResources.getSni(), ",");
+        // 添加固定参数
+        url.append("encryption=none")
+                .append("&flow=xtls-rprx-vision")
+                .append("&security=reality")
+                .append("&sni=").append(encode(split.get(0)))
+                .append("&fp=chrome")
+                .append("&pbk=").append(encode(serverResources.getPublicBrokerKey()))
+                .append("&sid=").append(encode(serverResources.getShortId()))
+                // URL 编码后的 "/"
+                .append("&spx=%2F")
+                .append("&type=tcp")
+                .append("&headerType=none");
+        String commodityNameByResourcesId = commodityMapper.findCommodityNameByResourcesId(serverResources.getId());
+        // 添加备注（URL 编码）
+        if (StrUtil.isNotEmpty(commodityNameByResourcesId)) {
+            url.append("#").append(encode(commodityNameByResourcesId));
+        }
+
+        return url.toString();
+    }
+
+
+    // URL 编码辅助方法
+    private static String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+
+
+
     //替换模板
     private String replaceTemplate(String template, ServerResources serverResources) {
+        String commodityNameByResourcesId = commodityMapper.findCommodityNameByResourcesId(serverResources.getId());
         List<String> split = StrUtil.split(serverResources.getSni(), ",");
         // 创建参数字典
         Dict params = Dict.create()
-                .set("commodityName", "测试方法名")
+                .set("commodityName", commodityNameByResourcesId)
                 .set("ip", serverResources.getResourcesIp())
                 .set("port", serverResources.getNodePort())
                 .set("uuid", serverResources.getUserId())

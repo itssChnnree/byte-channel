@@ -93,7 +93,7 @@ public class CommodityController {
         if (StrUtil.isBlank( id)){
             return Result.fail("商品编号不能为空");
         }
-        return commodityService.findById(id);
+        return commodityService.findResourcesById(id);
     }
 
 

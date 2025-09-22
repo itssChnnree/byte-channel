@@ -7,6 +7,7 @@ import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
 import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -102,5 +103,14 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return java.util.List<com.ruoyi.system.domain.vo.ServerResourcesPageVo>
      **/
     List<ServerResourcesPageVo> findPage(@Param("dto") ServerResourcesPageDto serverResourcesPageDto);
+
+    /**
+     * [根据资源id和租户id查询]
+     * @author 陈湘岳 2025/9/22
+     * @param resourcesId 资源id
+     * @param password 随机生成密码
+     * @return com.ruoyi.system.domain.entity.ServerResources
+     **/
+    ServerResources selectByIdAndResourceTenant(@Param("resourcesId") String resourcesId,@Param("password") String password);
 
 }
