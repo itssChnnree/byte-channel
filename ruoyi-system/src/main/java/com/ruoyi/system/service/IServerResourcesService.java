@@ -52,10 +52,10 @@ public interface IServerResourcesService{
     /**
      * [下载clash配置文件]
      * @author 陈湘岳 2025/9/17
-     * @param resourceId 资源id
+     * @param password 资源id
      * @return org.springframework.http.ResponseEntity
      **/
-    ResponseEntity download(String resourceId,String password);
+    ResponseEntity download(String password);
 
 
     /**

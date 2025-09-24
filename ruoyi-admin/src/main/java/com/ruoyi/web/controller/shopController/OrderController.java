@@ -88,10 +88,6 @@ public class OrderController {
 
 
 
-    @GetMapping("/test")
-    public String test(){
-        return orderService.test();
-    }
 
 
 

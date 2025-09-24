@@ -299,13 +299,12 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     /**
      * [下载clash配置文件]
      *
-     * @param resourceId 资源id
      * @return org.springframework.http.ResponseEntity
      * @author 陈湘岳 2025/9/17
      **/
     @Override
-    public ResponseEntity download(String resourceId,String password) {
-        ServerResources serverResources = serverResourcesMapper.selectByIdAndResourceTenant(resourceId,password);
+    public ResponseEntity download(String password) {
+        ServerResources serverResources = serverResourcesMapper.selectByPassword(password);
         if (ObjectUtils.isEmpty(serverResources)){
             throw new BaseException("资源不存在");
         }
@@ -367,7 +366,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
 
     private String getClashDownloadUrl(ServerResources serverResources) {
-        return clashDownloadUrl+"?resourcesId="+serverResources.getId()+"&password="+serverResources.getPassword();
+        return clashDownloadUrl+"?password="+serverResources.getPassword();
     }
 
 
@@ -380,7 +379,54 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      **/
     @Override
     public Result<ServerResources> resourceReset(String id) {
-        return null;
+        ServerResources serverResources = serverResourcesMapper.selectById(id);
+        if (ObjectUtils.isEmpty(serverResources)){
+            throw new BaseException("资源不存在");
+        }
+
+        Commodity commodity = commodityMapper.selectById(serverResources.getCommodityId());
+        if (commodity == null||commodity.getIsDeleted()==1){
+            return Result.fail("所选商品不存在");
+        }
+
+        String userId = UUID.randomUUID().toString();
+
+        String post = XrayManager.restartXray(commodity.getDest(), commodity.getServerNames(),
+                Integer.parseInt(serverResources.getNodePort()), userId, serverResources.getResourcesIp());
+
+
+        if ("JsonError".contains( post)|| "RequestFieldError".contains(post)){
+            return Result.fail("参数错误，请联系管理员");
+        }
+        if ("XrayStartError".contains(post)){
+            return Result.fail("节点启动失败");
+        }
+        XrayRestartVo xrayRestartVo =null;
+        //反参
+        try{
+            xrayRestartVo = JSON.parseObject(post, XrayRestartVo.class);
+        }catch (Exception e){
+            return Result.fail("节点启动失败");
+        }
+
+        serverResources.setPublicBrokerKey(xrayRestartVo.getPublicKey());
+        serverResources.setShortId(xrayRestartVo.getShortId());
+        serverResources.setUserId(userId);
+        //新增资源数据
+        int update = serverResourcesMapper.updateById(serverResources);
+
+        if (update > 0){
+            //新增资源校验数据
+            String strUserId = SecurityUtils.getStrUserId();
+            CompletableFuture.runAsync(() -> {
+                newResourcesValid(userId, serverResources,strUserId);
+            });
+            return Result.success(serverResources);
+        }else{
+
+            return Result.fail("新增失败");
+        }
+
     }
 
     private String getVlessUrl(ServerResources serverResources){

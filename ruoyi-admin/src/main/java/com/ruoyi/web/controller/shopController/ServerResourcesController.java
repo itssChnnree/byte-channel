@@ -98,8 +98,8 @@ public class ServerResourcesController{
     //下载clash配置文件
     @GetMapping("/download")
     @ApiOperation("下载clash配置文件")
-    public ResponseEntity download(String resourcesId,String password){
-        return serverResourcesService.download(resourcesId,password);
+    public ResponseEntity download(String password){
+        return serverResourcesService.download(password);
     }
 
 
