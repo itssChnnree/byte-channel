@@ -12,6 +12,7 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.AvailableStatus;
@@ -23,22 +24,23 @@ import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
+import com.ruoyi.system.domain.entity.ServerResourcesXrayValid;
+import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
 import com.ruoyi.system.domain.vo.ResourcesImportVo;
 import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
 import com.ruoyi.system.domain.vo.VendorAccountInformationVo;
 import com.ruoyi.system.domain.vo.XrayRestartVo;
 import com.ruoyi.system.http.Result;
-import com.ruoyi.system.mapper.CommodityMapper;
-import com.ruoyi.system.mapper.ResourceAllocationTemporaryStorageMapper;
-import com.ruoyi.system.mapper.ServerResourcesMapper;
-import com.ruoyi.system.mapper.VendorAccountInformationMapper;
+import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.ServerResourcesMapstruct;
 import com.ruoyi.system.service.IServerResourcesService;
 import com.ruoyi.system.util.XrayManager;
 import lombok.Cleanup;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +57,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * 服务器资源表(ServerResources)�����ʵ����
@@ -64,9 +69,12 @@ import java.util.UUID;
  * @version v1.0.0
  * @date 2025-07-20 23:24:25
  */
+@Slf4j
 @Service("serverResourcesService")
 public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
+    @Resource
+    private RedisCache redisCache;
 
     @Resource
     private ServerResourcesMapstruct serverResourcesMapstruct;
@@ -79,6 +87,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
     @Resource
     private VendorAccountInformationMapper vendorAccountInformationMapper;
+
+    @Resource
+    private ServerResourcesXrayValidMapper serverResourcesXrayValidMapper;
 
     @Resource
     private ResourceAllocationTemporaryStorageMapper resourceAllocationTemporaryStorageMapper;
@@ -144,16 +155,6 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             return Result.fail("所选云服务商账号不存在");
         }
 
-//        //重启xray请求体
-//        RestartXrayDto restartXrayDto = new RestartXrayDto();
-//        restartXrayDto.setDest(commodity.getDest());
-//        List<String> split = StrUtil.split(commodity.getServerNames(), ",");
-//        restartXrayDto.setServerNames(split);
-//        restartXrayDto.setPort(resourceAllocationTemporaryStorage.getNodePort());
-//        String userId = UUID.randomUUID().toString();
-//        restartXrayDto.setUserId(userId);
-//        //调用节点方法启动节点
-//        String post = HttpUtil.post("http://" + resourceProcessingDto.getResourcesIp() + ":9080/xrayRestart", JSON.toJSONString(restartXrayDto));
         String userId = UUID.randomUUID().toString();
 
         String post = XrayManager.restartXray(commodity.getDest(), commodity.getServerNames(),
@@ -178,14 +179,63 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         //新增资源数据
         ServerResources serverResources = buildServerResources(userId, commodity, xrayRestartVo, resourceAllocationTemporaryStorage, resourceProcessingDto);
         int insert = serverResourcesMapper.insert(serverResources);
+
+        //删除暂存数据
         int deleteByIp = resourceAllocationTemporaryStorageMapper.deleteByIp(resourceProcessingDto.getResourcesIp());
+
         if (insert > 0){
+            //新增资源校验数据
+            String strUserId = SecurityUtils.getStrUserId();
+            CompletableFuture.runAsync(() -> {
+                newResourcesValid(userId, serverResources,strUserId);
+            });
             return Result.success(serverResources);
         }else{
 
             return Result.fail("新增失败");
         }
     }
+
+
+
+    private void newResourcesValid(String userId,ServerResources serverResources,String strUserId){
+
+        String cacheObject = redisCache.getCacheObject("sys_config:sys:validServer:ip");
+        if (StrUtil.isBlank(serverResources.getId())||StrUtil.isBlank(cacheObject)){
+            //如果id为空或者校验服务器ip为空则不新增资源校验
+            return;
+        }
+        List<String> ipAndPortList = StrUtil.split(cacheObject, ",");
+        Map<String, Integer> useLeastIp = serverResourcesXrayValidMapper.findUseLeastIp(ipAndPortList);
+        String minUseIp=ipAndPortList.get(0);
+        for (Map.Entry<String, Integer> entry : useLeastIp.entrySet()) {
+            if (minUseIp.isEmpty()||entry.getValue()<useLeastIp.get(minUseIp)){
+                minUseIp = entry.getKey();
+            }
+        }
+
+        //新增资源校验
+        OutboundConfig outboundConfig = OutboundConfig.buildOutboundConfig(userId, serverResources.getResourcesIp(),
+                Integer.parseInt(serverResources.getResourcesPort()), serverResources.getId(), serverResources.getSni(),
+                serverResources.getPublicBrokerKey(), serverResources.getShortId());
+        minUseIp = "localhost:9080";
+        String newValidXrayResult = XrayManager.newValidXray(outboundConfig, minUseIp);
+        if (StrUtil.isBlank(newValidXrayResult)){
+            return;
+        }
+        Result result = JSON.parseObject(newValidXrayResult, Result.class);
+        if (result.getCode()!=200){
+            return;
+        }
+        ServerResourcesXrayValid serverResourcesXrayValid = new ServerResourcesXrayValid();
+        serverResourcesXrayValid.setWebIpPort(minUseIp);
+        serverResourcesXrayValid.setXrayPort(result.getData().toString());
+        serverResourcesXrayValid.setResourcesId(serverResources.getId());
+        serverResourcesXrayValid.setCreateUser(strUserId);
+        serverResourcesXrayValid.setUpdateUser(strUserId);
+        int insert = serverResourcesXrayValidMapper.insert(serverResourcesXrayValid);
+    }
+
 
 
     /**
@@ -320,6 +370,18 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         return clashDownloadUrl+"?resourcesId="+serverResources.getId()+"&password="+serverResources.getPassword();
     }
 
+
+    /**
+     * [重置资源]
+     *
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
+     * @author 陈湘岳 2025/9/24
+     **/
+    @Override
+    public Result<ServerResources> resourceReset(String id) {
+        return null;
+    }
 
     private String getVlessUrl(ServerResources serverResources){
 // 构建基础 URL

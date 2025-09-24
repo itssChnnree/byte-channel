@@ -65,4 +65,13 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     Result getImportUrl(String resourcesId,Boolean hasAuth);
+
+
+    /**
+     * [重置资源]
+     * @author 陈湘岳 2025/9/24
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    Result<ServerResources> resourceReset(String id);
 }

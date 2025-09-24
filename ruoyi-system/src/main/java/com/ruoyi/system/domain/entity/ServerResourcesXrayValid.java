@@ -41,12 +41,8 @@ private String resourcesId;
     * 校验服务器ip
     */
 @TableField(value = "web_ip")
-private String webIp;
-/**
-    * 校验服务器-web服务端口
-    */
-@TableField(value = "web_port")
-private String webPort;
+private String webIpPort;
+
 /**
     * 校验服务器-xray代理端口
     */

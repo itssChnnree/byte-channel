@@ -27,10 +27,7 @@ public class ServerResourcesXrayValidVo{
    private String resourcesId;
     
     @ApiModelProperty("校验服务器ip")
-   private String webIp;
-    
-    @ApiModelProperty("校验服务器-web服务端口")
-   private String webPort;
+   private String webIpPort;
     
     @ApiModelProperty("校验服务器-xray代理端口")
    private String xrayPort;

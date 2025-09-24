@@ -5,8 +5,7 @@
     <resultMap type="com.ruoyi.system.domain.entity.ServerResourcesXrayValid" id="ServerResourcesXrayValidMap">
                 <result property="id" column="id" jdbcType="VARCHAR"/>
                 <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
-                <result property="webIp" column="web_ip" jdbcType="VARCHAR"/>
-                <result property="webPort" column="web_port" jdbcType="VARCHAR"/>
+                <result property="webIpPort" column="web_ip_port" jdbcType="VARCHAR"/>
                 <result property="xrayPort" column="xray_port" jdbcType="VARCHAR"/>
                 <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
                 <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
@@ -18,8 +17,7 @@
     <resultMap type="com.ruoyi.system.domain.vo.ServerResourcesXrayValidVo" id="ServerResourcesXrayValidVOMap">
                 <result property="id" column="id" jdbcType="VARCHAR"/>
                 <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
-                <result property="webIp" column="web_ip" jdbcType="VARCHAR"/>
-                <result property="webPort" column="web_port" jdbcType="VARCHAR"/>
+                <result property="webIpPort" column="web_ip_port" jdbcType="VARCHAR"/>
                 <result property="xrayPort" column="xray_port" jdbcType="VARCHAR"/>
                 <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
                 <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
@@ -31,7 +29,7 @@
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesXrayValidVOMap">
         select
-id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time
+        id, resources_id, web_ip_port,  xray_port, is_deleted, create_user, update_user, create_time, update_time
         from server_resources_xray_valid
         where id = #{id} and is_deleted = 0
     </select>
@@ -39,7 +37,7 @@ id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_u
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="ServerResourcesXrayValidVOMap">
         select
-id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time        
+        id, resources_id, web_ip_port,  xray_port, is_deleted, create_user, update_user, create_time, update_time        
         from server_resources_xray_valid
         <where>
         1 = 1 and is_deleted = 0
@@ -49,11 +47,8 @@ id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_u
             <if test="resourcesId != null and resourcesId != ''">
                 and resources_id = #{resourcesId}
             </if>
-            <if test="webIp != null and webIp != ''">
-                and web_ip = #{webIp}
-            </if>
-            <if test="webPort != null and webPort != ''">
-                and web_port = #{webPort}
+            <if test="webIpPort != null and webIpPort != ''">
+                and web_ip_port = #{webIpPort}
             </if>
             <if test="xrayPort != null and xrayPort != ''">
                 and xray_port = #{xrayPort}
@@ -79,7 +74,7 @@ id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_u
     <!--��ѯָ��������-->
     <select id="queryListLimit" resultMap="ServerResourcesXrayValidVOMap">
         select
-id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time
+id, resources_id, web_ip_port,  xray_port, is_deleted, create_user, update_user, create_time, update_time
         from server_resources_xray_valid
         <where>
         1 = 1 and is_deleted = 0 
@@ -89,11 +84,8 @@ id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_u
             <if test="dto.resourcesId != null and dto.resourcesId != ''">
                 and resources_id = #{dto.resourcesId}
             </if>
-            <if test="dto.webIp != null and dto.webIp != ''">
-                and web_ip = #{dto.webIp}
-            </if>
-            <if test="dto.webPort != null and dto.webPort != ''">
-                and web_port = #{dto.webPort}
+            <if test="dto.webIpPort != null and dto.webIpPort != ''">
+                and web_ip_port = #{dto.webIpPort}
             </if>
             <if test="dto.xrayPort != null and dto.xrayPort != ''">
                 and xray_port = #{dto.xrayPort}
@@ -120,7 +112,7 @@ id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_u
     <!--��ѯ��ҳ����-->
     <select id="queryPage" resultMap="ServerResourcesXrayValidVOMap">
         select
-id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time
+id, resources_id, web_ip_port,  xray_port, is_deleted, create_user, update_user, create_time, update_time
         from server_resources_xray_valid
         <where>
         1 = 1 and is_deleted = 0 
@@ -130,11 +122,8 @@ id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_u
             <if test="dto.resourcesId != null and dto.resourcesId != ''">
                 and resources_id = #{dto.resourcesId}
             </if>
-            <if test="dto.webIp != null and dto.webIp != ''">
-                and web_ip = #{dto.webIp}
-            </if>
-            <if test="dto.webPort != null and dto.webPort != ''">
-                and web_port = #{dto.webPort}
+            <if test="dto.webIpPort != null and dto.webIpPort != ''">
+                and web_ip_port = #{dto.webIpPort}
             </if>
             <if test="dto.xrayPort != null and dto.xrayPort != ''">
                 and xray_port = #{dto.xrayPort}
@@ -156,38 +145,50 @@ id, resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_u
             </if>
         </where>
     </select>
-    
-    
+
+
+    <select id="findUseLeastIp" resultType="java.util.Map">
+        SELECT
+            web_ip_port,
+            COUNT(*) AS usage_count
+        FROM server_resources_xray_valid
+        WHERE web_ip_port IN
+        <foreach collection="ipList" item="ip"  separator="," open="(" close=")">
+            #{ip}
+        </foreach>
+        GROUP BY web_ip_port
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources_xray_valid(id,resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{entity.id},#{resourcesId}, #{webIp}, #{webPort}, #{xrayPort}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        insert into server_resources_xray_valid(id,resources_id, web_ip_port,  xray_port, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{resourcesId}, #{webIpPort}, #{xrayPort}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources_xray_valid(id,resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time)
+        insert into server_resources_xray_valid(id,resources_id, web_ip_port,  xray_port, is_deleted, create_user, update_user, create_time, update_time)
         values
              <foreach collection="entities" item="entity" separator=",">
-             (#{entity.id},#{entity.resourcesId}, #{entity.webIp}, #{entity.webPort}, #{entity.xrayPort}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+             (#{entity.id},#{entity.resourcesId}, #{entity.webIpPort},  #{entity.xrayPort}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
              </foreach>
     </insert>
 
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources_xray_valid(id,resources_id, web_ip, web_port, xray_port, is_deleted, create_user, update_user, create_time, update_time)
+        insert into server_resources_xray_valid(id,resources_id, web_ip_port,  xray_port, is_deleted, create_user, update_user, create_time, update_time)
         values
             <foreach collection="entities" item="entity" separator=",">
-                (#{entity.id},#{entity.resourcesId}, #{entity.webIp}, #{entity.webPort}, #{entity.xrayPort}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+                (#{entity.id},#{entity.resourcesId}, #{entity.webIpPort},  #{entity.xrayPort}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
             </foreach>
             on duplicate key update
-resources_id = values(resources_id),
-web_ip = values(web_ip),
-web_port = values(web_port),
-xray_port = values(xray_port),
-is_deleted = values(is_deleted),
-create_user = values(create_user),
-update_user = values(update_user),
-create_time = values(create_time),
-update_time = values(update_time)    </insert>
+            resources_id = values(resources_id),
+            web_ip_port = values(web_ip_port),
+            xray_port = values(xray_port),
+            is_deleted = values(is_deleted),
+            create_user = values(create_user),
+            update_user = values(update_user),
+            create_time = values(create_time),
+            update_time = values(update_time)    </insert>
 
 </mapper>
 

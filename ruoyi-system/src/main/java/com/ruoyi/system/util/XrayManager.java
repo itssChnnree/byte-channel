@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.ruoyi.system.domain.dto.RestartXrayDto;
+import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +21,7 @@ import java.util.UUID;
 public class XrayManager {
 
 
-
+    //重启xray
     public static String restartXray(String dest, String serverNames, Integer port, String userId,String resourcesIp){
         RestartXrayDto restartXrayDto = new RestartXrayDto();
         restartXrayDto.setDest(dest);
@@ -30,6 +31,12 @@ public class XrayManager {
         restartXrayDto.setUserId(userId);
         //调用节点方法启动节点
         return HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", JSON.toJSONString(restartXrayDto));
+    }
+
+
+    //新增xray校验
+    public static String newValidXray(OutboundConfig outboundConfig,String ipAndPort){
+        return HttpUtil.post("http://" + ipAndPort + "/newValidXray", JSON.toJSONString(outboundConfig));
     }
 
 

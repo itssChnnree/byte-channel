@@ -1,8 +1,10 @@
 package com.ruoyi.web.controller.shopController;
 
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.Page;
 import com.ruoyi.common.utils.uuid.UUID;
 import com.ruoyi.framework.web.service.PermissionService;
+import com.ruoyi.system.domain.dto.IdDto;
 import com.ruoyi.system.domain.dto.ResourceProcessingDto;
 import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.entity.ServerResources;
@@ -71,6 +73,20 @@ public class ServerResourcesController{
     }
 
 
+
+    @PostMapping("/resourceReset")
+    @ApiOperation("重置节点")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result<ServerResources> resourceReset(@RequestBody IdDto idDto) {
+        if (StrUtil.isBlank(idDto.getId())){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.resourceReset(idDto.getId());
+    }
+
+
+
+
     @PostMapping("/getResourcesPage")
     @ApiOperation("资源分页查询")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
@@ -93,5 +109,7 @@ public class ServerResourcesController{
     public Result getImportUrl(String resourcesId){
         return serverResourcesService.getImportUrl(resourcesId, permissionService.hasPermi("shop:background:admin"));
     }
+
+
 
 }
