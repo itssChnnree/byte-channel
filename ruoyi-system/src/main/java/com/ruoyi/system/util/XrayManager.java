@@ -5,6 +5,7 @@ import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.ruoyi.system.domain.dto.RestartXrayDto;
 import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,10 +19,12 @@ import java.util.UUID;
  * @version v1.0.0
  * @date 2025/7/23
  */
+@Slf4j
 public class XrayManager {
 
 
     //重启xray
+    //在节点服务启动xray
     public static String restartXray(String dest, String serverNames, Integer port, String userId,String resourcesIp){
         RestartXrayDto restartXrayDto = new RestartXrayDto();
         restartXrayDto.setDest(dest);
@@ -30,15 +33,48 @@ public class XrayManager {
         restartXrayDto.setPort(port);
         restartXrayDto.setUserId(userId);
         //调用节点方法启动节点
-        return HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", JSON.toJSONString(restartXrayDto));
+        return HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", JSON.toJSONString(restartXrayDto),5000);
     }
 
 
     //新增xray校验
+    //在出站节点服务新增出站规则，入站规则，路由规则
     public static String newValidXray(OutboundConfig outboundConfig,String ipAndPort){
-        return HttpUtil.post("http://" + ipAndPort + "/newValidXray", JSON.toJSONString(outboundConfig));
+        String api = "http://" + ipAndPort + "/newValidXray";
+        log.info("新增xray校验调用url["+api+"]");
+        return HttpUtil.post(api, JSON.toJSONString(outboundConfig),5000);
     }
 
 
+    //通过出站节点服务查看通过代理节点是否可ping通谷歌
+    public static String checkXrayStatus(String ipAndPort,String inboundPort){
+        String api = "http://"+ipAndPort+"/CheckXrayStatus?port="+inboundPort;
+        log.info("xray校验调用url["+api+"]");
+        return HttpUtil.get(api,5000);
+    }
+
+
+    //向资源节点发送心跳，确认go服务状态
+    public static String getXrayPing(String ip){
+        String api = "http://"+ip+":9080/ping";
+        log.info("xray-资源节点go检测调用url["+api+"]");
+        return HttpUtil.get(api,5000);
+    }
+
+
+    //查询资源节点对xray节点防火墙是否开放
+    public static String getXrayFirewalldStatus(String ip,String port){
+        String api = "http://"+ip+":9080/checkFirewalld?port="+ port;
+        log.info("xray-资源节点防火墙调用url["+api+"]");
+        return HttpUtil.get(api,5000);
+    }
+
+
+    //查询资源节点xray进程状态
+    public static String getXrayProcessStatus(String ip,String port){
+        String api = "http://"+ip+":9080/checkXrayStatus";
+        log.info("xray-资源节点xray进程状态调用url["+api+"]");
+        return HttpUtil.get(api,5000);
+    }
 
 }

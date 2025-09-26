@@ -20,11 +20,8 @@ import com.ruoyi.system.constant.ResourcesStatus;
 import com.ruoyi.system.constant.SalesStatus;
 import com.ruoyi.system.domain.dto.ResourceProcessingDto;
 import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
-import com.ruoyi.system.domain.entity.Commodity;
-import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
-import com.ruoyi.system.domain.entity.ServerResources;
+import com.ruoyi.system.domain.entity.*;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
-import com.ruoyi.system.domain.entity.ServerResourcesXrayValid;
 import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
 import com.ruoyi.system.domain.vo.ResourcesImportVo;
 import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
@@ -34,6 +31,7 @@ import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.ServerResourcesMapstruct;
 import com.ruoyi.system.service.IServerResourcesService;
+import com.ruoyi.system.util.NetworkUtil;
 import com.ruoyi.system.util.XrayManager;
 import lombok.Cleanup;
 
@@ -206,25 +204,27 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             return;
         }
         List<String> ipAndPortList = StrUtil.split(cacheObject, ",");
-        Map<String, Integer> useLeastIp = serverResourcesXrayValidMapper.findUseLeastIp(ipAndPortList);
+        Map<String, IpUseNum> useLeastIp = serverResourcesXrayValidMapper.findUseLeastIp(ipAndPortList);
         String minUseIp=ipAndPortList.get(0);
-        for (Map.Entry<String, Integer> entry : useLeastIp.entrySet()) {
-            if (minUseIp.isEmpty()||entry.getValue()<useLeastIp.get(minUseIp)){
+        for (Map.Entry<String, IpUseNum> entry : useLeastIp.entrySet()) {
+            if (minUseIp.isEmpty()||entry.getValue().getUsageCount()<useLeastIp.get(minUseIp).getUsageCount()){
                 minUseIp = entry.getKey();
             }
         }
-
+        log.info("[新增资源校验]开始");
+        log.info("[新增资源校验]使用最少的ip为："+minUseIp);
         //新增资源校验
         OutboundConfig outboundConfig = OutboundConfig.buildOutboundConfig(userId, serverResources.getResourcesIp(),
-                Integer.parseInt(serverResources.getResourcesPort()), serverResources.getId(), serverResources.getSni(),
+                Integer.parseInt(serverResources.getNodePort()), serverResources.getId(), serverResources.getSni(),
                 serverResources.getPublicBrokerKey(), serverResources.getShortId());
-        minUseIp = "localhost:9080";
         String newValidXrayResult = XrayManager.newValidXray(outboundConfig, minUseIp);
         if (StrUtil.isBlank(newValidXrayResult)){
+            log.error("调用go[newValidXray]接口失败");
             return;
         }
         Result result = JSON.parseObject(newValidXrayResult, Result.class);
         if (result.getCode()!=200){
+            log.error("调用go[newValidXray]接口失败，错误原因为"+result.getMessage());
             return;
         }
         ServerResourcesXrayValid serverResourcesXrayValid = new ServerResourcesXrayValid();
@@ -233,6 +233,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResourcesXrayValid.setResourcesId(serverResources.getId());
         serverResourcesXrayValid.setCreateUser(strUserId);
         serverResourcesXrayValid.setUpdateUser(strUserId);
+        serverResourcesXrayValidMapper.deleteByResourcesIdInt(serverResources.getId());
         int insert = serverResourcesXrayValidMapper.insert(serverResourcesXrayValid);
     }
 
@@ -412,6 +413,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResources.setPublicBrokerKey(xrayRestartVo.getPublicKey());
         serverResources.setShortId(xrayRestartVo.getShortId());
         serverResources.setUserId(userId);
+        serverResources.setResourcesStatus(ResourcesStatus.WAIT_CHECK);
         //新增资源数据
         int update = serverResourcesMapper.updateById(serverResources);
 
@@ -419,7 +421,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             //新增资源校验数据
             String strUserId = SecurityUtils.getStrUserId();
             CompletableFuture.runAsync(() -> {
-                newResourcesValid(userId, serverResources,strUserId);
+                newResourcesValid(userId, serverResources, strUserId);
             });
             return Result.success(serverResources);
         }else{
@@ -427,6 +429,139 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             return Result.fail("新增失败");
         }
 
+    }
+
+
+    /**
+     * [网络连通性检测，检测与资源节点之间的网络联通性]
+     *
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/26
+     **/
+    @Override
+    public Result networkConnectivityTesting(String resourcesId) {
+        ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
+        if (ObjectUtils.isEmpty(serverResources)){
+            return Result.fail("资源不存在");
+        }
+        //检测网络是否联通
+        boolean checkConnectivity = NetworkUtil.checkConnectivity(serverResources.getResourcesIp());
+        return checkConnectivity?Result.success(true):Result.fail(false);
+    }
+
+
+    /**
+     * [获取检测服务状态]
+     *
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/26
+     **/
+    @Override
+    public Result getXrayPing(String resourcesId) {
+        ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
+        if (ObjectUtils.isEmpty(serverResources)){
+            return Result.fail("资源不存在");
+        }
+        String xrayPing = XrayManager.getXrayPing(serverResources.getResourcesIp());
+        if (StrUtil.isBlank(xrayPing)){
+            return  Result.success(false);
+        }
+        Result result = JSON.parseObject(xrayPing, Result.class);
+        if (!ObjectUtils.isEmpty( result)&&"success".equals(result.getData())){
+            return Result.success(true);
+        }
+        return Result.success(false);
+    }
+
+    /**
+     * [检测资源节点防火墙是否开放xray端口]
+     *
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/26
+     **/
+    @Override
+    public Result getXrayFirewalld(String resourcesId) {
+        ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
+        if (ObjectUtils.isEmpty(serverResources)){
+            return Result.fail("资源不存在");
+        }
+        String xrayFirewalldStatus = XrayManager.getXrayFirewalldStatus(serverResources.getResourcesIp(),serverResources.getNodePort());
+        if (StrUtil.isBlank(xrayFirewalldStatus)){
+            return  Result.success(false);
+        }
+        Result result = JSON.parseObject(xrayFirewalldStatus, Result.class);
+        if (!ObjectUtils.isEmpty( result)&&Boolean.TRUE==result.getData()){
+            return Result.success(true);
+        }
+        return Result.success(false);
+    }
+
+
+    /**
+     * [获取资源节点xray进程状态]
+     *
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/26
+     **/
+    @Override
+    public Result getXrayProcess(String resourcesId) {
+        ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
+        if (ObjectUtils.isEmpty(serverResources)){
+            return Result.fail("资源不存在");
+        }
+        String xrayFirewalldStatus = XrayManager.getXrayProcessStatus(serverResources.getResourcesIp(),serverResources.getNodePort());
+        if (StrUtil.isBlank(xrayFirewalldStatus)){
+            return  Result.success(false);
+        }
+        Result result = JSON.parseObject(xrayFirewalldStatus, Result.class);
+        if (!ObjectUtils.isEmpty( result)&&"success".equals(result.getData())){
+            return Result.success(true);
+        }
+        return Result.success(false);
+    }
+
+    /**
+     * [通过出站节点查看是否可以通过目标代理节点访问谷歌]
+     *
+     * @param resourcesId
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/25
+     **/
+    @Override
+    @Transactional
+    public Result getResourcesStatus(String resourcesId) {
+        ServerResourcesXrayValid byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(resourcesId);
+        if (byResourcesId == null){
+            // 资源不存在  新增资源
+            ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
+            if (ObjectUtils.isEmpty(serverResources)){
+                return Result.fail("资源不存在");
+            }
+            newResourcesValid(serverResources.getUserId(), serverResources, SecurityUtils.getStrUserId());
+            byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(resourcesId);
+        }
+
+        String xrayStatus = XrayManager.checkXrayStatus(byResourcesId.getWebIpPort(), byResourcesId.getXrayPort());
+        Result result = JSON.parseObject(xrayStatus, Result.class);
+        if (result.getCode()!=200){
+            log.error("调用go[newValidXray]接口失败，错误原因为"+result.getMessage());
+            return Result.fail("查询节点状态失败");
+        }
+
+        log.info("调用go[newValidXray]接口成功，返回结果为"+result.getData());
+        String str= result.getData().toString();
+        boolean equals = "200".equals(str.trim());
+        if (equals){
+            serverResourcesMapper.updateResourcesStatus(resourcesId,ResourcesStatus.NORMAL);
+            return Result.success("节点状态正常");
+        }else {
+            serverResourcesMapper.updateResourcesStatus(resourcesId,ResourcesStatus.ERROR);
+            return Result.success("节点状态异常");
+        }
     }
 
     private String getVlessUrl(ServerResources serverResources){

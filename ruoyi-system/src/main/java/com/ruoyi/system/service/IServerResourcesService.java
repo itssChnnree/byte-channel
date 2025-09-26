@@ -74,4 +74,47 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
      **/
     Result<ServerResources> resourceReset(String id);
+
+    /**
+     * [校验xray资源状态]
+     * @author 陈湘岳 2025/9/25
+     * @param resourcesId
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getResourcesStatus(String resourcesId);
+
+
+    /**
+     * [网络连通性检测，检测与资源节点之间的网络联通性]
+     * @author 陈湘岳 2025/9/26
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result networkConnectivityTesting(String resourcesId);
+
+
+    /**
+     * [获取检测服务状态]
+     * @author 陈湘岳 2025/9/26
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getXrayPing(String resourcesId);
+
+
+    /**
+     * [检测资源节点防火墙是否开放xray端口]
+     * @author 陈湘岳 2025/9/26
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getXrayFirewalld(String resourcesId);
+
+    /**
+     * [获取资源节点xray进程状态]
+     * @author 陈湘岳 2025/9/26
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getXrayProcess(String resourcesId);
 }

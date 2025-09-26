@@ -137,6 +137,12 @@
         </foreach>
     </update>
 
+    <update id="updateResourcesStatus">
+        update server_resources
+        set resources_status = #{resourcesStatus}
+        where id = #{resourcesId}
+    </update>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesVOMap">
         select

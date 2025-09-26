@@ -86,6 +86,63 @@ public class ServerResourcesController{
 
 
 
+    @GetMapping("/getResourcesStatus")
+    @ApiOperation("获取资源状态")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result getResourcesStatus(String resourcesId) {
+        if (StrUtil.isBlank(resourcesId)){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.getResourcesStatus(resourcesId);
+    }
+
+
+
+    @GetMapping("/networkConnectivityTesting")
+    @ApiOperation("网络连通性检测")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result networkConnectivityTesting(String resourcesId) {
+        if (StrUtil.isBlank(resourcesId)){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.networkConnectivityTesting(resourcesId);
+    }
+
+
+
+    @GetMapping("/getXrayPing")
+    @ApiOperation("检测资源节点Go服务状态")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result getXrayPing(String resourcesId) {
+        if (StrUtil.isBlank(resourcesId)){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.getXrayPing(resourcesId);
+    }
+
+
+    @GetMapping("/getXrayFirewalld")
+    @ApiOperation("检测资源节点防火墙是否开放")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result getXrayFirewalld(String resourcesId) {
+        if (StrUtil.isBlank(resourcesId)){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.getXrayFirewalld(resourcesId);
+    }
+
+
+    @GetMapping("/getXrayProcess")
+    @ApiOperation("检测资源节点xray进程")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result getXrayProcess(String resourcesId) {
+        if (StrUtil.isBlank(resourcesId)){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.getXrayProcess(resourcesId);
+    }
+
+
 
     @PostMapping("/getResourcesPage")
     @ApiOperation("资源分页查询")

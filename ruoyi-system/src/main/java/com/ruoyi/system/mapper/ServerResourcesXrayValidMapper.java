@@ -2,6 +2,7 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ruoyi.system.domain.entity.IpUseNum;
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -28,8 +29,8 @@ public interface ServerResourcesXrayValidMapper extends BaseMapper<ServerResourc
      * @author 陈湘岳 2025/9/24
      * @return com.ruoyi.system.domain.entity.ServerResourcesXrayValid
      **/
-    @MapKey("web_ip")
-    Map<String,Integer> findUseLeastIp(@Param("ipList") List<String> ipList);
+    @MapKey("webIpPort")
+    Map<String, IpUseNum> findUseLeastIp(@Param("ipList") List<String> ipList);
 
 
     /**
@@ -40,4 +41,21 @@ public interface ServerResourcesXrayValidMapper extends BaseMapper<ServerResourc
      **/
     int insert(ServerResourcesXrayValid serverResourcesXrayValid);
 
+
+    /**
+     * [根据资源id删除校验服务器]
+     * @author 陈湘岳 2025/9/25
+     * @param resourcesId 资源id
+     * @return int
+     **/
+    int deleteByResourcesIdInt(@Param("resourcesId") String resourcesId);
+
+
+    /**
+     * [通过资源id查询资源校验]
+     * @author 陈湘岳 2025/9/25
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.domain.entity.ServerResourcesXrayValid
+     **/
+    ServerResourcesXrayValid findByResourcesId(@Param("resourcesId") String resourcesId);
 }

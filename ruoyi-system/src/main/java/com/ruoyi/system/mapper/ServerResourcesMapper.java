@@ -112,4 +112,14 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      **/
     ServerResources selectByPassword(@Param("password") String password);
 
+
+    /**
+     * [通过资源id变更资源状态]
+     * @author 陈湘岳 2025/9/25
+     * @param resourcesId 资源id
+     * @param resourcesStatus 资源状态
+     * @return int
+     **/
+    int updateResourcesStatus(@Param("resourcesId") String resourcesId,@Param("resourcesStatus")String resourcesStatus);
+
 }

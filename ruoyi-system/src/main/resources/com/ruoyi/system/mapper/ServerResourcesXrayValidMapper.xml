@@ -26,6 +26,11 @@
                 <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+
+    <delete id="deleteByResourcesIdInt">
+        delete from server_resources_xray_valid where resources_id = #{resourcesId}
+    </delete>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesXrayValidVOMap">
         select
@@ -145,18 +150,22 @@ id, resources_id, web_ip_port,  xray_port, is_deleted, create_user, update_user,
             </if>
         </where>
     </select>
-
-
-    <select id="findUseLeastIp" resultType="java.util.Map">
+    <select id="findUseLeastIp" resultType="com.ruoyi.system.domain.entity.IpUseNum">
         SELECT
-            web_ip_port,
-            COUNT(*) AS usage_count
+        web_ip_port as webIpPort ,
+        COUNT(*)  as usageCount
         FROM server_resources_xray_valid
         WHERE web_ip_port IN
         <foreach collection="ipList" item="ip"  separator="," open="(" close=")">
             #{ip}
         </foreach>
         GROUP BY web_ip_port
+    </select>
+
+
+
+    <select id="findByResourcesId" resultType="com.ruoyi.system.domain.entity.ServerResourcesXrayValid">
+        select id,resources_id, web_ip_port,  xray_port from server_resources_xray_valid where resources_id = #{resourcesId}
     </select>
 
 
