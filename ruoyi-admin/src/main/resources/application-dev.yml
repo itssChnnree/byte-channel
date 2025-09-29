@@ -91,11 +91,11 @@ ruoyi:
   # 版权年份
   copyrightYear: 2025
   # 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
-  profile: /home/ruoyi/uploadPath
+  profile: D:/ruoyi/uploadPath
   # 获取ip地址开关
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证
   captchaType: math
 
 resources:
-  clashUrl: http://localhost:${server.port}/serverResources/download
+  clashUrl: http://8.155.17.11:${server.port}/serverResources/download

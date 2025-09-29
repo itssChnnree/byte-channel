@@ -4,11 +4,10 @@ import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.Page;
 import com.ruoyi.common.utils.uuid.UUID;
 import com.ruoyi.framework.web.service.PermissionService;
-import com.ruoyi.system.domain.dto.IdDto;
-import com.ruoyi.system.domain.dto.ResourceProcessingDto;
-import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
+import com.ruoyi.system.domain.dto.*;
 import com.ruoyi.system.domain.entity.ServerResources;
-import com.ruoyi.system.domain.dto.ServerResourcesDto;
+import com.ruoyi.system.domain.vo.ServerResourcesDetailVo;
+import com.ruoyi.system.domain.vo.ServerResourcesVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IServerResourcesService;
 import io.swagger.annotations.Api;
@@ -82,6 +81,29 @@ public class ServerResourcesController{
             return Result.fail("资源编号不能为空");
         }
         return serverResourcesService.resourceReset(idDto.getId());
+    }
+
+
+    @PostMapping("/ipReplacement")
+    @ApiOperation("ip置换")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result<ServerResources> ipReplacement(@RequestBody @Valid ServerUpdateDto serverUpdateDto, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()){
+            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return serverResourcesService.ipReplacement(serverUpdateDto);
+    }
+
+
+
+    @GetMapping("/getById")
+    @ApiOperation("查询详情")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result<ServerResourcesDetailVo> getById(String id) {
+        if (StrUtil.isBlank( id)){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.getById(id);
     }
 
 

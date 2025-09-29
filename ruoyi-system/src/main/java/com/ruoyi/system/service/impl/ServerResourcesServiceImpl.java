@@ -2,8 +2,10 @@ package com.ruoyi.system.service.impl;
 
 
 import cn.hutool.core.lang.Dict;
+
 import cn.hutool.core.net.url.UrlPath;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.extra.template.Template;
 import cn.hutool.extra.template.TemplateConfig;
 import cn.hutool.extra.template.TemplateEngine;
@@ -20,13 +22,11 @@ import com.ruoyi.system.constant.ResourcesStatus;
 import com.ruoyi.system.constant.SalesStatus;
 import com.ruoyi.system.domain.dto.ResourceProcessingDto;
 import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
+import com.ruoyi.system.domain.dto.ServerUpdateDto;
 import com.ruoyi.system.domain.entity.*;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
 import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
-import com.ruoyi.system.domain.vo.ResourcesImportVo;
-import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
-import com.ruoyi.system.domain.vo.VendorAccountInformationVo;
-import com.ruoyi.system.domain.vo.XrayRestartVo;
+import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.ServerResourcesMapstruct;
@@ -45,7 +45,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
-
 import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,12 +52,12 @@ import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 
 /**
  * 服务器资源表(ServerResources)�����ʵ����
@@ -70,6 +69,9 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 @Service("serverResourcesService")
 public class ServerResourcesServiceImpl  implements IServerResourcesService {
+
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final SecureRandom random = new SecureRandom();
 
     @Resource
     private RedisCache redisCache;
@@ -122,6 +124,13 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         } else {
             return Result.fail("新增失败");
         }
+    }
+
+    public static String generateRandomString(int length) {
+        List<Character> collect = random.ints(length, 0, CHARACTERS.length())
+                .mapToObj(CHARACTERS::charAt)
+                .collect(Collectors.toList());
+        return collect.stream().map(String::valueOf).collect(Collectors.joining());
     }
 
     /**
@@ -414,6 +423,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResources.setShortId(xrayRestartVo.getShortId());
         serverResources.setUserId(userId);
         serverResources.setResourcesStatus(ResourcesStatus.WAIT_CHECK);
+        serverResources.setPassword(generateRandomString(10));
         //新增资源数据
         int update = serverResourcesMapper.updateById(serverResources);
 
@@ -423,13 +433,15 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             CompletableFuture.runAsync(() -> {
                 newResourcesValid(userId, serverResources, strUserId);
             });
-            return Result.success(serverResources);
+            return Result.success("重置资源成功");
         }else{
 
             return Result.fail("新增失败");
         }
 
     }
+
+
 
 
     /**
@@ -525,6 +537,59 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     }
 
     /**
+     * [详情查询]
+     *
+     * @param id
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.vo.ServerResourcesVo>
+     * @author 陈湘岳 2025/9/28
+     **/
+    @Override
+    public Result<ServerResourcesDetailVo> getById(String id) {
+        ServerResourcesDetailVo serverResourcesDetailVo = serverResourcesMapper.getById(id);
+        return ObjectUtils.isEmpty(serverResourcesDetailVo)? Result.fail("资源不存在"):Result.success(serverResourcesDetailVo);
+    }
+
+    /**
+     * [ip置换]
+     *
+     * @param serverUpdateDto 置换参数
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
+     * @author 陈湘岳 2025/9/28
+     **/
+    @Override
+    public Result<ServerResources> ipReplacement(ServerUpdateDto serverUpdateDto) {
+        ServerResources serverResources = serverResourcesMapper.selectById(serverUpdateDto.getId());
+        if (ObjectUtils.isEmpty(serverResources)){
+            return Result.fail("资源不存在");
+        }
+        serverResources.setResourcesIp(serverUpdateDto.getResourcesIp());
+        if (StrUtil.isNotEmpty(serverUpdateDto.getNodePort())){
+            // 创建Pattern对象
+            Pattern pattern = Pattern.compile("^([1-9]\\d{0,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$");
+            // 创建Matcher对象
+            Matcher matcher = pattern.matcher(serverUpdateDto.getNodePort());
+            // 判断是否符合
+            boolean isMatch = matcher.matches();
+            if (!isMatch){
+                return Result.fail("端口号必须是1-65535之间的整数");
+            }
+            serverResources.setNodePort(serverUpdateDto.getNodePort());
+        }
+        serverResources.setUpdateTime(new Date());
+        int update = serverResourcesMapper.updateById(serverResources);
+        if (update <= 0){
+            return Result.fail("置换失败");
+        }
+        ServerResourcesServiceImpl bean = SpringUtil.getBean(ServerResourcesServiceImpl.class);
+        Result<ServerResources> serverResourcesResult = bean.resourceReset(serverResources.getId());
+        if (serverResourcesResult.getCode() == 200) {
+            return Result.success("置换成功");
+        }else {
+            return Result.fail("置换失败");
+        }
+    }
+
+    /**
      * [通过出站节点查看是否可以通过目标代理节点访问谷歌]
      *
      * @param resourcesId
@@ -535,32 +600,33 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     @Transactional
     public Result getResourcesStatus(String resourcesId) {
         ServerResourcesXrayValid byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(resourcesId);
-        if (byResourcesId == null){
-            // 资源不存在  新增资源
+        if (byResourcesId == null) {
+            // 资源校验不存在  新增资源校验
             ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
-            if (ObjectUtils.isEmpty(serverResources)){
+            if (ObjectUtils.isEmpty(serverResources)) {
                 return Result.fail("资源不存在");
             }
             newResourcesValid(serverResources.getUserId(), serverResources, SecurityUtils.getStrUserId());
             byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(resourcesId);
         }
 
-        String xrayStatus = XrayManager.checkXrayStatus(byResourcesId.getWebIpPort(), byResourcesId.getXrayPort());
-        Result result = JSON.parseObject(xrayStatus, Result.class);
-        if (result.getCode()!=200){
-            log.error("调用go[newValidXray]接口失败，错误原因为"+result.getMessage());
-            return Result.fail("查询节点状态失败");
+        String xrayStatus = "";
+        try {
+            xrayStatus = XrayManager.checkXrayStatus(byResourcesId.getWebIpPort(), byResourcesId.getXrayPort());
+        }catch (Exception e){
+            log.error("调用go[newValidXray]接口失败，错误原因为" + e.getMessage());
+            return Result.fail("检测节点状态失败");
         }
 
-        log.info("调用go[newValidXray]接口成功，返回结果为"+result.getData());
-        String str= result.getData().toString();
-        boolean equals = "200".equals(str.trim());
-        if (equals){
-            serverResourcesMapper.updateResourcesStatus(resourcesId,ResourcesStatus.NORMAL);
-            return Result.success("节点状态正常");
-        }else {
-            serverResourcesMapper.updateResourcesStatus(resourcesId,ResourcesStatus.ERROR);
-            return Result.success("节点状态异常");
+        Result result = JSON.parseObject(xrayStatus, Result.class);
+        log.info("调用go[newValidXray]接口成功，返回结果为" + result.getData());
+
+        if (!ObjectUtils.isEmpty(result.getData())&&"200".equals(result.getData().toString().trim())) {
+            serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.NORMAL);
+            return Result.success("节点状态正常",true);
+        } else {
+            serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.ERROR);
+            return Result.success("节点状态异常",false);
         }
     }
 

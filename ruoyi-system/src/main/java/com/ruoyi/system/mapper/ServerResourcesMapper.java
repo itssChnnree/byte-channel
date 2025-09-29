@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
+import com.ruoyi.system.domain.vo.ServerResourcesDetailVo;
 import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
+import com.ruoyi.system.domain.vo.ServerResourcesVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
@@ -122,4 +124,12 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      **/
     int updateResourcesStatus(@Param("resourcesId") String resourcesId,@Param("resourcesStatus")String resourcesStatus);
 
+
+    /**
+     * [资源详情查询]
+     * @author 陈湘岳 2025/9/28
+     * @param id 资源id
+     * @return com.ruoyi.system.domain.vo.ServerResourcesVo
+     **/
+    ServerResourcesDetailVo getById(@Param("id") String id);
 }

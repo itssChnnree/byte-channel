@@ -3,8 +3,11 @@ package com.ruoyi.system.service;
 
 import com.ruoyi.system.domain.dto.ResourceProcessingDto;
 import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
+import com.ruoyi.system.domain.dto.ServerUpdateDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
+import com.ruoyi.system.domain.vo.ServerResourcesDetailVo;
+import com.ruoyi.system.domain.vo.ServerResourcesVo;
 import com.ruoyi.system.http.Result;
 import org.springframework.http.ResponseEntity;
 
@@ -117,4 +120,20 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     Result getXrayProcess(String resourcesId);
+
+    /**
+     * [详情查询]
+     * @author 陈湘岳 2025/9/28
+     * @param id
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.vo.ServerResourcesVo>
+     **/
+    Result<ServerResourcesDetailVo> getById(String id);
+
+    /**
+     * [ip置换]
+     * @author 陈湘岳 2025/9/28
+     * @param serverUpdateDto 置换参数
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    Result<ServerResources> ipReplacement(@Valid ServerUpdateDto serverUpdateDto);
 }

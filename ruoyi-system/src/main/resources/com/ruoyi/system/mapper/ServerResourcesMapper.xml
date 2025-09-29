@@ -465,6 +465,31 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
     </select>
 
 
+
+    <select id="getById" resultType="com.ruoyi.system.domain.vo.ServerResourcesDetailVo">
+        select sr.id as resourcesId,
+        sr.resources_ip resourcesIp,
+        sr.commodity_id as commodityId,
+        c.commodity_name as commodityName,
+        c.category_id as commodityCategoryId,
+        cc.category_name as commodityCategoryName,
+        vi.vendor_name as vendorName,
+        sr.resources_status,
+        sr.sales_status,
+        sr.available_status,
+        sr.vendor_account_id,
+        sr.resources_port as resourcesPort,
+        sr.resources_password resourcesPassword,
+        sr.resources_user_name resourcesUsername
+        from server_resources sr
+        left join commodity c on sr.commodity_id = c.id
+        left join commodity_category cc on c.category_id = cc.id
+        left join vendor_account_information vai on sr.vendor_account_id = vai.id
+        left join vendor_information vi on vai.vendor_id = vi.id
+        where 1=1 and sr.is_deleted = 0 and sr.id=#{id}
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, resources_user_name, node_port, public_broker_key, sni, short_id, user_id, commodity_id,password, is_deleted, create_user, update_user, create_time, update_time)

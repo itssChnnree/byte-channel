@@ -3,6 +3,7 @@ package com.ruoyi.system.util;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
+import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.system.domain.dto.RestartXrayDto;
 import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ public class XrayManager {
 
     //重启xray
     //在节点服务启动xray
-    public static String restartXray(String dest, String serverNames, Integer port, String userId,String resourcesIp){
+    public static String restartXray(String dest, String serverNames, Integer port, String userId,String resourcesIp) {
         RestartXrayDto restartXrayDto = new RestartXrayDto();
         restartXrayDto.setDest(dest);
         List<String> split = StrUtil.split(serverNames, ",");
@@ -33,7 +34,14 @@ public class XrayManager {
         restartXrayDto.setPort(port);
         restartXrayDto.setUserId(userId);
         //调用节点方法启动节点
-        return HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", JSON.toJSONString(restartXrayDto),5000);
+        String post;
+        try {
+            post = HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", JSON.toJSONString(restartXrayDto), 5000);
+        } catch (Exception e) {
+            throw new BaseException("重置失败，节点服务异常");
+        }
+
+        return post;
     }
 
 
@@ -42,7 +50,14 @@ public class XrayManager {
     public static String newValidXray(OutboundConfig outboundConfig,String ipAndPort){
         String api = "http://" + ipAndPort + "/newValidXray";
         log.info("新增xray校验调用url["+api+"]");
-        return HttpUtil.post(api, JSON.toJSONString(outboundConfig),5000);
+        String post;
+        try {
+            post = HttpUtil.post(api, JSON.toJSONString(outboundConfig),5000);
+        } catch (Exception e) {
+            log.error("新增校验节点资源校验数据异常"+e.getMessage());
+            throw new BaseException("新增校验节点资源校验数据异常");
+        }
+        return post;
     }
 
 
@@ -50,7 +65,14 @@ public class XrayManager {
     public static String checkXrayStatus(String ipAndPort,String inboundPort){
         String api = "http://"+ipAndPort+"/CheckXrayStatus?port="+inboundPort;
         log.info("xray校验调用url["+api+"]");
-        return HttpUtil.get(api,5000);
+        String post;
+        try {
+            post = HttpUtil.get(api,5000);
+        } catch (Exception e) {
+            log.error("检测资源节点网络连通性异常"+e.getMessage());
+            throw new BaseException("检测资源节点网络连通性异常");
+        }
+        return post;
     }
 
 
@@ -58,7 +80,14 @@ public class XrayManager {
     public static String getXrayPing(String ip){
         String api = "http://"+ip+":9080/ping";
         log.info("xray-资源节点go检测调用url["+api+"]");
-        return HttpUtil.get(api,5000);
+        String post;
+        try {
+            post = HttpUtil.get(api,5000);
+        } catch (Exception e) {
+            log.error("检测资源节点检测服务状态异常"+e.getMessage());
+            throw new BaseException("检测资源节点检测服务状态异常");
+        }
+        return post;
     }
 
 
@@ -66,7 +95,14 @@ public class XrayManager {
     public static String getXrayFirewalldStatus(String ip,String port){
         String api = "http://"+ip+":9080/checkFirewalld?port="+ port;
         log.info("xray-资源节点防火墙调用url["+api+"]");
-        return HttpUtil.get(api,5000);
+        String post;
+        try {
+            post = HttpUtil.get(api,5000);
+        } catch (Exception e) {
+            log.error("检测资源节点防火墙状态异常"+e.getMessage());
+            throw new BaseException("检测资源节点防火墙状态异常");
+        }
+        return post;
     }
 
 
@@ -74,7 +110,14 @@ public class XrayManager {
     public static String getXrayProcessStatus(String ip,String port){
         String api = "http://"+ip+":9080/checkXrayStatus";
         log.info("xray-资源节点xray进程状态调用url["+api+"]");
-        return HttpUtil.get(api,5000);
+        String post;
+        try {
+            post = HttpUtil.get(api,5000);
+        } catch (Exception e) {
+            log.error("检测资源节点xray状态异常"+e.getMessage());
+            throw new BaseException("检测资源节点xray状态异常");
+        }
+        return post;
     }
 
 }

@@ -76,6 +76,10 @@ public class Result<T> {
         return build(ResultCodeEnum.SUCCESS.getResultCode(), msg, null);
     }
 
+    public static<T> Result<T> success(String msg,T data){
+        return build(ResultCodeEnum.SUCCESS.getResultCode(), msg, data);
+    }
+
     public static Result fail(){
         Result result = new Result();
         result.setCode(ResultCodeEnum.FAIL.getResultCode());
