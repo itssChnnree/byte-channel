@@ -44,37 +44,4 @@ public class TicketMainTextFile extends ByteBaseEntity implements Serializable {
      */
     @TableField(value = "file_url")
     private String fileUrl;
-    /**
-     * 状态
-     */
-    @TableField(value = "status")
-    private String status;
-    /**
-     * 0为未删除，1为已删除
-     */
-    @TableField(value = "is_deleted")
-    private Integer isDeleted;
-    /**
-     * 创建人
-     */
-    @TableField(value = "create_user")
-    private String createUser;
-    /**
-     * 修改人
-     */
-    @TableField(value = "update_user")
-    private String updateUser;
-    /**
-     * 创建时间
-     */
-    @TableField(value = "create_time")
-    private Date createTime;
-    /**
-     * 修改时间
-     */
-    @TableField(value = "update_time")
-    private Date updateTime;
-
-
-
 }

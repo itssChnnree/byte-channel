@@ -2,6 +2,7 @@ package com.ruoyi.system.domain.vo;
 
 import java.util.Date;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -46,6 +47,7 @@ public class TicketMainTextFileVo {
 
     @ApiModelProperty("修改时间")
     private Date updateTime;
+
 
 
 }

@@ -30,6 +30,10 @@
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <update id="updateStatusById">
+        update ticket set status = #{status} where id = #{id}
+    </update>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="TicketVOMap">
         select id,
@@ -182,11 +186,26 @@
     </select>
 
 
+
+    <select id="getNeedUserReply" resultType="java.lang.Integer">
+        select count(*) from ticket
+         where status = '等待用户回复'
+           and is_deleted = 0
+           and create_user = #{userId}
+    </select>
+
+    <select id="getNeedServiceReply" resultType="java.lang.Integer">
+        select count(*) from ticket
+        where (status = '等待客服回复' or status = '处理中' or status = '新建')
+          and is_deleted = 0
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into ticket(id, user_id, ticket_type, status, description, ticket_title, is_deleted, create_user,
                            update_user, create_time, update_time)
-        values (#{entity.id}, #{userId}, #{ticketType}, #{status}, #{description}, #{ticketTitle}, #{isDeleted},
+        values (#{id}, #{userId}, #{ticketType}, #{status}, #{description}, #{ticketTitle}, #{isDeleted},
                 #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 

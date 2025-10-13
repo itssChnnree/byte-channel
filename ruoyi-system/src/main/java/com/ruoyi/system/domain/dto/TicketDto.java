@@ -1,11 +1,16 @@
 package com.ruoyi.system.domain.dto;
 
 import java.util.Date;
+import java.util.List;
 
+import com.ruoyi.system.domain.base.PageBase;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import javax.validation.constraints.NotBlank;
 
 
 /**
@@ -15,10 +20,11 @@ import lombok.NoArgsConstructor;
  * @version v1.0.0
  * @date 2025-09-29 14:57:34
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TicketDto {
+public class TicketDto extends PageBase {
 
     @ApiModelProperty("主键id")
     private String id;
@@ -27,31 +33,27 @@ public class TicketDto {
     private String userId;
 
     @ApiModelProperty("工单类型")
+    @NotBlank(message = "工单类型不能为空")
     private String ticketType;
 
     @ApiModelProperty("工单状态")
     private String status;
 
     @ApiModelProperty("工单描述")
+    @NotBlank(message = "工单描述不能为空")
     private String description;
 
     @ApiModelProperty("工单标题")
+    @NotBlank(message = "工单标题不能为空")
     private String ticketTitle;
 
-    @ApiModelProperty("0为未删除，1为已删除")
-    private Integer isDeleted;
 
-    @ApiModelProperty("创建人")
-    private String createUser;
+    @ApiModelProperty("工单正文")
+    @NotBlank(message = "工单正文不能为空")
+    private String ticketMainText;
 
-    @ApiModelProperty("修改人")
-    private String updateUser;
-
-    @ApiModelProperty("创建时间")
-    private Date createTime;
-
-    @ApiModelProperty("修改时间")
-    private Date updateTime;
+    @ApiModelProperty("工单正文文件路径")
+    private List<String> fileUrlList;
 
 
 }

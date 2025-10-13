@@ -159,7 +159,7 @@
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into ticket_main_text_file(id, ticket_main_text_id, file_url, status, is_deleted, create_user,
                                           update_user, create_time, update_time)
-        values (#{entity.id}, #{ticketMainTextId}, #{fileUrl}, #{status}, #{isDeleted}, #{createUser}, #{updateUser},
+        values (#{id}, #{ticketMainTextId}, #{fileUrl}, #{status}, #{isDeleted}, #{createUser}, #{updateUser},
                 #{createTime}, #{updateTime})
     </insert>
 

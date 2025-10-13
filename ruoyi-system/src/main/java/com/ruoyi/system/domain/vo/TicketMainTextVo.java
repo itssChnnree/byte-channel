@@ -50,5 +50,6 @@ public class TicketMainTextVo {
     @ApiModelProperty("修改时间")
     private Date updateTime;
 
-
+    @ApiModelProperty(value = "工单回复人用户名")
+    private String userName;
 }

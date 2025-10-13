@@ -7,6 +7,7 @@
         <result property="ticketId" column="ticket_id" jdbcType="VARCHAR"/>
         <result property="userId" column="user_id" jdbcType="VARCHAR"/>
         <result property="ticketMainText" column="ticket_main_text" jdbcType="VARCHAR"/>
+        <result property="userName" column="user_name" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="VARCHAR"/>
         <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
         <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
@@ -23,6 +24,7 @@
         <result property="status" column="status" jdbcType="VARCHAR"/>
         <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
         <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="userName" column="user_name" jdbcType="VARCHAR"/>
         <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
@@ -169,41 +171,13 @@
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into ticket_main_text(id, ticket_id, user_id, ticket_main_text, status, is_deleted, create_user,
+        insert into ticket_main_text(id, ticket_id, user_id,user_name, ticket_main_text, status, is_deleted, create_user,
                                      update_user, create_time, update_time)
-        values (#{entity.id}, #{ticketId}, #{userId}, #{ticketMainText}, #{status}, #{isDeleted}, #{createUser},
+        values (#{id}, #{ticketId}, #{userId},#{userName}, #{ticketMainText}, #{status}, #{isDeleted}, #{createUser},
                 #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
-    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into ticket_main_text(id,ticket_id, user_id, ticket_main_text, status, is_deleted, create_user,
-        update_user, create_time, update_time)
-        values
-        <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.ticketId}, #{entity.userId}, #{entity.ticketMainText}, #{entity.status},
-            #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
-        </foreach>
-    </insert>
 
-    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into ticket_main_text(id,ticket_id, user_id, ticket_main_text, status, is_deleted, create_user,
-        update_user, create_time, update_time)
-        values
-        <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.ticketId}, #{entity.userId}, #{entity.ticketMainText}, #{entity.status},
-            #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
-        </foreach>
-        on duplicate key update
-        ticket_id = values(ticket_id),
-        user_id = values(user_id),
-        ticket_main_text = values(ticket_main_text),
-        status = values(status),
-        is_deleted = values(is_deleted),
-        create_user = values(create_user),
-        update_user = values(update_user),
-        create_time = values(create_time),
-        update_time = values(update_time)
-    </insert>
 
 </mapper>
 
