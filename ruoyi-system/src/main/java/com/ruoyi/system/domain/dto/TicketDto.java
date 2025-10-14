@@ -3,6 +3,7 @@ package com.ruoyi.system.domain.dto;
 import java.util.Date;
 import java.util.List;
 
+import cn.hutool.core.util.StrUtil;
 import com.ruoyi.system.domain.base.PageBase;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
@@ -39,6 +40,9 @@ public class TicketDto extends PageBase {
     @ApiModelProperty("工单状态")
     private String status;
 
+    @ApiModelProperty("工单状态集合")
+    private List<String> statusList;
+
     @ApiModelProperty("工单描述")
     @NotBlank(message = "工单描述不能为空")
     private String description;
@@ -55,5 +59,11 @@ public class TicketDto extends PageBase {
     @ApiModelProperty("工单正文文件路径")
     private List<String> fileUrlList;
 
+
+    public void setStatusList(String status){
+        if (StrUtil.isNotBlank(status)){
+            this.statusList = StrUtil.split(status, ",");
+        }
+    }
 
 }

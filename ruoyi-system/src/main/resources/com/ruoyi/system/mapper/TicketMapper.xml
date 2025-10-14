@@ -30,6 +30,16 @@
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <resultMap type="com.ruoyi.system.domain.vo.TicketMainTextDetailVo" id="TicketMainTextDetailVoMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="ticketId" column="ticket_id" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="ticketMainText" column="ticket_main_text" jdbcType="VARCHAR"/>
+        <result property="userName" column="user_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+
     <update id="updateStatusById">
         update ticket set status = #{status} where id = #{id}
     </update>
@@ -199,6 +209,35 @@
         where (status = '等待客服回复' or status = '处理中' or status = '新建')
           and is_deleted = 0
     </select>
+
+    <select id="selectList" resultType="com.ruoyi.system.domain.vo.TicketVo">
+        select
+        id, t.user_id, ticket_type, t.status, description, ticket_title ,t.create_time,su.nick_name as createUser
+        from ticket t
+        left join sys_user su on t.user_id=su.user_id
+        where 1=1 and is_deleted = 0
+        <if test="userId != null and userId != ''">
+            and t.user_id = #{userId}
+        </if>
+        <if test="dto.id != null and dto.id != ''">
+            and id = #{dto.id}
+        </if>
+        <if test="dto.ticketTitle != null and dto.ticketTitle != ''">
+            and ticket_title like concat('%', #{dto.ticketTitle}, '%')
+        </if>
+        <if test="dto.statusList != null and dto.statusList.size > 0">
+            and t.status in
+            <foreach collection="dto.statusList" close=")" open="("  item="i" separator=",">
+                #{i}
+            </foreach>
+        </if>
+        <if test="dto.ticketType != null and dto.ticketType != ''">
+            and ticket_type = #{dto.ticketType}
+        </if>
+
+    </select>
+
+
 
 
     <!--新增所有列-->

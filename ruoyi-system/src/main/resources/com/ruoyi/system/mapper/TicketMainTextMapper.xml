@@ -30,6 +30,15 @@
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <select id="findByTicketId" resultType="com.ruoyi.system.domain.vo.TicketMainTextDetailVo">
+        select id, ticket_id, user_id, ticket_main_text, create_time, user_name
+        from ticket_main_text
+        where ticket_id = #{ticketId}
+        and is_deleted = 0 order by create_time desc
+    </select>
+
+
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="TicketMainTextVOMap">
         select id,

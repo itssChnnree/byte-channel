@@ -2,6 +2,7 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ruoyi.system.domain.vo.TicketMainTextFileVo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
@@ -28,4 +29,12 @@ public interface TicketMainTextFileMapper extends BaseMapper<TicketMainTextFile>
      * @return 影响行数
      */
     int insertBatch(@Param("entities") List<TicketMainTextFile> list);
+
+    /**
+     * [通过工单正文查询文件]
+     * @author 陈湘岳 2025/10/13
+     * @param ticketMainTextIds 工单正文id集合
+     * @return java.util.List<com.ruoyi.system.domain.vo.TicketMainTextFileVo>
+     **/
+    List<TicketMainTextFileVo> findByTicketMainTextId(@Param("list") List<String> ticketMainTextIds);
 }

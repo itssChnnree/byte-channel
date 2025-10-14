@@ -2,6 +2,7 @@ package com.ruoyi.system.mapstruct;
 
 
 import com.ruoyi.system.domain.dto.TicketDto;
+import com.ruoyi.system.domain.vo.TicketDetailVo;
 import com.ruoyi.system.domain.vo.TicketVo;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -64,5 +65,14 @@ public interface TicketMapstruct {
      * @author chenxiangyue 2025-09-29 14:57:34
      **/
     TicketVo change2Vo(Ticket ticket);
+
+    /**
+     * Entity ת VO
+     *
+     * @param ticket
+     * @return TicketVO
+     * @author chenxiangyue 2025-09-29 14:57:34
+     **/
+    TicketDetailVo change2DetailVo(Ticket ticket);
 
 }

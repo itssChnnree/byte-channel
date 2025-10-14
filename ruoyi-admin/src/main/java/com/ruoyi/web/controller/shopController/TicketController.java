@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ruoyi.framework.web.service.PermissionService;
 import com.ruoyi.system.domain.dto.IdDto;
 import com.ruoyi.system.domain.dto.TicketDto;
 import com.ruoyi.system.domain.dto.TicketMainTextDto;
@@ -31,6 +32,9 @@ public class TicketController   {
 
     @Resource(name = "ticketService")
     ITicketService ticketService;
+
+    @Resource
+    private PermissionService permissionService;
 
 
     @PostMapping("/insert")
@@ -80,6 +84,30 @@ public class TicketController   {
     @GetMapping("/getUserTicketList")
     public Result getUserTicketList(TicketDto ticketDto){
         return ticketService.getUserTicketList(ticketDto);
+    }
+
+    @ApiOperation("获取客服工单列表")
+    @GetMapping("/getServiceTicketList")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result getServiceTicketList(TicketDto ticketDto){
+        return ticketService.getServiceTicketList(ticketDto);
+    }
+
+
+    @ApiOperation("查询工单详情")
+    @GetMapping("/getTicketDetails")
+    public Result getTicketDetails(String id,Integer pageNum,Integer pageSize){
+        if (StrUtil.isBlank(id)){
+            return Result.fail("工单编号不能为空");
+        }
+        if(pageNum == null||pageNum<=0){
+            pageNum = 1;
+        }
+        if(pageSize == null||pageSize<=0){
+            pageSize = 10;
+        }
+        boolean hasPermi = permissionService.hasPermi("shop:background:admin");
+        return ticketService.getTicketDetails(id,hasPermi,pageNum,pageSize);
     }
 
 }

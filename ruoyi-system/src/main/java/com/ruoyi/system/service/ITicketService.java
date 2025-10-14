@@ -74,4 +74,21 @@ public interface ITicketService {
      * @return com.ruoyi.system.http.Result
      **/
     Result getUserTicketList(TicketDto ticketDto);
+
+
+    /**
+     * [客服查询工单]
+     * @author 陈湘岳 2025/10/13
+     * @param ticketDto 查询参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getServiceTicketList(TicketDto ticketDto);
+
+    /**
+     * [查询工单详情]
+     * @author 陈湘岳 2025/10/13
+     * @param id 工单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getTicketDetails(String id,Boolean hasPermi,int pageNum,int pageSize);
 }

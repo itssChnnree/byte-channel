@@ -30,24 +30,5 @@ public class TicketMainTextFileVo {
     @ApiModelProperty("文件路径")
     private String fileUrl;
 
-    @ApiModelProperty("状态")
-    private String status;
-
-    @ApiModelProperty("0为未删除，1为已删除")
-    private Integer isDeleted;
-
-    @ApiModelProperty("创建人")
-    private String createUser;
-
-    @ApiModelProperty("修改人")
-    private String updateUser;
-
-    @ApiModelProperty("创建时间")
-    private Date createTime;
-
-    @ApiModelProperty("修改时间")
-    private Date updateTime;
-
-
 
 }

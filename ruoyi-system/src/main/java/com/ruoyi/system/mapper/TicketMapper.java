@@ -3,10 +3,14 @@ package com.ruoyi.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.system.domain.dto.TicketDto;
+import com.ruoyi.system.domain.vo.TicketMainTextDetailVo;
+import com.ruoyi.system.domain.vo.TicketVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.system.domain.entity.Ticket;
+
+import java.util.List;
 
 /**
  * 工单主表(Ticket)�����ݿ���ʲ�
@@ -43,4 +47,14 @@ public interface TicketMapper extends BaseMapper<Ticket> {
      * @return int
      **/
     Integer getNeedServiceReply();
+
+    /**
+     * [根据条件分页查询]
+     * @author 陈湘岳 2025/10/13
+     * @param ticketDto 查询条件
+     * @return java.util.List<com.ruoyi.system.domain.vo.TicketVo>
+     **/
+    List<TicketVo> selectList(@Param("dto") TicketDto ticketDto,@Param("userId")String userId);
+
+
 }
