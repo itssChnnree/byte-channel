@@ -20,8 +20,8 @@ import javax.annotation.Resource;
  * @version v1.0.0
  * @date 2025/8/13
  */
-//@RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_ORDER_COMMODITY,
-//        topic = RocketMqConstant.ORDER_ADD_TOPIC)
+@RocketMQMessageListener(consumerGroup = RocketMqConstant.CREATE_ORDER_COMMODITY,
+        topic = RocketMqConstant.ORDER_ADD_TOPIC)
 @Slf4j
 @Service
 public class CreateOrderCommodityConsumer implements RocketMQListener<OrderMessageDto> {

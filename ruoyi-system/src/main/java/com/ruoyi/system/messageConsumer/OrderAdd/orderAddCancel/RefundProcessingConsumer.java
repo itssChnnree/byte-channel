@@ -26,8 +26,8 @@ import javax.annotation.Resource;
  * @date 2025/8/23
  */
 //todo 暂时注释增加重启速度
-//@RocketMQMessageListener(consumerGroup = RocketMqConstant.REFUND_PROCESSING,
-//        topic = RocketMqConstant.ORDER_ADD_CANCEL_TOPIC)
+@RocketMQMessageListener(consumerGroup = RocketMqConstant.REFUND_PROCESSING,
+        topic = RocketMqConstant.ORDER_ADD_CANCEL_TOPIC)
 @Slf4j
 @Service
 public class RefundProcessingConsumer implements RocketMQListener<OrderMessageDto> {

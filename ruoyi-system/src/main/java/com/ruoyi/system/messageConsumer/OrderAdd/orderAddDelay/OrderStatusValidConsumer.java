@@ -26,8 +26,8 @@ import javax.annotation.Resource;
  * @date 2025/8/19
  */
 //todo 暂时注释增加重启速度
-//@RocketMQMessageListener(consumerGroup = RocketMqConstant.ORDER_STATUS_VALID,
-//        topic = RocketMqConstant.ORDER_ADD_DELAY_TOPIC)
+@RocketMQMessageListener(consumerGroup = RocketMqConstant.ORDER_STATUS_VALID,
+        topic = RocketMqConstant.ORDER_ADD_DELAY_TOPIC)
 @Slf4j
 @Service
 public class OrderStatusValidConsumer implements RocketMQListener<OrderMessageDto> {

@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -29,6 +30,9 @@ public class TicketMainTextDto {
     @ApiModelProperty("工单主表id")
     @NotBlank(message = "工单主表id不能为空")
     private String ticketId;
+
+    @ApiModelProperty("报价")
+    private BigDecimal quote;
 
     @ApiModelProperty("提交用户id")
     private String userId;

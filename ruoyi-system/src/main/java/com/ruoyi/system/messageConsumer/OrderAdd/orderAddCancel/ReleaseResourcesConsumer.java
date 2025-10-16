@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
  * @date 2025/8/19
  */
 //todo 暂时注释增加重启速度
-//@RocketMQMessageListener(consumerGroup = RocketMqConstant.RELEASE_COMMODITY,
-//        topic = RocketMqConstant.ORDER_ADD_CANCEL_TOPIC)
+@RocketMQMessageListener(consumerGroup = RocketMqConstant.RELEASE_COMMODITY,
+        topic = RocketMqConstant.ORDER_ADD_CANCEL_TOPIC)
 @Slf4j
 @Service
 public class ReleaseResourcesConsumer implements RocketMQListener<OrderMessageDto> {

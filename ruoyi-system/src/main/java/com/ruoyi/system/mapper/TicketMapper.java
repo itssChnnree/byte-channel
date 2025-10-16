@@ -54,7 +54,7 @@ public interface TicketMapper extends BaseMapper<Ticket> {
      * @param ticketDto 查询条件
      * @return java.util.List<com.ruoyi.system.domain.vo.TicketVo>
      **/
-    List<TicketVo> selectList(@Param("dto") TicketDto ticketDto,@Param("userId")String userId);
+    List<TicketVo> selectList(@Param("dto") TicketDto ticketDto,@Param("userId")String userId,@Param("orderType")String orderType);
 
 
 }

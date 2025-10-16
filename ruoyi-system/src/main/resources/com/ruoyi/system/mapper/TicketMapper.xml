@@ -234,7 +234,7 @@
         <if test="dto.ticketType != null and dto.ticketType != ''">
             and ticket_type = #{dto.ticketType}
         </if>
-
+        order by create_time ${orderType}
     </select>
 
 

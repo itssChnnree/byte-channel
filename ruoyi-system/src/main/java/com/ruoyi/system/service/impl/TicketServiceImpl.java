@@ -7,23 +7,18 @@ import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.PageUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.TicketStatus;
-import com.ruoyi.system.domain.base.PageUtil;
 import com.ruoyi.system.domain.dto.TicketDto;
 import com.ruoyi.system.domain.dto.TicketMainTextDto;
 import com.ruoyi.system.domain.entity.Ticket;
 import com.ruoyi.system.domain.entity.TicketMainText;
 import com.ruoyi.system.domain.entity.TicketMainTextFile;
-import com.ruoyi.system.domain.vo.TicketDetailVo;
-import com.ruoyi.system.domain.vo.TicketMainTextDetailVo;
-import com.ruoyi.system.domain.vo.TicketMainTextFileVo;
-import com.ruoyi.system.domain.vo.TicketVo;
+import com.ruoyi.system.domain.entity.TicketMainTextQuote;
+import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.http.Result;
-import com.ruoyi.system.mapper.SysUserMapper;
-import com.ruoyi.system.mapper.TicketMainTextFileMapper;
-import com.ruoyi.system.mapper.TicketMainTextMapper;
-import com.ruoyi.system.mapper.TicketMapper;
+import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.TicketMapstruct;
 import com.ruoyi.system.service.ITicketService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -31,6 +26,8 @@ import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +37,7 @@ import java.util.stream.Collectors;
  * @version v1.0.0
  * @date 2025-09-29 14:57:35
  */
+@Slf4j
 @Service("ticketService")
 public class TicketServiceImpl  implements ITicketService {
 
@@ -51,6 +49,9 @@ public class TicketServiceImpl  implements ITicketService {
 
     @Resource
     private SysUserMapper  sysUserMapper;
+
+    @Resource
+    private TicketMainTextQuoteMapper ticketMainTextQuoteMapper;
 
 
     @Resource
@@ -172,7 +173,7 @@ public class TicketServiceImpl  implements ITicketService {
     public Result getNeedUserReply() {
         Integer needUserReply = ticketMapper.getNeedUserReply(SecurityUtils.getStrUserId());
         if (ObjectUtils.isEmpty(needUserReply)||needUserReply==0){
-            return Result.success(false);
+            return Result.success(0);
         }
         return Result.success(needUserReply);
     }
@@ -212,6 +213,14 @@ public class TicketServiceImpl  implements ITicketService {
             });
             ticketMainTextFileMapper.insertBatch(ticketMainTextFiles);
         }
+        //判断是否为报价单
+        if (!ObjectUtils.isEmpty(ticketDto.getQuote())){
+            TicketMainTextQuote ticketMainTextQuote = new TicketMainTextQuote();
+            ticketMainTextQuote.setTicketMainTextId(ticketMainText.getId());
+            ticketMainTextQuote.setQuote(ticketDto.getQuote());
+            ticketMainTextQuote.setStatus(TicketStatus.QUOTE_NOT_PROCESSED);
+            ticketMainTextQuoteMapper.insert(ticketMainTextQuote);
+        }
         ticketMapper.updateStatusById(ticketDto.getTicketId(),TicketStatus.WAITING_USER_REPLY);
         return Result.success("回复工单成功");
     }
@@ -226,7 +235,7 @@ public class TicketServiceImpl  implements ITicketService {
     public Result getNeedServiceReply() {
         Integer needUserReply = ticketMapper.getNeedServiceReply();
         if (ObjectUtils.isEmpty(needUserReply)||needUserReply==0){
-            return Result.success(false);
+            return Result.success(0);
         }
         return Result.success(needUserReply);
     }
@@ -241,7 +250,7 @@ public class TicketServiceImpl  implements ITicketService {
     @Override
     public Result getUserTicketList(TicketDto ticketDto) {
         PageUtils.startPage(ticketDto);
-        List<TicketVo> ticketVos = ticketMapper.selectList(ticketDto,SecurityUtils.getStrUserId());
+        List<TicketVo> ticketVos = ticketMapper.selectList(ticketDto,SecurityUtils.getStrUserId(),"desc");
         PageUtils.clearPage();
         return Result.success(new PageInfo<>(ticketVos));
     }
@@ -255,8 +264,14 @@ public class TicketServiceImpl  implements ITicketService {
      **/
     @Override
     public Result getServiceTicketList(TicketDto ticketDto) {
+        String orderType = "desc";
+        if (!CollectionUtils.isEmpty(ticketDto.getStatusList())){
+            if (ticketDto.getStatusList().contains(TicketStatus.WAITING_SERVICE_REPLY)
+                    ||ticketDto.getStatusList().contains(TicketStatus.NEW))
+                orderType = "asc";
+        }
         PageUtils.startPage(ticketDto);
-        List<TicketVo> ticketVos = ticketMapper.selectList(ticketDto,null);
+        List<TicketVo> ticketVos = ticketMapper.selectList(ticketDto,null,orderType);
         PageUtils.clearPage();
         return Result.success(new PageInfo<>(ticketVos));
     }
@@ -283,8 +298,31 @@ public class TicketServiceImpl  implements ITicketService {
         if (CollectionUtils.isEmpty(byTicketId)){
             return Result.success(ticketDetailVo);
         }
+        String strUserId = SecurityUtils.getStrUserId();
         //提取出工单正文id
         List<String> collect = byTicketId.stream().map(TicketMainTextDetailVo::getId).collect(Collectors.toList());
+        //为工单正文设置文件
+        CompletableFuture<Void> setFileCompletableFuture = CompletableFuture.runAsync(() -> {
+            setFile(collect, byTicketId,strUserId);
+        });
+
+        //设置报价
+        CompletableFuture<Void> setQuoteCompletableFuture = CompletableFuture.runAsync(() -> {
+            setQuote(collect, byTicketId);
+        });
+        CompletableFuture<Void> voidCompletableFuture = CompletableFuture.allOf(setFileCompletableFuture, setQuoteCompletableFuture);
+        try {
+            voidCompletableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            log.error("设置文件或报价失败{}", e.getMessage());
+            return Result.fail("查询工单详情失败");
+        }
+        ticketDetailVo.setTicketMainTextDetailVos(byTicketId);
+        return Result.success(ticketDetailVo);
+    }
+
+    private void setFile(List<String> collect, List<TicketMainTextDetailVo> byTicketId,String strUserId) {
         //获取工单正文文件
         List<TicketMainTextFileVo> byTicketMainTextId = ticketMainTextFileMapper.findByTicketMainTextId(collect);
         //键为工单正文id  值为工单正文下的文件集合
@@ -299,7 +337,6 @@ public class TicketServiceImpl  implements ITicketService {
                 map.put(ticketMainTextFileVo.getTicketMainTextId(),list);
             }
         });
-        String strUserId = SecurityUtils.getStrUserId();
         //循环工单正文集合,为工单正文设置工单正文下的文件集合
         byTicketId.forEach(ticketMainTextDetailVo -> {
             if (map.containsKey(ticketMainTextDetailVo.getId())){
@@ -307,8 +344,25 @@ public class TicketServiceImpl  implements ITicketService {
             }
             ticketMainTextDetailVo.setIsMe(StrUtil.equals(strUserId, ticketMainTextDetailVo.getUserId()));
         });
+    }
 
-        ticketDetailVo.setTicketMainTextDetailVos(byTicketId);
-        return Result.success(ticketDetailVo);
+    //设置报价
+    private void setQuote(List<String> collect, List<TicketMainTextDetailVo> byTicketId) {
+        //获取工单正文文件
+        List<TicketMainTextQuoteVo> byTicketMainTextId = ticketMainTextQuoteMapper.findByTicketMainTextId(collect);
+        //键为工单正文id  值为工单正文下的文件集合
+        Map<String,TicketMainTextQuoteVo> map = new HashMap<>();
+        //循环工单正文文件集合,生成  工单正文id:工单正文下的文件集合
+        byTicketMainTextId.forEach(ticketMainTextQuoteVo->{
+            if (!map.containsKey(ticketMainTextQuoteVo.getTicketMainTextId())){
+                map.put(ticketMainTextQuoteVo.getTicketMainTextId(),ticketMainTextQuoteVo);
+            }
+        });
+        //循环工单正文集合,为工单正文设置工单正文下的文件集合
+        byTicketId.forEach(ticketMainTextDetailVo -> {
+            if (map.containsKey(ticketMainTextDetailVo.getId())){
+                ticketMainTextDetailVo.setTicketMainTextQuoteVo(map.get(ticketMainTextDetailVo.getId()));
+            }
+        });
     }
 }
