@@ -37,6 +37,16 @@ public interface OrderMapper extends BaseMapper<Order> {
     Order queryById(@Param("id") String id);
 
     /**
+     * [根据订单id修改订单状态]
+     * @author 陈湘岳 2025/10/16
+     * @param id 订单id
+     * @param status 订单状态
+     * @return int
+     **/
+    int updateStatusById(@Param("id") String id, @Param("status") String status);
+    
+    
+    /**
      * 查询订单信息
      * @author 陈湘岳 2025/9/3
      * @param id 订单id

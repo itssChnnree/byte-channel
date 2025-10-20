@@ -120,4 +120,8 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
      * @return java.lang.String
      **/
     String findCommodityNameByResourcesId(@Param("resourcesId") String resourcesId);
+
+
+
+
 }

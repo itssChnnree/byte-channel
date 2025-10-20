@@ -71,7 +71,9 @@ public class ReleaseCommodityConsumer implements RocketMQListener<OrderMessageDt
                 log.error("获取锁异常", e);
                 throw new RuntimeException("系统繁忙，请稍后再试");
             }finally {
-                lock.unlock();
+                if (lock.isHeldByCurrentThread()){
+                    lock.unlock();
+                }
             }
         });
     }

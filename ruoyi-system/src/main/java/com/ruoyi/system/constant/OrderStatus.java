@@ -32,7 +32,7 @@ public interface OrderStatus {
      String WAIT_ALLOCATION_RESOURCES = "WAIT_ALLOCATION_RESOURCES";
 
     //资源分配中
-     String ALLOCATION_RESOURCES = "ALLOCATION_RESOURCES";
+//     String ALLOCATION_RESOURCES = "ALLOCATION_RESOURCES";
 
     //已完成
      String COMPLETED = "COMPLETED";

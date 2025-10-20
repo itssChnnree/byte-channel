@@ -51,6 +51,7 @@ public class OrderStatusValidConsumer implements RocketMQListener<OrderMessageDt
     @Override
     @Transactional
     public void onMessage(OrderMessageDto orderMessageDto) {
+        System.out.println("取消订单-30分钟校验");
         orderGeneral.orderGeneral(orderMessageDto, RocketMqConstant.ORDER_STATUS_VALID, () -> {
             Order order = orderMapper.queryById(orderMessageDto.getOrder().getId());
             if (ObjectUtil.isEmpty( order)){
@@ -59,8 +60,8 @@ public class OrderStatusValidConsumer implements RocketMQListener<OrderMessageDt
             //判断订单是否是完成状态
             if (OrderStatus.WAIT_PAY.equals(order.getStatus())){
                 //订单置为已取消状态
-                order.setStatus(OrderStatus.CANCELED_TIMEOUT);
-                orderMapper.updateById(order);
+//                order.setStatus(OrderStatus.CANCELED_TIMEOUT);
+                orderMapper.updateStatusById(order.getId(),OrderStatus.CANCELED_TIMEOUT);
                 //若是待支付状态则取消订单并回退锁定资源
                 SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_CANCEL_TOPIC, orderMessageDto);
                 if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){

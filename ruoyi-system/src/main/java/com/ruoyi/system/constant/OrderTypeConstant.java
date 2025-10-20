@@ -11,4 +11,7 @@ public interface OrderTypeConstant {
 
     //充值
     String RECHARGE = "recharge";
+
+    //报价
+    String QUOTE = "quote";
 }

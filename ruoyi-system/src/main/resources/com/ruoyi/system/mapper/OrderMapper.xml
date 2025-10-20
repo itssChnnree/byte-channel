@@ -34,9 +34,13 @@
     </resultMap>
 
 
+    <update id="updateStatusById">
+        update `order`set status = #{status} where id = #{id}
+    </update>
+
 
     <!--��ѯ����-->
-    <select id="queryById" resultMap="OrderVOMap">
+    <select id="queryById" resultMap="OrderMap">
         select
             id, user_id, amount, status, description,order_time, is_deleted, create_user, update_user, create_time, update_time
         from `order`

@@ -69,4 +69,30 @@ public interface IOrderService{
      * @return com.ruoyi.system.http.Result
      **/
     Result getOrderInfo(String orderId);
+
+
+    /**
+     * [获取订单状态]
+     * @author 陈湘岳 2025/10/16
+     * @param orderId
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getOrderStatus(String orderId);
+
+    /**
+     * [用户点击订单已支付]
+     * @author 陈湘岳 2025/10/16
+     * @param orderId
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result orderIsPay(String orderId);
+
+
+    /**
+     * [订单取消新版（不使用消息队列）]
+     * @author 陈湘岳 2025/10/17
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result cancelOrderNew(String orderId,String status);
 }

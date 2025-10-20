@@ -9,6 +9,10 @@ package com.ruoyi.system.constant;
  */
 public interface RocketMqConstant {
 
+//    -----------------------订单支付-topic类型---------------------------------
+    //订单支付后
+    String ORDER_PAY_TOPIC = "order-pay-topic";
+
 
 //    -----------------------新增-topic类型---------------------------------
 

@@ -37,4 +37,5 @@ public interface OrderCommodityMapper extends BaseMapper<OrderCommodity> {
      * @return com.ruoyi.system.domain.entity.OrderCommodity
      **/
     OrderByCommodityDto findCommodityByOrderId(@Param("orderId") String orderId);
+
 }

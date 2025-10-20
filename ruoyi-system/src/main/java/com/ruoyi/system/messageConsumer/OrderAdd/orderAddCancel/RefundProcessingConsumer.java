@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 /**
- * [取消推荐]
+ * [退款]
  *
  * @author 陈湘岳
  * @version v1.0.0

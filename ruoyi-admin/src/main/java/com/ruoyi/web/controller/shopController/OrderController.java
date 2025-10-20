@@ -1,6 +1,7 @@
 package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
+import com.ruoyi.system.constant.OrderStatus;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.group.InsertGroup;
@@ -49,14 +50,45 @@ public class OrderController {
     }
 
 
+    @GetMapping("/getOrderStatus")
+    @ApiOperation("获取订单状态")
+    public Result getOrderStatus(String orderId){
+        if (StrUtil.isBlank(orderId)){
+            return Result.fail("请选择订单");
+        }
+        return orderService.getOrderStatus(orderId);
+    }
+
+
+    @ApiOperation("订单已支付")
+    @PostMapping("/orderIsPay")
+    public Result orderIsPay(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.orderIsPay(orderId);
+    }
+
+
+
+//    @GetMapping("/cancelOrder")
+//    @ApiOperation("取消订单")
+//    public Result cancelOrder(String orderId){
+//        if (StrUtil.isBlank(orderId)) {
+//            return Result.fail("请选择订单");
+//        }
+//        return orderService.cancelOrder(orderId);
+//    }
+
     @GetMapping("/cancelOrder")
     @ApiOperation("取消订单")
     public Result cancelOrder(String orderId){
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");
         }
-        return orderService.cancelOrder(orderId);
+        return orderService.cancelOrderNew(orderId, OrderStatus.USER_CANCELED);
     }
+
 
 
     @GetMapping("/pageQuery")
