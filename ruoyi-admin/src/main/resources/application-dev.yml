@@ -100,18 +100,3 @@ ruoyi:
 resources:
   clashUrl: http://8.155.17.11:${server.port}/serverResources/download
 
-
-rocketmq:
-  # rocketMq的nameServer地址
-  name-server: localhost:9876
-  producer:
-    # 生产者组别
-    group: order-create
-    # 消息发送的超时时间
-    send-message-timeout: 3000
-    # 异步消息发送失败重试次数
-    retry-times-when-send-async-failed: 2
-    # 发送消息的最大大小，单位字节，这里等于4M
-    max-message-size: 4194304
-#    access-key: qyly_pub
-#    secret-key: Hk4$bN9^s+P

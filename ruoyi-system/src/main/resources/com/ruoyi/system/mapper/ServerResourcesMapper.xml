@@ -143,6 +143,7 @@
         where id = #{resourcesId}
     </update>
 
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesVOMap">
         select
@@ -382,6 +383,8 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         </where>
     </select>
 
+
+
     <select id="haveServerResources" resultType="java.lang.String">
         select distinct commodity_id from server_resources where is_deleted = 0 and commodity_id in
         <foreach item="item" index="index" collection="commodityIdList" separator="," close=")" open="(" >
@@ -488,6 +491,19 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         left join vendor_information vi on vai.vendor_id = vi.id
         where 1=1 and sr.is_deleted = 0 and sr.id=#{id}
     </select>
+
+    <select id="findByCommodityId" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select * from server_resources
+                 where commodity_id = #{commodityId}
+                   and is_deleted = 0
+                   and sales_status = 'NOT_SALE'
+                   and available_status = 1
+                 order by update_time
+                 limit 1 for update skip locked
+    </select>
+
+
+
 
 
     <!--新增所有列-->

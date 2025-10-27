@@ -162,6 +162,15 @@ id, user_id, balance, invitees_number, referral_bonus_credits, is_deleted, creat
     </select>
 
 
+    <select id="findWalletBalanceByUserId" resultType="com.ruoyi.system.domain.entity.WalletBalance">
+        select
+            id, user_id, balance, invitees_number, referral_bonus_credits,
+            is_deleted, create_user, update_user, create_time, update_time
+        from wallet_balance
+        where user_id = #{userId} and is_deleted = 0
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into wallet_balance(id,user_id, balance, invitees_number, referral_bonus_credits, is_deleted, create_user, update_user, create_time, update_time)

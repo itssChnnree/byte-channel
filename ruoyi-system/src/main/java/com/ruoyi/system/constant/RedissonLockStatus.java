@@ -16,5 +16,8 @@ public interface RedissonLockStatus {
      String ORDER_CANCEL_STATUS_LOCK = "ORDER_CANCEL_STATUS_LOCK:";
 
      //订单确认支付处理
-     String ORDER_CONFIRM_PAY_LOCK = "ORDER_CONFIRM_PAY_LOCK:";
+     String ORDER_STATUS_UPDATE_LOCK = "ORDER_STATUS_UPDATE_LOCK:";
+
+     //余额锁
+     String USER_BALANCE_LOCK = "USER_BALANCE_LOCK:";
 }

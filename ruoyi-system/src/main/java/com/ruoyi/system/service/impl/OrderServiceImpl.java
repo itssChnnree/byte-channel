@@ -3,37 +3,35 @@ package com.ruoyi.system.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
+import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.*;
+import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.util.DefaultValueUtil;
-import com.ruoyi.system.constant.OrderStatus;
-import com.ruoyi.system.constant.PaymentPeriodConstant;
-import com.ruoyi.system.constant.RedissonLockStatus;
-import com.ruoyi.system.constant.RocketMqConstant;
 import com.ruoyi.system.domain.entity.*;
-import com.ruoyi.system.domain.vo.OrderInfoVo;
-import com.ruoyi.system.domain.vo.OrderVo;
-import com.ruoyi.system.domain.vo.PriceCalculateVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.service.IOrderService;
 import com.ruoyi.system.strategy.OrderCreate.OrderCreateContext;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.client.producer.SendStatus;
-import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -69,9 +67,6 @@ public class OrderServiceImpl implements IOrderService {
     private OrderCommodityMapper orderCommodityMapper;
 
     @Resource
-    private RocketMQTemplate rocketMqTemplate;
-
-    @Resource
     private PromoCodeRecordsMapper promoCodeRecordsMapper;
 
     @Resource
@@ -83,8 +78,14 @@ public class OrderServiceImpl implements IOrderService {
     @Resource
     private ServerResourcesMapper serverResourcesMapper;
 
-    @Resource(name = "orderCache")
-    private Cache<String, ReentrantLock> orderCache;
+    @Resource
+    private RestTemplate restTemplate;
+
+    @Resource
+    private WalletBalanceMapper walletBalanceMapper;
+
+    @Resource
+    private WalletBalanceDetailMapper walletBalanceDetailMapper;
 
 
     /**
@@ -201,16 +202,6 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
-    private void sendMessage(OrderMessageDto orderMessageDto) {
-        SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_TOPIC, orderMessageDto);
-        if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){
-            SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_TOPIC, orderMessageDto);
-            if (!sendResult2.getSendStatus().equals(SendStatus.SEND_OK)){
-                throw new RuntimeException("生成订单失败，请稍后再试");
-            }
-        }
-    }
-
     private static OrderMessageDto buildOrderMessageDto(OrderByCommodityDto orderByCommodityDto, Order order, PromoCodeRecords promoCodeRecords) {
         //创建消息队列类
         OrderMessageDto orderMessageDto = new OrderMessageDto();
@@ -259,69 +250,6 @@ public class OrderServiceImpl implements IOrderService {
 
 
     /**
-     * [消息队列测试]
-     *
-     * @return java.lang.String
-     * @author 陈湘岳 2025/8/14
-     **/
-    @Override
-    public String test() {
-//        for (int i = 0; i < 300; i++){
-            OrderMessageDto orderMessageDto = new OrderMessageDto(20000, null, null, null);
-            SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_TOPIC, orderMessageDto);
-//        }
-        return "测试完毕";
-    }
-
-    /**
-     * [取消订单]
-     *
-     * @param orderId
-     * @return com.ruoyi.system.http.Result
-     * @author 陈湘岳 2025/8/24
-     **/
-    @Override
-    public Result cancelOrder(String orderId) {
-        Order order = orderMapper.queryById(orderId);
-        if (order == null){
-            return Result.fail("订单不存在");
-        }
-        if (OrderStatus.WAIT_REFUND.equals(order.getStatus())){
-            return Result.fail("订单正在退款中");
-        }
-        if (OrderStatus.USER_CANCELED.equals(order.getStatus())
-                || OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
-            return Result.fail("订单已取消");
-        }
-        if (OrderStatus.REFUND_SUCCESS.equals(order.getStatus())){
-            return Result.fail("订单已退款成功");
-        }
-        //订单取消标志位
-        String key = RedissonLockStatus.ORDER_CANCEL_STATUS_LOCK+orderId;
-        //插入成功，说明订单未撤回，插入失败代表订单已撤回
-        Boolean isNotCancel = redisTemplate.opsForValue().setIfAbsent(key, "1",3600, TimeUnit.SECONDS);
-        if (Boolean.FALSE.equals(isNotCancel)){
-            //订单撤回标志位设置成功
-            //设置过期时间
-            order.setStatus(OrderStatus.USER_CANCELED);
-            orderMapper.updateById(order);
-            OrderByCommodityDto commodityByOrderId = orderCommodityMapper.findCommodityByOrderId(orderId);
-            OrderMessageDto orderMessageDto = buildOrderMessageDto(commodityByOrderId, order, null);
-            SendResult sendResult1 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_CANCEL_TOPIC, orderMessageDto);
-            if (!sendResult1.getSendStatus().equals(SendStatus.SEND_OK)){
-                SendResult sendResult2 = rocketMqTemplate.syncSend(RocketMqConstant.ORDER_ADD_CANCEL_TOPIC, orderMessageDto);
-                if (!sendResult2.getSendStatus().equals(SendStatus.SEND_OK)){
-                    throw new RuntimeException("订单["+orderMessageDto.getOrder().getId()+"]发送取消消息失败，等待重试");
-                }
-            }
-            return Result.success("订单取消成功");
-        }else {
-            return Result.fail("订单已取消");
-        }
-    }
-
-
-    /**
      * [订单取消新版（不使用消息队列）]
      *
      * @param orderId 订单id
@@ -355,6 +283,53 @@ public class OrderServiceImpl implements IOrderService {
         refund(order);
         return Result.success("订单取消成功");
     }
+
+
+    /**
+     * [根据订单id获取支付二维码]
+     *
+     * @param orderId  订单id
+     * @param payaType 支付方式，可选支付宝或微信
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/10/24
+     **/
+    @Override
+    public Result getQrCode(String orderId, String payaType) {
+        //获取订单状态
+        Order order = orderMapper.queryById(orderId);
+        Result<?> validStatus = validStatus(orderId, order);
+        if (validStatus != null){
+            return validStatus;
+        }
+        if (getOrderPayStatus(orderId)){
+            return Result.success("订单已支付",true);
+        }else {
+            OrderPayUrlVo orderPayUrlVo = new OrderPayUrlVo();
+            orderPayUrlVo.setPayUrl(getPayUrl(orderId, payaType));
+            orderPayUrlVo.setOrderId(orderId);
+            orderPayUrlVo.setPayType(payaType);
+            orderPayUrlVo.setPayMoney(order.getAmount());
+            return Result.success(orderPayUrlVo);
+        }
+    }
+
+
+    private String getPayUrl(String orderId, String payaType){
+        if (OrderStatus.ALIPAY_PAY.equals(payaType)){
+
+        } else if (OrderStatus.WECHAT_PAY.equals(payaType)) {
+
+        }else {
+            throw new RuntimeException("支付方式错误");
+        }
+        RequestThreePayVo forObject = restTemplate.getForObject("https://mock.apipost.net/mock/335560/getCode?apipost_id=391baed8798152", RequestThreePayVo.class);
+        if (ObjectUtil.isNull(forObject)){
+            throw new RuntimeException("获取支付二维码失败");
+        }
+        return forObject.getUrl();
+    }
+
+
 
     //退款
     private void refund(Order order) {
@@ -579,7 +554,7 @@ public class OrderServiceImpl implements IOrderService {
 
     //获取订单支付状态,已支付为true、未支付为false
     private Boolean getOrderPayStatus(String orderId) {
-        return false;
+        return Math.random()>0.5;
     }
 
 
@@ -616,43 +591,185 @@ public class OrderServiceImpl implements IOrderService {
      * @author 陈湘岳 2025/10/16
      **/
     @Override
-    public Result orderIsPay(String orderId) {
+    public Result orderIsPay(String orderId,Boolean isBalance) {
         //获取订单状态
         Order order = orderMapper.queryById(orderId);
+        Result<?> validStatus = validStatus(orderId, order);
+        if (validStatus != null){
+            return validStatus;
+        }
+        OrderServiceImpl bean = SpringUtil.getBean(OrderServiceImpl.class);
+        //如果第三方已支付，则走第三方支付,未支付则判断是否余额支付，是走余额支付，否则支付失败
+        if (getOrderPayStatus(orderId)){
+            return bean.allocationResources(orderId, order);
+        }else {
+            return bean.noThreePay(orderId, isBalance, order, bean);
+        }
+    }
+
+    @Transactional
+    public Result<Boolean> noThreePay(String orderId, Boolean isBalance, Order order, OrderServiceImpl bean) {
+        if (isBalance){
+            order.setPaymentType(OrderStatus.BALANCE_PAY);
+            Boolean reduceBalance = reduceBalance(order);
+            if (!reduceBalance){
+                return Result.success("余额不足，请充值", false);
+            }
+            return bean.allocationResources(orderId, order);
+        }else {
+            return Result.success("未检测到支付信息，请稍后再试", false);
+        }
+    }
+
+
+    //余额扣减
+    private Boolean reduceBalance(Order order){
+        String userId = SecurityUtils.getStrUserId();
+        RLock lock = redissonClient.getLock(RedissonLockStatus.USER_BALANCE_LOCK + userId);
+        try{
+            if (lock.tryLock()) {
+                //获取用户余额
+                WalletBalance walletBalanceByUserId = walletBalanceMapper.findWalletBalanceByUserId(userId);
+                //判断余额是否充足
+                if (ObjectUtil.isNull(walletBalanceByUserId)) {
+                    throw new RuntimeException("查询用户余额错误，请联系管理员");
+                }
+                if (walletBalanceByUserId.getBalance().compareTo(order.getAmount()) < 0){
+                    return false;
+                }
+                //余额充足，则扣减余额
+                walletBalanceByUserId.setBalance(walletBalanceByUserId.getBalance().subtract(order.getAmount()));
+                int i = walletBalanceMapper.updateById(walletBalanceByUserId);
+                if (i >= 1){
+                    //添加余额变更记录
+                    walletBalanceDetailMapper.insert(buildWalletBalanceDetail(walletBalanceByUserId, order));
+                    return true;
+                }else {
+                    throw new RuntimeException("余额变更失败，请联系管理员");
+                }
+            }else {
+                throw new RuntimeException("余额变更中，请稍后再试");
+            }
+        }finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
+
+    private WalletBalanceDetail buildWalletBalanceDetail(WalletBalance walletBalance, Order order) {
+        WalletBalanceDetail walletBalanceDetail = new WalletBalanceDetail();
+        walletBalanceDetail.setUserId(walletBalance.getUserId());
+        walletBalanceDetail.setChangeAmount(order.getAmount().doubleValue());
+        walletBalanceDetail.setType(BalanceDetailStatus.REDUCE);
+        return walletBalanceDetail;
+    }
+
+
+    //余额支付
+    @Transactional
+    public Result<Boolean> allocationResources(String orderId, Order order) {
+        //已经支付后锁住该订单，做相关操作
+        RLock lock = redissonClient.getLock(RedissonLockStatus.ORDER_STATUS_UPDATE_LOCK + orderId);
+        try{
+            if (lock.tryLock()) {
+                //分配资源，新增订单资源
+                OrderCommodity orderCommodity = orderCommodityMapper.findByOrderId(order.getId());
+                String resourcesId = allocationResources(order,orderCommodity);
+                //如果订单id为空，则订单置为待分配资源状态
+                if (StrUtil.isBlank(resourcesId)){
+                    order.setStatus(OrderStatus.WAIT_ALLOCATION_RESOURCES);
+                    orderMapper.updateById(order);
+                }else {
+                    OrderCommodityResources orderCommodityResources = buildOrderCommodityResources(order, orderCommodity.getId(), resourcesId);
+                    orderCommodityResourcesMapper.insert(orderCommodityResources);
+                    order.setStatus(OrderStatus.COMPLETED);
+                    orderMapper.updateById(order);
+                }
+            }else {
+                return Result.success("订单正在处理中", false);
+            }
+        }finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+        return Result.success("支付成功",true);
+    }
+
+
+
+
+
+
+    private OrderCommodityResources buildOrderCommodityResources(Order order, String orderCommodityId, String resourcesId) {
+        OrderCommodityResources orderCommodityResources = new OrderCommodityResources();
+        orderCommodityResources.setUserId(order.getUserId());
+        orderCommodityResources.setOrderCommodityId(orderCommodityId);
+        orderCommodityResources.setResourcesId(resourcesId);
+        return orderCommodityResources;
+    }
+
+    //分配资源
+    private String allocationResources(Order order,OrderCommodity orderCommodity) {
+        if (orderCommodity == null){
+            throw new BaseException("未查询到订单购买商品，请重新购买或提交工单");
+        }
+        ServerResources byCommodityId = serverResourcesMapper.findByCommodityId(orderCommodity.getCommodityId());
+        if (ObjectUtil.isNull(byCommodityId)){
+            return null;
+        }
+        Date timeByPaymentPeriod = getTimeByPaymentPeriod(order.getPaymentPeriod());
+        byCommodityId.setLeaseExpirationTime(timeByPaymentPeriod);
+        //更新到期时间
+        byCommodityId.setResourceTenant(order.getUserId());
+        byCommodityId.setSalesStatus(SalesStatus.ON_SALE);
+        int i = serverResourcesMapper.updateById(byCommodityId);
+        if (i < 1){
+            throw new BaseException("资源分配失败，请分配工单联系管理员");
+        }else {
+            return byCommodityId.getId();
+        }
+    }
+
+
+    //通过付款周期获取到期时间
+    private Date getTimeByPaymentPeriod(String paymentPeriod){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+
+        switch (paymentPeriod) {
+            case PaymentPeriodConstant.MONTHLY:
+                calendar.add(Calendar.MONTH, 1);
+                break;
+            case PaymentPeriodConstant.QUARTERLY:
+                calendar.add(Calendar.MONTH, 3);
+                break;
+            case PaymentPeriodConstant.YEARLY:
+                calendar.add(Calendar.YEAR, 1);
+                break;
+        }
+        return calendar.getTime();
+    }
+
+
+    private Result<?> validStatus(String orderId, Order order) {
         //判断订单是否存在
-        if (order == null||order.getIsDeleted()==0){
+        if (order == null|| order.getIsDeleted()!=0){
             return Result.fail("订单不存在");
         }
         String strUserId = SecurityUtils.getStrUserId();
         if (!strUserId.equals(order.getCreateUser())){
             return Result.fail("您没有权限对此订单进行操作");
         }
+        //如果订单不是待支付状态，代表不用确认付款
         if (!OrderStatus.WAIT_PAY.equals(order.getStatus())){
-            return Result.success(orderStatusConvert(order.getStatus()),false);
+            return Result.success(orderStatusConvert(order.getStatus()), false);
         }
-        if (getOrderPayStatus(orderId)){
-            RLock lock = redissonClient.getLock(RedissonLockStatus.ORDER_CONFIRM_PAY_LOCK + orderId);
-            try{
-                if (lock.tryLock()) {
-                    int i = orderMapper.updateStatusById(orderId, OrderStatus.WAIT_ALLOCATION_RESOURCES);
-                    if (i > 0) {
-                        //发送消息给资源分配服务
 
-                    }else {
-                        throw new RuntimeException("变更订单状态失败，请重试");
-                    }
-                }else {
-                    return Result.success("订单已支付",false);
-                }
-            }finally {
-                if (lock.isHeldByCurrentThread()) {
-                    lock.unlock();
-                }
-            }
-        }
-        return Result.success("订单尚未支付",false);
+        return null;
     }
-
 
 
 }

@@ -132,4 +132,12 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return com.ruoyi.system.domain.vo.ServerResourcesVo
      **/
     ServerResourcesDetailVo getById(@Param("id") String id);
+
+    /**
+     * [通过商品id查询未被分配且未被锁定的资源]
+     * @author 陈湘岳 2025/9/28
+     * @param commodityId 商品id
+     * @return com.ruoyi.system.domain.entity.ServerResources
+     **/
+    ServerResources findByCommodityId(@Param("commodityId") String commodityId);
 }

@@ -177,6 +177,16 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
                where o.id = #{id} and o.user_id = #{userId} and o.is_deleted = 0
     </select>
 
+    <update id="updateById">
+        update `order`
+        set user_id =#{et.userId}, amount=#{et.amount}, description=#{et.description},
+            `status`=#{et.status}, order_time=#{et.orderTime},
+            is_deleted=#{et.isDeleted}, create_user=#{et.createUser},
+            update_user=#{et.updateUser}, create_time=#{et.createTime}, update_time=#{et.updateTime}
+        where id = #{et.id}
+    </update>
+
+
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">

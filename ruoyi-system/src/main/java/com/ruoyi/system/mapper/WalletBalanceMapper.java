@@ -27,4 +27,12 @@ public interface WalletBalanceMapper extends BaseMapper<WalletBalance> {
      * @return java.math.BigDecimal
      **/
     BigDecimal findByUserId(@Param("userId") String userId);
+
+    /**
+     * [通过用户id查询余额]
+     * @author 陈湘岳 2025/8/28
+     * @param userId 用户id
+     * @return com.ruoyi.system.domain.entity.WalletBalance
+     **/
+    WalletBalance findWalletBalanceByUserId(@Param("userId") String userId);
 }

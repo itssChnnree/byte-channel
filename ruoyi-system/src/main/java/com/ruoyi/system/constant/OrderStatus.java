@@ -31,9 +31,6 @@ public interface OrderStatus {
     //待分配资源
      String WAIT_ALLOCATION_RESOURCES = "WAIT_ALLOCATION_RESOURCES";
 
-    //资源分配中
-//     String ALLOCATION_RESOURCES = "ALLOCATION_RESOURCES";
-
     //已完成
      String COMPLETED = "COMPLETED";
 
@@ -51,8 +48,11 @@ public interface OrderStatus {
 
     //-----------------------------------------------支付方式--------------------------------------------------------------------
 
-    //扫码支付
-     String SCAN_CODE_PAY = "SCAN_CODE_PAY";
+    //支付宝扫码支付
+    String ALIPAY_PAY = "ALIPAY_PAY";
+
+    //微信扫码支付
+     String WECHAT_PAY = "WECHAT_PAY";
 
     //余额支付
      String BALANCE_PAY = "BALANCE_PAY";

@@ -31,6 +31,16 @@ public interface OrderCommodityMapper extends BaseMapper<OrderCommodity> {
 
 
     /**
+     * [通过订单id查询订单商品数据]
+     * @author 陈湘岳 2025/8/20
+     * @param orderId 订单商品id
+     * @return com.ruoyi.system.domain.entity.OrderCommodity
+     **/
+    OrderCommodity findByOrderId(@Param("orderId") String orderId);
+
+
+
+    /**
      * [通过订单id查询订单关联商品信息]
      * @author 陈湘岳 2025/8/20
      * @param orderId

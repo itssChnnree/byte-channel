@@ -37,24 +37,6 @@ public interface IOrderService{
 
 
     /**
-     * [消息队列测试]
-     * @author 陈湘岳 2025/8/14
-     * @param
-     * @return java.lang.String
-     **/
-    String test();
-
-
-    /**
-     * [取消订单]
-     * @author 陈湘岳 2025/8/24
-     * @param orderId
-     * @return com.ruoyi.system.http.Result
-     **/
-    Result cancelOrder(String orderId);
-
-
-    /**
      * [计算价格]
      * @author 陈湘岳 2025/8/24
      * @param orderByCommodityDto
@@ -85,7 +67,7 @@ public interface IOrderService{
      * @param orderId
      * @return com.ruoyi.system.http.Result
      **/
-    Result orderIsPay(String orderId);
+    Result orderIsPay(String orderId,Boolean isBalance);
 
 
     /**
@@ -95,4 +77,14 @@ public interface IOrderService{
      * @return com.ruoyi.system.http.Result
      **/
     Result cancelOrderNew(String orderId,String status);
+
+
+    /**
+     * [根据订单id获取支付二维码]
+     * @author 陈湘岳 2025/10/24
+     * @param orderId 订单id
+     * @param payaType 支付方式，可选支付宝或微信
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getQrCode(String orderId,String payaType);
 }

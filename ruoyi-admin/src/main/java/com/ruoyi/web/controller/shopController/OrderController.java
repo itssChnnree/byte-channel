@@ -60,25 +60,29 @@ public class OrderController {
     }
 
 
-    @ApiOperation("订单已支付")
+    @ApiOperation("第三方支付或余额支付")
     @PostMapping("/orderIsPay")
-    public Result orderIsPay(String orderId){
+    public Result orderIsPay(String orderId,Boolean isBalance) {
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");
         }
-        return orderService.orderIsPay(orderId);
+        if (isBalance == null){
+            return Result.fail("请选择支付方式");
+        }
+        return orderService.orderIsPay(orderId,isBalance);
     }
 
-
-
-//    @GetMapping("/cancelOrder")
-//    @ApiOperation("取消订单")
-//    public Result cancelOrder(String orderId){
-//        if (StrUtil.isBlank(orderId)) {
-//            return Result.fail("请选择订单");
-//        }
-//        return orderService.cancelOrder(orderId);
-//    }
+    @ApiOperation("获取支付二维码")
+    @GetMapping("/getQrCode")
+    public Result getQrCode(String orderId,String payType) {
+        if (StrUtil.isBlank(orderId)){
+            return Result.fail("请选择订单");
+        }
+        if(StrUtil.isBlank(payType)){
+            return Result.fail("请选择支付方式");
+        }
+        return orderService.getQrCode(orderId,payType);
+    }
 
     @GetMapping("/cancelOrder")
     @ApiOperation("取消订单")
