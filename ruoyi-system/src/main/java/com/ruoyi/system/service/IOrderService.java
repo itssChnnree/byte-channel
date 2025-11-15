@@ -2,6 +2,7 @@ package com.ruoyi.system.service;
 
 
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
+import com.ruoyi.system.domain.dto.OrderByRenewalDto;
 import com.ruoyi.system.domain.dto.OrderByShoppingCartDto;
 import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.http.Result;
@@ -76,7 +77,7 @@ public interface IOrderService{
      * @param orderId 订单id
      * @return com.ruoyi.system.http.Result
      **/
-    Result cancelOrderNew(String orderId,String status);
+    Result cancelOrderNew(String orderId);
 
 
     /**
@@ -87,4 +88,30 @@ public interface IOrderService{
      * @return com.ruoyi.system.http.Result
      **/
     Result getQrCode(String orderId,String payaType);
+
+    /**
+     * [资源续费订单创建]
+     * @author 陈湘岳 2025/10/28
+     * @param orderByRenewalDto 创建参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result createOrderByRenewal(OrderByRenewalDto orderByRenewalDto);
+
+    /**
+     * [续费订单支付]
+     * @author 陈湘岳 2025/10/29
+     * @param orderId 订单id
+     * @param isBalance 是否使用余额
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result renewalOrderIsPay(String orderId, Boolean isBalance);
+
+
+    /**
+     * [获取续费订单信息]
+     * @author 陈湘岳 2025/11/14
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getRenewalOrderInfo(String orderId);
 }

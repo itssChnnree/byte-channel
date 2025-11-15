@@ -395,6 +395,15 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
     </select>
 
 
+    <select id="findByResourcesId" resultType="com.ruoyi.system.domain.entity.Commodity">
+        select c.id,commodity_name, commodity_price, commodity_discounted_price,
+               category_id, oversold_configurations, oversold, inventory,
+               alarm_threshold, description, category,dest,server_names
+        from commodity c join server_resources sr on sr.commodity_id=c.id
+        where c.is_deleted=0 and sr.is_deleted=0 and sr.id=#{resourcesId}
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status,dest,server_names, create_user, update_user, create_time, update_time)

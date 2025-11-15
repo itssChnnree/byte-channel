@@ -50,4 +50,16 @@ public class ServerResourcesPageVo {
 
     @ApiModelProperty("服务器状态")
     private String resourcesStatus;
+
+    @ApiModelProperty("自动续费开关")
+    private Integer renewalSwitch;
+
+    @ApiModelProperty("到期时间")
+    private String leaseExpirationTime;
+
+    @ApiModelProperty("带宽")
+    private String bandwidth;
+
+    @ApiModelProperty("商品描述")
+    private String description;
 }

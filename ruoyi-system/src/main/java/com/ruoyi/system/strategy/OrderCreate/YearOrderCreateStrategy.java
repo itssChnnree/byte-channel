@@ -27,7 +27,7 @@ public class YearOrderCreateStrategy implements OrderCreateStrategy{
 
 
     @Override
-    public Order createOrder(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {
+    public Order createOrder(int num, Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {
         BigDecimal price = null;
         //存在折扣价则使用折扣价，不存在则使用原价
         if (ObjectUtil.isNotEmpty(normalCommodity.getCommodityDiscountedPrice())){
@@ -36,7 +36,7 @@ public class YearOrderCreateStrategy implements OrderCreateStrategy{
             price = normalCommodity.getCommodityPrice();
         }
         //计算价格
-        BigDecimal total = calculatePrice(orderByCommodityDto.getNum(), ObjectUtil.isNotEmpty(promoCodeRecords), price);
+        BigDecimal total = calculatePrice(num, ObjectUtil.isNotEmpty(promoCodeRecords), price);
 
         Order order = new Order();
         order.setUserId(SecurityUtils.getStrUserId());
@@ -46,6 +46,32 @@ public class YearOrderCreateStrategy implements OrderCreateStrategy{
         order.setDescription("按年订购节点");
         order.setPaymentPeriod(PaymentPeriodConstant.YEARLY);
         order.setOrderType(OrderTypeConstant.ADD);
+        order.setIsDeleted(0);
+        order.setCreateTime(new Date());
+        order.setUpdateTime(new Date());
+        return order;
+    }
+
+    @Override
+    public Order createRenewalOrder(PromoCodeRecords promoCodeRecords, Commodity normalCommodity) {
+        BigDecimal price = null;
+        //存在折扣价则使用折扣价，不存在则使用原价
+        if (ObjectUtil.isNotEmpty(normalCommodity.getCommodityDiscountedPrice())){
+            price = normalCommodity.getCommodityDiscountedPrice();
+        }else {
+            price = normalCommodity.getCommodityPrice();
+        }
+        //计算价格
+        BigDecimal total = calculatePrice(1, ObjectUtil.isNotEmpty(promoCodeRecords), price);
+
+        Order order = new Order();
+        order.setUserId(SecurityUtils.getStrUserId());
+        order.setAmount(total);
+        order.setStatus(OrderStatus.WAIT_PAY);
+        order.setOrderTime(new Date());
+        order.setDescription("按年续费节点");
+        order.setPaymentPeriod(PaymentPeriodConstant.YEARLY);
+        order.setOrderType(OrderTypeConstant.RENEW);
         order.setIsDeleted(0);
         order.setCreateTime(new Date());
         order.setUpdateTime(new Date());

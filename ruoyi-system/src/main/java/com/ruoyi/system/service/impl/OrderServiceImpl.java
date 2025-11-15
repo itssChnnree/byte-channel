@@ -2,11 +2,11 @@ package com.ruoyi.system.service.impl;
 
 
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.benmanes.caffeine.cache.Cache;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
@@ -31,12 +31,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -123,6 +121,46 @@ public class OrderServiceImpl implements IOrderService {
         return Result.success(order);
     }
 
+
+    /**
+     * [资源续费订单创建]
+     *
+     * @param orderByRenewalDto 创建参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/10/28
+     **/
+    @Override
+    @Transactional
+    public Result createOrderByRenewal(OrderByRenewalDto orderByRenewalDto) {
+        ServerResources byId = serverResourcesMapper.findById(orderByRenewalDto.getResourcesId());
+        if (byId == null){
+            return Result.fail("资源不存在");
+        }
+        if (AvailableStatus.AVAILABLE_STATUS_DOWN.equals(byId.getAvailableStatus())){
+            return Result.fail("资源已下架");
+        }
+        if (!SecurityUtils.getStrUserId().equals(byId.getResourceTenant())||byId.getLeaseExpirationTime().before(new Date())){
+            return Result.fail("资源不属于当前用户或资源已到期");
+        }
+        Commodity byResourcesId = commodityMapper.findByResourcesId(byId.getId());
+        if (byResourcesId == null){
+            return Result.fail("续费资源所属商品不存在");
+        }
+        //创建订单计算上下文
+        OrderCreateContext orderCreateContext = new OrderCreateContext(orderByRenewalDto.getPayCycle());
+        PromoCodeRecords promoCodeRecords = promoCodeRecordsMapper.selectPromoCode(orderByRenewalDto.getPromoCode());
+        Order renewalOrder = orderCreateContext.createRenewalOrder(byResourcesId, promoCodeRecords);
+        int insert = orderMapper.insert(renewalOrder);
+        if (insert<1){
+            throw new RuntimeException("生成订单失败，请稍后再试");
+        }
+        //新增推广记录
+        insertPromoRecords(promoCodeRecords,renewalOrder);
+
+        insertRenewalOrderCommodity(renewalOrder, byResourcesId, byId.getId());
+        return Result.success(renewalOrder);
+    }
+
     private void updateCommodityStock(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity) {
         RLock lock = redissonClient.getLock(RedissonLockStatus.COMMODITY_STOCK_CHANGE_LOCK + orderByCommodityDto.getCommodityId());
         try{
@@ -162,6 +200,30 @@ public class OrderServiceImpl implements IOrderService {
             throw new RuntimeException("生成订单失败，请稍后再试");
         }
         return orderCommodity;
+    }
+
+    private void insertRenewalOrderCommodity( Order order,Commodity commodity,String resourcesId) {
+        OrderCommodity orderCommodity = new OrderCommodity();
+        orderCommodity.setOrderId(order.getId());
+        orderCommodity.setCommodityId(commodity.getId());
+        orderCommodity.setUserId(order.getUserId());
+        orderCommodity.setOrderQuantity(0);
+        orderCommodity.setPurchaseQuantity(1);
+        orderCommodity.setCreateUser(order.getUserId());
+        orderCommodity.setUpdateUser(order.getUserId());
+        int insert = orderCommodityMapper.insert(orderCommodity);
+        if (insert<1){
+            throw new RuntimeException("生成订单失败，请稍后再试");
+        }
+        OrderCommodityResources orderCommodityResources = new OrderCommodityResources();
+        orderCommodityResources.setUserId(SecurityUtils.getStrUserId());
+        orderCommodityResources.setOrderCommodityId(orderCommodity.getId());
+        orderCommodityResources.setResourcesId(resourcesId);
+        orderCommodityResources.setIsDeleted(0);
+        int insert1 = orderCommodityResourcesMapper.insert(orderCommodityResources);
+        if (insert1<1){
+            throw new RuntimeException("生成订单失败，请稍后再试");
+        }
     }
 
 
@@ -243,9 +305,9 @@ public class OrderServiceImpl implements IOrderService {
      **/
     @Override
     public Result pageQuery(OrderDto orderDto) {
-        Page<Order> page = new Page<>(orderDto.getPageNum(), orderDto.getPageSize());
-        IPage<OrderVo> orderVoIPage = orderMapper.queryPage(page, orderDto, SecurityUtils.getStrUserId());
-        return Result.success(orderVoIPage);
+        PageHelper.startPage(orderDto);
+        List<OrderVo> orderVoIPage = orderMapper.queryPage(orderDto, SecurityUtils.getStrUserId());
+        return Result.success(new PageInfo<>(orderVoIPage));
     }
 
 
@@ -257,14 +319,22 @@ public class OrderServiceImpl implements IOrderService {
      * @author 陈湘岳 2025/10/17
      **/
     @Override
-    public Result cancelOrderNew(String orderId,String status) {
+    public Result cancelOrderNew(String orderId) {
         Order order = orderMapper.queryById(orderId);
         if (order == null){
             return Result.fail("订单不存在");
         }
-        if (OrderStatus.USER_CANCELED.equals(order.getStatus())
-                || OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
-            return Result.fail("订单已取消");
+        if ( OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
+            return Result.fail("订单超时自动取消");
+        }
+        if (OrderStatus.USER_CANCELED.equals(order.getStatus())){
+            return Result.fail("用户已取消订单");
+        }
+        if (OrderStatus.WAIT_REFUND.equals(order.getStatus())){
+            return Result.fail("订单正在退款中");
+        }
+        if (OrderStatus.REFUND_SUCCESS.equals(order.getStatus())){
+            return Result.fail("订单已退款");
         }
         String strUserId = SecurityUtils.getStrUserId();
         if (!strUserId.equals(order.getCreateUser())){
@@ -278,10 +348,17 @@ public class OrderServiceImpl implements IOrderService {
         releaseResources(orderId);
         //增加库存
         addCommodityStockLock(uCompletableFuture, completableFuture);
+        String status = null;
+        String result = null;
+        if (OrderStatus.WAIT_PAY.equals(order.getStatus())){
+            status = OrderStatus.USER_CANCELED;
+            result = "订单取消成功";
+        }else {
+            status = OrderStatus.WAIT_REFUND;
+            result = "订单退款成功";
+        }
         orderMapper.updateStatusById(orderId, status);
-        //退款
-        refund(order);
-        return Result.success("订单取消成功");
+        return Result.success(result);
     }
 
 
@@ -525,6 +602,41 @@ public class OrderServiceImpl implements IOrderService {
 
 
     /**
+     * [获取续费订单信息]
+     *
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/11/14
+     **/
+    @Override
+    public Result getRenewalOrderInfo(String orderId) {
+        OrderInfoVo order = orderMapper.getOrderInfoById(orderId,SecurityUtils.getStrUserId());
+        if (order == null){
+            return Result.fail("订单不存在");
+        }
+        PromoCodeRecords byOrderId = promoCodeRecordsMapper.findByOrderId(orderId);
+        order.setPromoCode(byOrderId == null ? "" : byOrderId.getPromoCode());
+        if (PaymentPeriodConstant.YEARLY.equals(order.getPayCycle())){
+            if (ObjectUtil.isNotEmpty(byOrderId)) {
+                order.setDiscountPrice("19.0%");
+            } else {
+                order.setDiscountPrice("10.0%");
+            }
+        } else if (PaymentPeriodConstant.QUARTERLY.equals(order.getPayCycle())) {
+            if (ObjectUtil.isNotEmpty(byOrderId)) {
+                order.setDiscountPrice("14.5%");
+            } else {
+                order.setDiscountPrice("5.0%");
+            }
+        }else {
+            if (ObjectUtil.isNotEmpty(byOrderId)) {
+                order.setDiscountPrice("10.0%");
+            }
+        }
+        return Result.success(order);
+    }
+
+    /**
      * [获取订单状态]
      *
      * @param orderId
@@ -564,7 +676,7 @@ public class OrderServiceImpl implements IOrderService {
             case "WAIT_PAY":
                 return "待支付";
             case "WAIT_ALLOCATION_RESOURCES":
-                return "待分配资源";
+                return "订单已支付，待分配资源";
             case "ALLOCATION_RESOURCES":
                 return "资源分配中";
             case "COMPLETED":
@@ -607,15 +719,55 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
+    /**
+     * [续费订单支付]
+     *
+     * @param orderId   订单id
+     * @param isBalance 是否使用余额
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/10/29
+     **/
+    @Override
+    public Result renewalOrderIsPay(String orderId, Boolean isBalance) {
+        //获取订单状态
+        Order order = orderMapper.queryById(orderId);
+        Result<?> validStatus = validStatus(orderId, order);
+        if (validStatus != null){
+            return validStatus;
+        }
+        OrderServiceImpl bean = SpringUtil.getBean(OrderServiceImpl.class);
+        //如果第三方已支付，则走第三方支付,未支付则判断是否余额支付，是走余额支付，否则支付失败
+        if (getOrderPayStatus(orderId)){
+            return bean.renewalResources(orderId, order);
+        }else {
+            return bean.renewalNoThreePay(orderId, isBalance, order, bean);
+        }
+    }
+
     @Transactional
     public Result<Boolean> noThreePay(String orderId, Boolean isBalance, Order order, OrderServiceImpl bean) {
+        if (isBalance){
+            Boolean reduceBalance = reduceBalance(order);
+            if (!reduceBalance){
+                return Result.success("余额不足，请充值", false);
+            }
+            order.setPaymentType(OrderStatus.BALANCE_PAY);
+            return bean.allocationResources(orderId, order);
+        }else {
+            return Result.success("未检测到支付信息，请稍后再试", false);
+        }
+    }
+
+
+    @Transactional
+    public Result<Boolean> renewalNoThreePay(String orderId, Boolean isBalance, Order order, OrderServiceImpl bean) {
         if (isBalance){
             order.setPaymentType(OrderStatus.BALANCE_PAY);
             Boolean reduceBalance = reduceBalance(order);
             if (!reduceBalance){
                 return Result.success("余额不足，请充值", false);
             }
-            return bean.allocationResources(orderId, order);
+            return bean.renewalResources(orderId, order);
         }else {
             return Result.success("未检测到支付信息，请稍后再试", false);
         }
@@ -667,7 +819,7 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
-    //余额支付
+    //分配资源
     @Transactional
     public Result<Boolean> allocationResources(String orderId, Order order) {
         //已经支付后锁住该订单，做相关操作
@@ -686,6 +838,8 @@ public class OrderServiceImpl implements IOrderService {
                     orderCommodityResourcesMapper.insert(orderCommodityResources);
                     order.setStatus(OrderStatus.COMPLETED);
                     orderMapper.updateById(order);
+                    orderCommodity.setOrderQuantity(orderCommodity.getOrderQuantity() + 1);
+                    orderCommodityMapper.updateById(orderCommodity);
                 }
             }else {
                 return Result.success("订单正在处理中", false);
@@ -699,7 +853,29 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
-
+    //续费订单处理资源
+    @Transactional
+    public Result<Boolean> renewalResources(String orderId, Order order) {
+        //已经支付后锁住该订单，做相关操作
+        RLock lock = redissonClient.getLock(RedissonLockStatus.ORDER_STATUS_UPDATE_LOCK + orderId);
+        try{
+            if (lock.tryLock()) {
+                //分配资源，新增订单资源
+                ServerResources serverResources = serverResourcesMapper.findByOrderId(order.getId());
+                String resourcesId = renewalResources(order,serverResources);
+                //如果订单id为空，则订单置为待分配资源状态
+                order.setStatus(OrderStatus.COMPLETED);
+                orderMapper.updateById(order);
+            }else {
+                return Result.success("订单正在处理中", false);
+            }
+        }finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+        return Result.success("支付成功",true);
+    }
 
 
 
@@ -720,14 +896,39 @@ public class OrderServiceImpl implements IOrderService {
         if (ObjectUtil.isNull(byCommodityId)){
             return null;
         }
-        Date timeByPaymentPeriod = getTimeByPaymentPeriod(order.getPaymentPeriod());
-        byCommodityId.setLeaseExpirationTime(timeByPaymentPeriod);
+        Date timeByPaymentPeriod = getTimeByPaymentPeriod(order.getPaymentPeriod(),new Date());
         //更新到期时间
+        byCommodityId.setLeaseExpirationTime(timeByPaymentPeriod);
         byCommodityId.setResourceTenant(order.getUserId());
         byCommodityId.setSalesStatus(SalesStatus.ON_SALE);
         int i = serverResourcesMapper.updateById(byCommodityId);
         if (i < 1){
-            throw new BaseException("资源分配失败，请分配工单联系管理员");
+            throw new BaseException("资源分配失败，请创建工单联系管理员");
+        }else {
+            return byCommodityId.getId();
+        }
+    }
+
+    //续费资源
+    private String renewalResources(Order order,ServerResources byCommodityId) {
+         if(ObjectUtil.isNull(byCommodityId)){
+            return null;
+        }
+         //判断是否到期,到期则在当前时间上续费，未到期则在到期时间上续费
+         Date nowDate = null;
+         if (ObjectUtil.isNull(byCommodityId.getLeaseExpirationTime())|| byCommodityId.getLeaseExpirationTime().getTime() < System.currentTimeMillis()){
+             nowDate = new Date();
+         }else {
+             nowDate = byCommodityId.getLeaseExpirationTime();
+         }
+        Date timeByPaymentPeriod = getTimeByPaymentPeriod(order.getPaymentPeriod(),nowDate);
+        //更新到期时间
+        byCommodityId.setLeaseExpirationTime(timeByPaymentPeriod);
+        byCommodityId.setResourceTenant(order.getUserId());
+        byCommodityId.setSalesStatus(SalesStatus.ON_SALE);
+        int i = serverResourcesMapper.updateById(byCommodityId);
+        if (i < 1){
+            throw new BaseException("资源分配失败，请创建工单联系管理员");
         }else {
             return byCommodityId.getId();
         }
@@ -735,9 +936,9 @@ public class OrderServiceImpl implements IOrderService {
 
 
     //通过付款周期获取到期时间
-    private Date getTimeByPaymentPeriod(String paymentPeriod){
+    private Date getTimeByPaymentPeriod(String paymentPeriod,Date date){
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(new Date());
+        calendar.setTime(date);
 
         switch (paymentPeriod) {
             case PaymentPeriodConstant.MONTHLY:

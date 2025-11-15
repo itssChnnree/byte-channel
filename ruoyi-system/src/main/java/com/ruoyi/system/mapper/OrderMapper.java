@@ -13,6 +13,8 @@ import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 /**
  * 订单表(Order)�����ݿ���ʲ�
  *
@@ -25,7 +27,14 @@ import org.apache.ibatis.annotations.Mapper;
 public interface OrderMapper extends BaseMapper<Order> {
 
 
-    IPage<OrderVo> queryPage(IPage<Order> page, @Param("dto") OrderDto orderDto, @Param("userId") String userId);
+    /**
+     * [分页查询订单状态]
+     * @author 陈湘岳 2025/11/3
+     * @param orderDto 订单参数
+     * @param userId 用户id
+     * @return java.util.List<com.ruoyi.system.domain.vo.OrderVo>
+     **/
+    List<OrderVo> queryPage(@Param("dto") OrderDto orderDto, @Param("userId") String userId);
 
 
     /**
@@ -54,4 +63,14 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return com.ruoyi.system.domain.vo.OrderInfoVo
      **/
     OrderInfoVo getOrderInfoById(@Param("id") String id, @Param("userId") String userId);
+
+
+    /**
+     * 查询续费订单信息
+     * @author 陈湘岳 2025/9/3
+     * @param id 订单id
+     * @param userId 用户id
+     * @return com.ruoyi.system.domain.vo.OrderInfoVo
+     **/
+    OrderInfoVo getRenewalOrderInfoById(@Param("id") String id, @Param("userId") String userId);
 }

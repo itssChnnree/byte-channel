@@ -42,7 +42,7 @@
     <!--��ѯ����-->
     <select id="queryById" resultMap="OrderMap">
         select
-            id, user_id, amount, status, description,order_time, is_deleted, create_user, update_user, create_time, update_time
+            id, user_id, amount,payment_period,payment_id, payment_type, status, description,order_time, is_deleted, create_user, update_user, create_time, update_time
         from `order`
         where id = #{id} and is_deleted = 0
     </select>
@@ -129,38 +129,49 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
     </select>
     
     <!--��ѯ��ҳ����-->
-    <select id="queryPage" resultMap="OrderVOMap">
+    <select id="queryPage" resultType="com.ruoyi.system.domain.vo.OrderVo">
         select
-        id, user_id, amount, status,description, order_time, is_deleted, create_user, update_user, create_time, update_time
+        id, amount, status,description, order_time,order_type, payment_type
         from `order`
         where 1 = 1 and is_deleted = 0 and create_user = #{userId}
-            <if test="dto.amount != null">
-                and amount = #{dto.amount}
-            </if>
             <if test="dto.status != null and dto.status != ''">
                 and status = #{dto.status}
             </if>
-            <if test="dto.orderTime != null">
-                and order_time = #{dto.orderTime}
+            <if test="dto.orderType != null and dto.orderType != ''">
+                and order_type = #{dto.orderType}
             </if>
-            <if test="dto.isDeleted != null">
-                and is_deleted = #{dto.isDeleted}
+            <if test="dto.orderCreateTime != null and dto.orderCreateTime != ''">
+                and order_time >= #{dto.orderCreateTime}
             </if>
-            <if test="dto.createUser != null and dto.createUser != ''">
-                and create_user = #{dto.createUser}
+            <if test="dto.orderEndTime != null and dto.orderEndTime != ''">
+                and order_time &lt;= #{dto.orderEndTime}
             </if>
-            <if test="dto.updateUser != null and dto.updateUser != ''">
-                and update_user = #{dto.updateUser}
+            <if test="dto.paymentPeriod != null and dto.paymentPeriod !=''">
+                and payment_period = #{dto.paymentPeriod}
             </if>
-            <if test="dto.createTime != null">
-                and create_time = #{dto.createTime}
-            </if>
-            <if test="dto.updateTime != null">
-                and update_time = #{dto.updateTime}
-            </if>
-        order by create_time
+        <if test="dto.paymentType != null and dto.paymentType !=''">
+            and payment_type = #{dto.paymentType}
+        </if>
+        order by create_time desc
     </select>
 
+
+    <select id="getRenewalOrderInfoById" resultType="com.ruoyi.system.domain.vo.OrderInfoVo">
+        select o.id as orderId,
+               o.status,
+               payment_period as payCycle,
+               amount as price,
+               c.commodity_name as commodityName,
+               c.description as commodityDesc,
+               c.bandwidth as bandwidth,
+               o.order_type,
+               ocr.resources_id
+               from `order` o
+               join order_commodity oc on o.id = oc.order_id
+               join order_commodity_resources ocr on oc.id = ocr.order_commodity_id
+               join commodity c on oc.commodity_id = c.id
+               where o.id = #{id} and o.user_id = #{userId} and o.is_deleted = 0
+    </select>
 
     <select id="getOrderInfoById" resultType="com.ruoyi.system.domain.vo.OrderInfoVo">
         select o.id as orderId,
@@ -171,16 +182,17 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
                c.description as commodityDesc,
                c.bandwidth as bandwidth,
                o.order_type
-               from `order` o
-               join order_commodity oc on o.id = oc.order_id
-               join commodity c on oc.commodity_id = c.id
-               where o.id = #{id} and o.user_id = #{userId} and o.is_deleted = 0
+        from `order` o
+                 join order_commodity oc on o.id = oc.order_id
+                 join commodity c on oc.commodity_id = c.id
+        where o.id = #{id} and o.user_id = #{userId} and o.is_deleted = 0
     </select>
 
     <update id="updateById">
         update `order`
         set user_id =#{et.userId}, amount=#{et.amount}, description=#{et.description},
             `status`=#{et.status}, order_time=#{et.orderTime},
+            payment_type=#{et.paymentType},
             is_deleted=#{et.isDeleted}, create_user=#{et.createUser},
             update_user=#{et.updateUser}, create_time=#{et.createTime}, update_time=#{et.updateTime}
         where id = #{et.id}

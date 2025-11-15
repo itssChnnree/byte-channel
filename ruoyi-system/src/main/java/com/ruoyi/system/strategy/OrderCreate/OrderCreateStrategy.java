@@ -14,16 +14,19 @@ import java.math.BigDecimal;
 public interface OrderCreateStrategy {
 
 
-    //创建订单
-    Order createOrder(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity, PromoCodeRecords promoCodeRecords);
+    //创建新购买订单
+    Order createOrder(int num, Commodity normalCommodity, PromoCodeRecords promoCodeRecords);
+
+    //创建续费订单
+    Order createRenewalOrder(PromoCodeRecords promoCodeRecords, Commodity normalCommodity);
 
 
     /**
      * [计算价格]
      * @author 陈湘岳 2025/8/30
-     * @param num
-     * @param havePromoCode
-     * @param price
+     * @param num 商品数量
+     * @param havePromoCode 是否有优惠码
+     * @param price 价格
      * @return java.math.BigDecimal
      **/
     BigDecimal calculatePrice(int num, Boolean havePromoCode, BigDecimal price);

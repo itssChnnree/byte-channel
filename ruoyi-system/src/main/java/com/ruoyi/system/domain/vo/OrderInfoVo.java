@@ -58,4 +58,6 @@ public class OrderInfoVo {
     @ApiModelProperty("订单类型")
     private String orderType;
 
+    @ApiModelProperty("续费资源ip")
+    private String ip;
 }

@@ -2,6 +2,9 @@ package com.ruoyi.system.constant;
 
 public interface PaymentPeriodConstant {
 
+    /** 次付 */
+    String SINGLE = "single";
+
     /** 月付 */
     String MONTHLY = "monthly";
 

@@ -43,15 +43,15 @@ public interface OrderStatus {
     //待退款
      String WAIT_REFUND = "WAIT_REFUND";
 
-    //退款成功
+    //已退款
      String REFUND_SUCCESS = "REFUND_SUCCESS";
 
     //-----------------------------------------------支付方式--------------------------------------------------------------------
 
-    //支付宝扫码支付
+    //支付宝支付
     String ALIPAY_PAY = "ALIPAY_PAY";
 
-    //微信扫码支付
+    //微信支付
      String WECHAT_PAY = "WECHAT_PAY";
 
     //余额支付

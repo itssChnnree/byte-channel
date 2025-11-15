@@ -54,4 +54,8 @@ public class ServerResourcesPageDto extends PageBase {
 
     @ApiModelProperty("商品分类")
     private String commodityCategoryId;
+
+    @ApiModelProperty("到期时间类型")
+    //到期时间类型,1为7天内到期，2为15天，3为一月
+    private Integer expireTimeType;
 }

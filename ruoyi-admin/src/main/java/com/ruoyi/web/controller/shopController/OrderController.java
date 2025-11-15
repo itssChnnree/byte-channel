@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.shopController;
 import cn.hutool.core.util.StrUtil;
 import com.ruoyi.system.constant.OrderStatus;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
+import com.ruoyi.system.domain.dto.OrderByRenewalDto;
 import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.group.InsertGroup;
 import com.ruoyi.system.http.Result;
@@ -50,6 +51,18 @@ public class OrderController {
     }
 
 
+
+    @PostMapping("/createOrderByRenewal")
+    @ApiOperation("资源续费订单创建")
+    public Result createOrderByRenewal(@RequestBody @Validated(InsertGroup.class) OrderByRenewalDto orderByRenewalDto
+            , BindingResult bindingResult){
+        if (bindingResult.hasErrors()) {
+            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return orderService.createOrderByRenewal(orderByRenewalDto);
+    }
+
+
     @GetMapping("/getOrderStatus")
     @ApiOperation("获取订单状态")
     public Result getOrderStatus(String orderId){
@@ -72,6 +85,18 @@ public class OrderController {
         return orderService.orderIsPay(orderId,isBalance);
     }
 
+    @ApiOperation("续费订单第三方支付或余额支付")
+    @PostMapping("/renewalOrderIsPay")
+    public Result renewalOrderIsPay(String orderId,Boolean isBalance) {
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        if (isBalance == null){
+            return Result.fail("请选择支付方式");
+        }
+        return orderService.renewalOrderIsPay(orderId,isBalance);
+    }
+
     @ApiOperation("获取支付二维码")
     @GetMapping("/getQrCode")
     public Result getQrCode(String orderId,String payType) {
@@ -90,12 +115,12 @@ public class OrderController {
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");
         }
-        return orderService.cancelOrderNew(orderId, OrderStatus.USER_CANCELED);
+        return orderService.cancelOrderNew(orderId);
     }
 
 
 
-    @GetMapping("/pageQuery")
+    @PostMapping("/pageQuery")
     @ApiOperation("分页查询订单")
     public Result pageQuery(@RequestBody OrderDto orderDto){
         return orderService.pageQuery(orderDto);
@@ -111,6 +136,14 @@ public class OrderController {
         return orderService.getOrderInfo(orderId);
     }
 
+    @GetMapping("/getRenewalOrderInfo")
+    @ApiOperation("获取续费订单信息")
+    public Result getRenewalOrderInfo(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.getRenewalOrderInfo(orderId);
+    }
 
     @PostMapping("/calculatePrice")
     @ApiOperation("计算价格")

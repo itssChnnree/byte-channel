@@ -3,7 +3,7 @@ package com.ruoyi.system.constant;
 
 public interface OrderTypeConstant {
 
-    //新增购买
+    //新购
     String ADD = "add";
 
     //续费

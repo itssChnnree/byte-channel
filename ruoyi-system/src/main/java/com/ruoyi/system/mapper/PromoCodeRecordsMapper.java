@@ -29,15 +29,6 @@ public interface PromoCodeRecordsMapper extends BaseMapper<PromoCodeRecords> {
 
 
     /**
-     * [失效用户邀请码]
-     * @author 陈湘岳 2025/8/14
-     * @param userId
-     * @return int
-     **/
-    int invalidPromoCode(@Param("userId")String userId);
-
-
-    /**
      * [通过订单ID查询该订单所用邀请码]
      * @author 陈湘岳 2025/8/14
      * @param orderId

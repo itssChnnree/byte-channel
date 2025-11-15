@@ -13,6 +13,7 @@ import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Date;
 import java.util.List;
 
 
@@ -44,6 +45,14 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return java.util.List<java.lang.String>
      **/
     Integer haveServerResourcesByAccount(@Param("accountId") String accountId);
+
+    /**
+     * [查询资源详情]
+     * @author 陈湘岳 2025/8/1
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.domain.vo.ServerResourcesVo
+     **/
+    ServerResources findById(@Param("resourcesId") String resourcesId);
 
 
     /**
@@ -106,6 +115,18 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      **/
     List<ServerResourcesPageVo> findPage(@Param("dto") ServerResourcesPageDto serverResourcesPageDto);
 
+
+    /**
+     * [查询用户资源]
+     * @author 陈湘岳 2025/10/27
+     * @param serverResourcesPageDto 查询参数
+     * @param userId 用户id
+     * @param date 到期时间
+     * @return java.util.List<com.ruoyi.system.domain.vo.ServerResourcesPageVo>
+     **/
+    List<ServerResourcesPageVo> findUserPage(@Param("dto") ServerResourcesPageDto serverResourcesPageDto,
+                                             @Param("userId") String userId, @Param("time")Date date);
+
     /**
      * [根据资源id和租户id查询]
      * @author 陈湘岳 2025/9/22
@@ -140,4 +161,12 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return com.ruoyi.system.domain.entity.ServerResources
      **/
     ServerResources findByCommodityId(@Param("commodityId") String commodityId);
+
+    /**
+     * [续费时，通过订单资源表查询对应的资源]
+     * @author 陈湘岳 2025/10/29
+     * @param id 订单id
+     * @return com.ruoyi.system.domain.entity.ServerResources
+     **/
+    ServerResources findByOrderId(@Param("id") String id);
 }

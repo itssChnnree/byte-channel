@@ -26,7 +26,12 @@ public class OrderCreateContext {
     }
 
     public Order createOrder(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {
-        return orderCreateStrategy.createOrder(orderByCommodityDto, normalCommodity, promoCodeRecords);
+        return orderCreateStrategy.createOrder(orderByCommodityDto.getNum(), normalCommodity, promoCodeRecords);
+    }
+
+    //创建续费订单
+    public Order createRenewalOrder(Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {
+        return orderCreateStrategy.createRenewalOrder( promoCodeRecords,normalCommodity);
     }
 
     public BigDecimal calculatePrice(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {

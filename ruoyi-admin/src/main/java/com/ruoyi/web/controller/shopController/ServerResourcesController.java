@@ -173,6 +173,12 @@ public class ServerResourcesController{
         return serverResourcesService.getResourcesPage(serverResourcesPageDto);
     }
 
+    @PostMapping("/getUserResourcesPage")
+    @ApiOperation("用户资源分页查询")
+    public Result getUserResourcesPage(@RequestBody ServerResourcesPageDto serverResourcesPageDto) {
+        return serverResourcesService.getUserResourcesPage(serverResourcesPageDto);
+    }
+
 
     //下载clash配置文件
     @GetMapping("/download")

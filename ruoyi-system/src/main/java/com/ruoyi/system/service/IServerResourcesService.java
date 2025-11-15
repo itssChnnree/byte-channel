@@ -136,4 +136,12 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
      **/
     Result<ServerResources> ipReplacement(@Valid ServerUpdateDto serverUpdateDto);
+
+    /**
+     * [用户查询资源]
+     * @author 陈湘岳 2025/10/27
+     * @param serverResourcesPageDto 查询参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getUserResourcesPage(ServerResourcesPageDto serverResourcesPageDto);
 }

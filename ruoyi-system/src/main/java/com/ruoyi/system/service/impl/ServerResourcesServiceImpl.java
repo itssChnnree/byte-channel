@@ -18,6 +18,7 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.AvailableStatus;
+import com.ruoyi.system.constant.PaymentPeriodConstant;
 import com.ruoyi.system.constant.ResourcesStatus;
 import com.ruoyi.system.constant.SalesStatus;
 import com.ruoyi.system.domain.dto.ResourceProcessingDto;
@@ -261,6 +262,8 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         List<ServerResourcesPageVo> serverResourcesVos = serverResourcesMapper.findPage(serverResourcesPageDto);
         return Result.success(new PageInfo<>(serverResourcesVos));
     }
+
+
 
     private ServerResources buildServerResources(String userId, Commodity commodity, XrayRestartVo xrayRestartVo, ResourceAllocationTemporaryStorage byIp, ResourceProcessingDto resourceProcessingDto){
         ServerResources serverResources = new ServerResources();
@@ -588,6 +591,53 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             return Result.fail("置换失败");
         }
     }
+
+    /**
+     * [用户查询资源]
+     *
+     * @param serverResourcesPageDto 查询参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/10/27
+     **/
+    @Override
+    public Result getUserResourcesPage(ServerResourcesPageDto serverResourcesPageDto) {
+        PageHelper.startPage(serverResourcesPageDto);
+        Date expireTime = getExpireTime(serverResourcesPageDto.getExpireTimeType());
+        List<ServerResourcesPageVo> serverResourcesVos = serverResourcesMapper.findUserPage(serverResourcesPageDto,SecurityUtils.getStrUserId(),expireTime);
+        serverResourcesVos.forEach(serverResourcesPageVo -> {
+            //时间保存前10位
+            serverResourcesPageVo.setLeaseExpirationTime(serverResourcesPageVo.getLeaseExpirationTime().substring(0,10));
+        });
+        return Result.success(new PageInfo<>(serverResourcesVos));
+    }
+
+
+
+
+    //获取到期时间类型,1为7天内到期，2为15天，3为一月
+    private Date getExpireTime(Integer expireTimeType){
+        if (expireTimeType==null){
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+
+        switch (expireTimeType) {
+            case 1:
+                calendar.add(Calendar.DAY_OF_MONTH, 7);
+                break;
+            case 2:
+                calendar.add(Calendar.DAY_OF_MONTH, 15);
+                break;
+            case 3:
+                calendar.add(Calendar.MONTH, 1);
+                break;
+            default:
+                break;
+        }
+        return calendar.getTime();
+    }
+
 
     /**
      * [通过出站节点查看是否可以通过目标代理节点访问谷歌]

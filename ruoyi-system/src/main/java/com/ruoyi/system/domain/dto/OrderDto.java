@@ -41,6 +41,12 @@ public class OrderDto extends PageBase {
     @ApiModelProperty("下单时间")
     private Date orderTime;
 
+    @ApiModelProperty("下单创建开始时间")
+    private String orderCreateTime;
+
+    @ApiModelProperty("订单创建完成时间")
+    private String orderEndTime;
+
     @ApiModelProperty("订单类型")
     private String orderType;
 

@@ -77,6 +77,15 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
      **/
     Commodity findNormalCommodity(@Param("id") String id);
 
+
+    /**
+     * [通过资源id查询资源所属商品]
+     * @author 陈湘岳 2025/10/29
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.domain.entity.Commodity
+     **/
+    Commodity findByResourcesId(@Param("resourcesId") String resourcesId);
+
     /**
      * [查询]
      * @author 陈湘岳 2025/8/1
