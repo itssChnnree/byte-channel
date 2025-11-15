@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ServerResourcesRenewalMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.ServerResourcesRenewal" id="ServerResourcesRenewalMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
+                <result property="renewalSwitch" column="renewal_switch" jdbcType="INTEGER"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="renewalPeriod" column="renewal_period" jdbcType="INTEGER"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.ServerResourcesRenewalVo" id="ServerResourcesRenewalVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
+                <result property="renewalSwitch" column="renewal_switch" jdbcType="INTEGER"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="renewalPeriod" column="renewal_period" jdbcType="INTEGER"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="ServerResourcesRenewalVOMap">
+        select
+id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status
+        from server_resources_renewal
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="ServerResourcesRenewalVOMap">
+        select
+id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status        
+        from server_resources_renewal
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="resourcesId != null and resourcesId != ''">
+                and resources_id = #{resourcesId}
+            </if>
+            <if test="renewalSwitch != null">
+                and renewal_switch = #{renewalSwitch}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="renewalPeriod != null">
+                and renewal_period = #{renewalPeriod}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="ServerResourcesRenewalVOMap">
+        select
+id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status
+        from server_resources_renewal
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.resourcesId != null and dto.resourcesId != ''">
+                and resources_id = #{dto.resourcesId}
+            </if>
+            <if test="dto.renewalSwitch != null">
+                and renewal_switch = #{dto.renewalSwitch}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.renewalPeriod != null">
+                and renewal_period = #{dto.renewalPeriod}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="ServerResourcesRenewalVOMap">
+        select
+id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status
+        from server_resources_renewal
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.resourcesId != null and dto.resourcesId != ''">
+                and resources_id = #{dto.resourcesId}
+            </if>
+            <if test="dto.renewalSwitch != null">
+                and renewal_switch = #{dto.renewalSwitch}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.renewalPeriod != null">
+                and renewal_period = #{dto.renewalPeriod}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources_renewal(id,resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status)
+        values (#{entity.id},#{resourcesId}, #{renewalSwitch}, #{userId}, #{renewalPeriod}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime}, #{status})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources_renewal(id,resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.resourcesId}, #{entity.renewalSwitch}, #{entity.userId}, #{entity.renewalPeriod}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into server_resources_renewal(id,resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.resourcesId}, #{entity.renewalSwitch}, #{entity.userId}, #{entity.renewalPeriod}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+            </foreach>
+            on duplicate key update
+resources_id = values(resources_id),
+renewal_switch = values(renewal_switch),
+user_id = values(user_id),
+renewal_period = values(renewal_period),
+is_deleted = values(is_deleted),
+create_user = values(create_user),
+update_user = values(update_user),
+create_time = values(create_time),
+update_time = values(update_time),
+status = values(status)    </insert>
+
+</mapper>
+
