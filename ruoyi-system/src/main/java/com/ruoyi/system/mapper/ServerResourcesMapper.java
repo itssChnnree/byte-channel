@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
+import com.ruoyi.system.domain.vo.OrderNewVo;
 import com.ruoyi.system.domain.vo.ServerResourcesDetailVo;
 import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
 import com.ruoyi.system.domain.vo.ServerResourcesVo;
@@ -169,4 +170,13 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return com.ruoyi.system.domain.entity.ServerResources
      **/
     ServerResources findByOrderId(@Param("id") String id);
+
+
+    /**
+     * [查询新购资源订单]
+     * @author 陈湘岳 2025/11/21
+     * @param orderId 订单id
+     * @return com.ruoyi.system.domain.vo.OrderNewVo
+     **/
+    OrderNewVo getOrderAdd(@Param("orderId") String orderId);
 }

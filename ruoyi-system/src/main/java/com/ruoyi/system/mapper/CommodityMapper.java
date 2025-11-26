@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.dto.CommodityDto;
+import com.ruoyi.system.domain.entity.OrderInformationSnapshot;
 import com.ruoyi.system.domain.vo.CommodityVo;
 import com.ruoyi.system.domain.vo.ResourcesCommodityVo;
 import com.ruoyi.system.domain.vo.ShoppingCartCommodityVo;
@@ -132,5 +133,11 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
 
 
 
-
+    /**
+     * [查询订单快照信息]
+     * @author 陈湘岳 2025/11/22
+     * @param commodityId 商品id
+     * @return com.ruoyi.system.domain.entity.OrderInformationSnapshot
+     **/
+    OrderInformationSnapshot selectSnapshotByCommodityId(@Param("commodityId") String commodityId);
 }

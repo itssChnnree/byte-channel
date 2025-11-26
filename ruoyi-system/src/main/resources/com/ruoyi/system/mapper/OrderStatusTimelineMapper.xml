@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.OrderStatusTimelineMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.OrderStatusTimeline" id="OrderStatusTimelineMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="orderId" column="order_id" jdbcType="VARCHAR"/>
+        <result property="orderCreatedTime" column="order_created_time" jdbcType="TIMESTAMP"/>
+        <result property="waitPayTime" column="wait_pay_time" jdbcType="TIMESTAMP"/>
+        <result property="timeoutCanceledTime" column="timeout_canceled_time" jdbcType="TIMESTAMP"/>
+        <result property="userPayTime" column="user_pay_time" jdbcType="TIMESTAMP"/>
+        <result property="waitAllocationTime" column="wait_allocation_time" jdbcType="TIMESTAMP"/>
+        <result property="completedTime" column="completed_time" jdbcType="TIMESTAMP"/>
+        <result property="userCanceledTime" column="user_canceled_time" jdbcType="TIMESTAMP"/>
+        <result property="waitRefundTime" column="wait_refund_time" jdbcType="TIMESTAMP"/>
+        <result property="refundSuccessTime" column="refund_success_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.OrderStatusTimelineVo" id="OrderStatusTimelineVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="orderId" column="order_id" jdbcType="VARCHAR"/>
+        <result property="orderCreatedTime" column="order_created_time" jdbcType="TIMESTAMP"/>
+        <result property="waitPayTime" column="wait_pay_time" jdbcType="TIMESTAMP"/>
+        <result property="timeoutCanceledTime" column="timeout_canceled_time" jdbcType="TIMESTAMP"/>
+        <result property="userPayTime" column="user_pay_time" jdbcType="TIMESTAMP"/>
+        <result property="waitAllocationTime" column="wait_allocation_time" jdbcType="TIMESTAMP"/>
+        <result property="completedTime" column="completed_time" jdbcType="TIMESTAMP"/>
+        <result property="userCanceledTime" column="user_canceled_time" jdbcType="TIMESTAMP"/>
+        <result property="waitRefundTime" column="wait_refund_time" jdbcType="TIMESTAMP"/>
+        <result property="refundSuccessTime" column="refund_success_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="OrderStatusTimelineVOMap">
+        select id,
+               order_id,
+               order_created_time,
+               wait_pay_time,
+               timeout_canceled_time,
+               user_pay_time,
+               wait_allocation_time,
+               completed_time,
+               user_canceled_time,
+               wait_refund_time,
+               refund_success_time
+        from order_status_timeline
+        where id = #{id}
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="OrderStatusTimelineVOMap">
+        select
+        id, order_id, order_created_time, wait_pay_time, timeout_canceled_time, user_pay_time, wait_allocation_time,
+        completed_time, user_canceled_time, wait_refund_time, refund_success_time
+        from order_status_timeline
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="orderId != null and orderId != ''">
+                and order_id = #{orderId}
+            </if>
+            <if test="orderCreatedTime != null">
+                and order_created_time = #{orderCreatedTime}
+            </if>
+            <if test="waitPayTime != null">
+                and wait_pay_time = #{waitPayTime}
+            </if>
+            <if test="timeoutCanceledTime != null">
+                and timeout_canceled_time = #{timeoutCanceledTime}
+            </if>
+            <if test="userPayTime != null">
+                and user_pay_time = #{userPayTime}
+            </if>
+            <if test="waitAllocationTime != null">
+                and wait_allocation_time = #{waitAllocationTime}
+            </if>
+            <if test="completedTime != null">
+                and completed_time = #{completedTime}
+            </if>
+            <if test="userCanceledTime != null">
+                and user_canceled_time = #{userCanceledTime}
+            </if>
+            <if test="waitRefundTime != null">
+                and wait_refund_time = #{waitRefundTime}
+            </if>
+            <if test="refundSuccessTime != null">
+                and refund_success_time = #{refundSuccessTime}
+            </if>
+        </where>
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="OrderStatusTimelineVOMap">
+        select
+        id, order_id, order_created_time, wait_pay_time, timeout_canceled_time, user_pay_time, wait_allocation_time,
+        completed_time, user_canceled_time, wait_refund_time, refund_success_time
+        from order_status_timeline
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.orderId != null and dto.orderId != ''">
+                and order_id = #{dto.orderId}
+            </if>
+            <if test="dto.orderCreatedTime != null">
+                and order_created_time = #{dto.orderCreatedTime}
+            </if>
+            <if test="dto.waitPayTime != null">
+                and wait_pay_time = #{dto.waitPayTime}
+            </if>
+            <if test="dto.timeoutCanceledTime != null">
+                and timeout_canceled_time = #{dto.timeoutCanceledTime}
+            </if>
+            <if test="dto.userPayTime != null">
+                and user_pay_time = #{dto.userPayTime}
+            </if>
+            <if test="dto.waitAllocationTime != null">
+                and wait_allocation_time = #{dto.waitAllocationTime}
+            </if>
+            <if test="dto.completedTime != null">
+                and completed_time = #{dto.completedTime}
+            </if>
+            <if test="dto.userCanceledTime != null">
+                and user_canceled_time = #{dto.userCanceledTime}
+            </if>
+            <if test="dto.waitRefundTime != null">
+                and wait_refund_time = #{dto.waitRefundTime}
+            </if>
+            <if test="dto.refundSuccessTime != null">
+                and refund_success_time = #{dto.refundSuccessTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="OrderStatusTimelineVOMap">
+        select
+        id, order_id, order_created_time, wait_pay_time, timeout_canceled_time, user_pay_time, wait_allocation_time,
+        completed_time, user_canceled_time, wait_refund_time, refund_success_time
+        from order_status_timeline
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.orderId != null and dto.orderId != ''">
+                and order_id = #{dto.orderId}
+            </if>
+            <if test="dto.orderCreatedTime != null">
+                and order_created_time = #{dto.orderCreatedTime}
+            </if>
+            <if test="dto.waitPayTime != null">
+                and wait_pay_time = #{dto.waitPayTime}
+            </if>
+            <if test="dto.timeoutCanceledTime != null">
+                and timeout_canceled_time = #{dto.timeoutCanceledTime}
+            </if>
+            <if test="dto.userPayTime != null">
+                and user_pay_time = #{dto.userPayTime}
+            </if>
+            <if test="dto.waitAllocationTime != null">
+                and wait_allocation_time = #{dto.waitAllocationTime}
+            </if>
+            <if test="dto.completedTime != null">
+                and completed_time = #{dto.completedTime}
+            </if>
+            <if test="dto.userCanceledTime != null">
+                and user_canceled_time = #{dto.userCanceledTime}
+            </if>
+            <if test="dto.waitRefundTime != null">
+                and wait_refund_time = #{dto.waitRefundTime}
+            </if>
+            <if test="dto.refundSuccessTime != null">
+                and refund_success_time = #{dto.refundSuccessTime}
+            </if>
+        </where>
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into order_status_timeline(id, order_id, order_created_time, wait_pay_time, timeout_canceled_time,
+                                          user_pay_time, wait_allocation_time, completed_time, user_canceled_time,
+                                          wait_refund_time, refund_success_time)
+        values (#{id}, #{orderId}, #{orderCreatedTime}, #{waitPayTime}, #{timeoutCanceledTime}, #{userPayTime},
+                #{waitAllocationTime}, #{completedTime}, #{userCanceledTime}, #{waitRefundTime}, #{refundSuccessTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into order_status_timeline(id,order_id, order_created_time, wait_pay_time, timeout_canceled_time,
+        user_pay_time, wait_allocation_time, completed_time, user_canceled_time, wait_refund_time, refund_success_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.orderId}, #{entity.orderCreatedTime}, #{entity.waitPayTime},
+            #{entity.timeoutCanceledTime}, #{entity.userPayTime}, #{entity.waitAllocationTime}, #{entity.completedTime},
+            #{entity.userCanceledTime}, #{entity.waitRefundTime}, #{entity.refundSuccessTime})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into order_status_timeline(id,order_id, order_created_time, wait_pay_time, timeout_canceled_time,
+        user_pay_time, wait_allocation_time, completed_time, user_canceled_time, wait_refund_time, refund_success_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.orderId}, #{entity.orderCreatedTime}, #{entity.waitPayTime},
+            #{entity.timeoutCanceledTime}, #{entity.userPayTime}, #{entity.waitAllocationTime}, #{entity.completedTime},
+            #{entity.userCanceledTime}, #{entity.waitRefundTime}, #{entity.refundSuccessTime})
+        </foreach>
+        on duplicate key update
+        order_id = values(order_id),
+        order_created_time = values(order_created_time),
+        wait_pay_time = values(wait_pay_time),
+        timeout_canceled_time = values(timeout_canceled_time),
+        user_pay_time = values(user_pay_time),
+        wait_allocation_time = values(wait_allocation_time),
+        completed_time = values(completed_time),
+        user_canceled_time = values(user_canceled_time),
+        wait_refund_time = values(wait_refund_time),
+        refund_success_time = values(refund_success_time)
+    </insert>
+
+</mapper>
+

@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.Page;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.uuid.UUID;
 import com.ruoyi.framework.web.service.PermissionService;
 import com.ruoyi.system.domain.dto.*;
@@ -192,9 +193,16 @@ public class ServerResourcesController{
     @GetMapping("/getImportUrl")
     @ApiOperation("获取导入链接")
     public Result getImportUrl(String resourcesId){
-        return serverResourcesService.getImportUrl(resourcesId, permissionService.hasPermi("shop:background:admin"));
+        return serverResourcesService.getImportUrl(resourcesId, SecurityUtils.hasPermi());
     }
 
+
+
+    @GetMapping("/getOrderAdd")
+    @ApiOperation("获取新购资源详情")
+    public Result getOrderAdd(String orderId){
+        return serverResourcesService.getOrderAdd(orderId);
+    }
 
 
 }

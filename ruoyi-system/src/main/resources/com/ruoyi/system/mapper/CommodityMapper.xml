@@ -120,7 +120,9 @@
 
     <select id="findNormalCommodity" resultMap="CommodityMap">
         select
-            id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
+            id, commodity_name, commodity_price, commodity_discounted_price, category_id,
+            oversold_configurations, oversold, inventory, alarm_threshold, description,
+            category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
         from commodity
         where id = #{id} and is_deleted = 0 and available_status = 1
     </select>
@@ -401,6 +403,22 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
                alarm_threshold, description, category,dest,server_names
         from commodity c join server_resources sr on sr.commodity_id=c.id
         where c.is_deleted=0 and sr.is_deleted=0 and sr.id=#{resourcesId}
+    </select>
+
+
+    <select id="selectSnapshotByCommodityId" resultType="com.ruoyi.system.domain.entity.OrderInformationSnapshot">
+        select
+            commodity_name,
+            description as commodityDesc,
+            bandwidth,
+            business_suitable as businessSuitable,
+            cc.category_name,
+            cc.summary as categoryDesc,
+            cc.id as categoryId,
+            c.id as commodityId
+        from commodity c
+        join commodity_category cc on c.category_id=cc.id
+        where c.id=#{commodityId} and c.is_deleted=0
     </select>
 
 

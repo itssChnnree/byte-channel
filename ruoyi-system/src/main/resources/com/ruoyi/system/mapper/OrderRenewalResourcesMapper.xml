@@ -161,7 +161,7 @@ id, order_id, resources_ip, resources_id, user_id, is_deleted, create_user, upda
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into order_renewal_resources(id,order_id, resources_ip, resources_id, user_id, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{entity.id},#{orderId}, #{resourcesIp}, #{resourcesId}, #{userId}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        values (#{id},#{orderId}, #{resourcesIp}, #{resourcesId}, #{userId}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">

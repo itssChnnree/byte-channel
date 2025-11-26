@@ -152,6 +152,16 @@ public class SecurityUtils
     }
 
     /**
+     * 验证用户是否具备某权限
+     *
+     * @return 用户是否具备某权限
+     */
+    public static boolean hasPermi()
+    {
+        return hasPermi("shop:background:admin");
+    }
+
+    /**
      * 判断是否包含权限
      * 
      * @param authorities 权限列表

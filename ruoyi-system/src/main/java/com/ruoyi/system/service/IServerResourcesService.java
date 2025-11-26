@@ -144,4 +144,12 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     Result getUserResourcesPage(ServerResourcesPageDto serverResourcesPageDto);
+
+    /**
+     * [获取新购订单资源详情]
+     * @author 陈湘岳 2025/11/20
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getOrderAdd(String orderId);
 }

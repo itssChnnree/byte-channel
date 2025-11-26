@@ -114,4 +114,14 @@ public interface IOrderService{
      * @return com.ruoyi.system.http.Result
      **/
     Result getRenewalOrderInfo(String orderId);
+
+    /**
+     * [查询订单详情]
+     * @author 陈湘岳 2025/11/19
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getOrderDetailById(String orderId);
+
+
 }

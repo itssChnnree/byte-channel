@@ -4,10 +4,7 @@ import java.util.Date;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -24,6 +21,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName(value ="order_renewal_resources" )
+@Builder
 public class OrderRenewalResources extends ByteBaseEntity implements Serializable {
 private static final long serialVersionUID = 1L;
 /**
@@ -51,32 +49,4 @@ private String resourcesId;
     */
 @TableField(value = "user_id")
 private String userId;
-/**
-    * 0为未删除，1为已删除
-    */
-@TableField(value = "is_deleted")
-private Integer isDeleted;
-/**
-    * 创建人
-    */
-@TableField(value = "create_user")
-private String createUser;
-/**
-    * 修改人
-    */
-@TableField(value = "update_user")
-private String updateUser;
-/**
-    * 创建时间
-    */
-@TableField(value = "create_time")
-private Date createTime;
-/**
-    * 修改时间
-    */
-@TableField(value = "update_time")
-private Date updateTime;
-
-
-
 }

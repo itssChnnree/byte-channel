@@ -38,7 +38,7 @@ public class OrderController {
     @Resource
     IOrderService orderService;
 
-
+//------------------------------------------------------新购-------------------------------------------------------
 
     @PostMapping("/createOrderByCommodity")
     @ApiOperation("从商品创建订单")
@@ -48,28 +48,6 @@ public class OrderController {
             return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
         }
         return orderService.createOrderByCommodity(orderByCommodityDto);
-    }
-
-
-
-    @PostMapping("/createOrderByRenewal")
-    @ApiOperation("资源续费订单创建")
-    public Result createOrderByRenewal(@RequestBody @Validated(InsertGroup.class) OrderByRenewalDto orderByRenewalDto
-            , BindingResult bindingResult){
-        if (bindingResult.hasErrors()) {
-            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
-        }
-        return orderService.createOrderByRenewal(orderByRenewalDto);
-    }
-
-
-    @GetMapping("/getOrderStatus")
-    @ApiOperation("获取订单状态")
-    public Result getOrderStatus(String orderId){
-        if (StrUtil.isBlank(orderId)){
-            return Result.fail("请选择订单");
-        }
-        return orderService.getOrderStatus(orderId);
     }
 
 
@@ -85,6 +63,40 @@ public class OrderController {
         return orderService.orderIsPay(orderId,isBalance);
     }
 
+    @GetMapping("/cancelOrder")
+    @ApiOperation("新购订单取消")
+    public Result cancelOrder(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.cancelOrderNew(orderId);
+    }
+
+
+    @GetMapping("/getOrderInfo")
+    @ApiOperation("获取新购订单信息-订单详情下面的")
+    public Result getOrderInfo(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.getOrderInfo(orderId);
+    }
+
+
+//------------------------------------------------------续费-------------------------------------------------------
+
+
+    @PostMapping("/createOrderByRenewal")
+    @ApiOperation("资源续费订单创建")
+    public Result createOrderByRenewal(@RequestBody @Validated(InsertGroup.class) OrderByRenewalDto orderByRenewalDto
+            , BindingResult bindingResult){
+        if (bindingResult.hasErrors()) {
+            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return orderService.createOrderByRenewal(orderByRenewalDto);
+    }
+
+
     @ApiOperation("续费订单第三方支付或余额支付")
     @PostMapping("/renewalOrderIsPay")
     public Result renewalOrderIsPay(String orderId,Boolean isBalance) {
@@ -96,6 +108,27 @@ public class OrderController {
         }
         return orderService.renewalOrderIsPay(orderId,isBalance);
     }
+
+    @GetMapping("/getRenewalOrderInfo")
+    @ApiOperation("获取续费订单信息-订单详情下面的")
+    public Result getRenewalOrderInfo(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.getRenewalOrderInfo(orderId);
+    }
+
+//-------------------------------------------------------通用-------------------------------------------------------
+
+    @GetMapping("/getOrderStatus")
+    @ApiOperation("获取订单状态")
+    public Result getOrderStatus(String orderId){
+        if (StrUtil.isBlank(orderId)){
+            return Result.fail("请选择订单");
+        }
+        return orderService.getOrderStatus(orderId);
+    }
+
 
     @ApiOperation("获取支付二维码")
     @GetMapping("/getQrCode")
@@ -109,14 +142,6 @@ public class OrderController {
         return orderService.getQrCode(orderId,payType);
     }
 
-    @GetMapping("/cancelOrder")
-    @ApiOperation("取消订单")
-    public Result cancelOrder(String orderId){
-        if (StrUtil.isBlank(orderId)) {
-            return Result.fail("请选择订单");
-        }
-        return orderService.cancelOrderNew(orderId);
-    }
 
 
 
@@ -127,23 +152,6 @@ public class OrderController {
     }
 
 
-    @GetMapping("/getOrderInfo")
-    @ApiOperation("获取订单信息")
-    public Result getOrderInfo(String orderId){
-        if (StrUtil.isBlank(orderId)) {
-            return Result.fail("请选择订单");
-        }
-        return orderService.getOrderInfo(orderId);
-    }
-
-    @GetMapping("/getRenewalOrderInfo")
-    @ApiOperation("获取续费订单信息")
-    public Result getRenewalOrderInfo(String orderId){
-        if (StrUtil.isBlank(orderId)) {
-            return Result.fail("请选择订单");
-        }
-        return orderService.getRenewalOrderInfo(orderId);
-    }
 
     @PostMapping("/calculatePrice")
     @ApiOperation("计算价格")
@@ -156,8 +164,14 @@ public class OrderController {
     }
 
 
-
-
+    @GetMapping("/getOrderDetailById")
+    @ApiOperation("获取订单详情")
+    public Result getOrderDetailById(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.getOrderDetailById(orderId);
+    }
 
 
 }

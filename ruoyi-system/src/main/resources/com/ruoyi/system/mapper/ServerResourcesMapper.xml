@@ -550,19 +550,35 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
 
     <select id="findByOrderId" resultType="com.ruoyi.system.domain.entity.ServerResources">
         select
-            sr.id,resources_ip, resources_port, resources_password,
+            sr.id,sr.resources_ip, resources_port, resources_password,
             resources_status, resource_tenant, lease_expiration_time,
             sales_status, available_status, vendor_account_id,
             resources_user_name, node_port, public_broker_key,
             sni, short_id, sr.commodity_id,password
         from server_resources sr
-        join order_commodity_resources ocr on ocr.resources_id = sr.id
-        join order_commodity oc on oc.id = ocr.order_commodity_id
-        join `order` o on o.id = oc.order_id
+        join order_renewal_resources osr on sr.id = osr.resources_id
+        join `order` o on o.id = osr.order_id
         where 1=1
           and sr.is_deleted = 0
           and sr.available_status = 1
           and o.id = #{id}
+    </select>
+
+
+    <select id="getOrderAdd" resultType="com.ruoyi.system.domain.vo.OrderNewVo">
+        select oc.commodity_id,
+               ois.commodity_name,
+               ois.commodity_desc as commodityDesc,
+               ois.category_id as categoryId,
+               ois.category_name,
+               ois.category_desc as categoryDesc,
+               ois.bandwidth,
+               o.user_id
+        from `order` o
+                 left join order_commodity oc on o.id = oc.order_id
+                 left join order_information_snapshot ois on o.id = ois.order_id
+                 left join order_commodity_resources ocr on oc.id = ocr.order_commodity_id
+        where o.id= #{orderId}
     </select>
 
 

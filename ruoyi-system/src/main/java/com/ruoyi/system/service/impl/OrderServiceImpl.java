@@ -2,7 +2,6 @@ package com.ruoyi.system.service.impl;
 
 
 import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.github.pagehelper.PageHelper;
@@ -12,6 +11,7 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.*;
 import com.ruoyi.system.domain.vo.*;
+import com.ruoyi.system.service.IOrderStatusTimelineService;
 import com.ruoyi.system.util.DefaultValueUtil;
 import com.ruoyi.system.domain.entity.*;
 import com.ruoyi.system.http.Result;
@@ -85,6 +85,15 @@ public class OrderServiceImpl implements IOrderService {
     @Resource
     private WalletBalanceDetailMapper walletBalanceDetailMapper;
 
+    @Resource
+    private OrderRenewalResourcesMapper orderRenewalResourcesMapper;
+
+    @Resource
+    private IOrderStatusTimelineService orderStatusTimelineService;
+
+    @Resource
+    private OrderInformationSnapshotMapper orderInformationSnapshotMapper;
+
 
     /**
      * [直接从商品创建订单]
@@ -115,10 +124,29 @@ public class OrderServiceImpl implements IOrderService {
         if (insert<1){
             throw new RuntimeException("生成订单失败，请稍后再试");
         }
+        //时间线设置
+        orderStatusTimelineService.createOrderAndTimeline(order.getId());
         insertOrderCommodity( order, orderByCommodityDto);
         insertPromoRecords(promoCodeRecords,order);
+        //创建购买商品时候的商品快照
+        insertOrderInformationSnapshot(orderByCommodityDto.getCommodityId(),order.getId());
         //发送消息，若
         return Result.success(order);
+    }
+
+
+    //插入订单快照信息
+    private void insertOrderInformationSnapshot(String commodityId,String orderId){
+        OrderInformationSnapshot orderInformationSnapshot = commodityMapper.selectSnapshotByCommodityId(commodityId);
+        if(orderInformationSnapshot == null){
+            throw new RuntimeException("生成订单资源快照失败");
+        }
+        orderInformationSnapshot.setOrderId(orderId);
+        orderInformationSnapshot.setUserId(SecurityUtils.getStrUserId());
+        int insert = orderInformationSnapshotMapper.insert(orderInformationSnapshot);
+        if (insert<1){
+            throw new RuntimeException("生成订单资源快照失败");
+        }
     }
 
 
@@ -132,17 +160,19 @@ public class OrderServiceImpl implements IOrderService {
     @Override
     @Transactional
     public Result createOrderByRenewal(OrderByRenewalDto orderByRenewalDto) {
-        ServerResources byId = serverResourcesMapper.findById(orderByRenewalDto.getResourcesId());
-        if (byId == null){
+        ServerResources resourcesMapperById = serverResourcesMapper.findById(orderByRenewalDto.getResourcesId());
+        if (resourcesMapperById == null){
             return Result.fail("资源不存在");
         }
-        if (AvailableStatus.AVAILABLE_STATUS_DOWN.equals(byId.getAvailableStatus())){
+        if (AvailableStatus.AVAILABLE_STATUS_DOWN.equals(resourcesMapperById.getAvailableStatus())){
             return Result.fail("资源已下架");
         }
-        if (!SecurityUtils.getStrUserId().equals(byId.getResourceTenant())||byId.getLeaseExpirationTime().before(new Date())){
+        if (!SecurityUtils.getStrUserId().equals(resourcesMapperById.getResourceTenant())
+                ||resourcesMapperById.getLeaseExpirationTime().before(new Date())){
             return Result.fail("资源不属于当前用户或资源已到期");
         }
-        Commodity byResourcesId = commodityMapper.findByResourcesId(byId.getId());
+        //这里商品下架也是可以续费的
+        Commodity byResourcesId = commodityMapper.findByResourcesId(resourcesMapperById.getId());
         if (byResourcesId == null){
             return Result.fail("续费资源所属商品不存在");
         }
@@ -154,10 +184,13 @@ public class OrderServiceImpl implements IOrderService {
         if (insert<1){
             throw new RuntimeException("生成订单失败，请稍后再试");
         }
+        orderStatusTimelineService.createOrderAndTimeline(renewalOrder.getId());
         //新增推广记录
         insertPromoRecords(promoCodeRecords,renewalOrder);
-
-        insertRenewalOrderCommodity(renewalOrder, byResourcesId, byId.getId());
+        //新增续费资源
+        insertOrderRenewal(renewalOrder, resourcesMapperById);
+        //生成订单快照
+        insertOrderInformationSnapshot(byResourcesId.getId(),renewalOrder.getId());
         return Result.success(renewalOrder);
     }
 
@@ -202,28 +235,14 @@ public class OrderServiceImpl implements IOrderService {
         return orderCommodity;
     }
 
-    private void insertRenewalOrderCommodity( Order order,Commodity commodity,String resourcesId) {
-        OrderCommodity orderCommodity = new OrderCommodity();
-        orderCommodity.setOrderId(order.getId());
-        orderCommodity.setCommodityId(commodity.getId());
-        orderCommodity.setUserId(order.getUserId());
-        orderCommodity.setOrderQuantity(0);
-        orderCommodity.setPurchaseQuantity(1);
-        orderCommodity.setCreateUser(order.getUserId());
-        orderCommodity.setUpdateUser(order.getUserId());
-        int insert = orderCommodityMapper.insert(orderCommodity);
-        if (insert<1){
-            throw new RuntimeException("生成订单失败，请稍后再试");
-        }
-        OrderCommodityResources orderCommodityResources = new OrderCommodityResources();
-        orderCommodityResources.setUserId(SecurityUtils.getStrUserId());
-        orderCommodityResources.setOrderCommodityId(orderCommodity.getId());
-        orderCommodityResources.setResourcesId(resourcesId);
-        orderCommodityResources.setIsDeleted(0);
-        int insert1 = orderCommodityResourcesMapper.insert(orderCommodityResources);
-        if (insert1<1){
-            throw new RuntimeException("生成订单失败，请稍后再试");
-        }
+    private void insertOrderRenewal(Order order, ServerResources serverResources) {
+        OrderRenewalResources orderRenewalResources = OrderRenewalResources.builder()
+                .orderId(order.getId())
+                .resourcesId(serverResources.getId())
+                .resourcesIp(serverResources.getResourcesIp())
+                .userId(order.getUserId())
+                .build();
+        int insert = orderRenewalResourcesMapper.insert(orderRenewalResources);
     }
 
 
@@ -578,6 +597,9 @@ public class OrderServiceImpl implements IOrderService {
         if (order == null){
             return Result.fail("订单不存在");
         }
+        if (!SecurityUtils.getStrUserId().equals(order.getUserId())){
+            return Result.fail("您没有权限查看此订单");
+        }
         PromoCodeRecords byOrderId = promoCodeRecordsMapper.findByOrderId(orderId);
         order.setPromoCode(byOrderId == null ? "" : byOrderId.getPromoCode());
         if (PaymentPeriodConstant.YEARLY.equals(order.getPayCycle())){
@@ -610,9 +632,12 @@ public class OrderServiceImpl implements IOrderService {
      **/
     @Override
     public Result getRenewalOrderInfo(String orderId) {
-        OrderInfoVo order = orderMapper.getOrderInfoById(orderId,SecurityUtils.getStrUserId());
+        OrderInfoVo order = orderMapper.getRenewalOrderInfoById(orderId,SecurityUtils.getStrUserId());
         if (order == null){
             return Result.fail("订单不存在");
+        }
+        if (!SecurityUtils.getStrUserId().equals(order.getUserId())){
+            return Result.fail("您没有权限查看此订单");
         }
         PromoCodeRecords byOrderId = promoCodeRecordsMapper.findByOrderId(orderId);
         order.setPromoCode(byOrderId == null ? "" : byOrderId.getPromoCode());
@@ -635,6 +660,29 @@ public class OrderServiceImpl implements IOrderService {
         }
         return Result.success(order);
     }
+
+
+    /**
+     * [查询订单详情]
+     *
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/11/19
+     **/
+    @Override
+    public Result getOrderDetailById(String orderId) {
+        OrderDetailVo order = orderMapper.getOrderDetailById(orderId);
+        if(ObjectUtil.isNull( order)){
+            return Result.fail("订单不存在");
+        }
+        if (!SecurityUtils.hasPermi()&&!SecurityUtils.getStrUserId().equals(order.getUserId())){
+            return Result.fail("您没有权限查看此订单");
+        }
+        OrderStatusTimelineVo byOrderId = orderStatusTimelineService.getByOrderId(orderId);
+        order.setOrderStatusTimelineVo(byOrderId);
+        return Result.success(order);
+    }
+
 
     /**
      * [获取订单状态]
@@ -828,6 +876,7 @@ public class OrderServiceImpl implements IOrderService {
             if (lock.tryLock()) {
                 //分配资源，新增订单资源
                 OrderCommodity orderCommodity = orderCommodityMapper.findByOrderId(order.getId());
+                orderStatusTimelineService.setUserPayAndWaitAllocationTime(orderId);
                 String resourcesId = allocationResources(order,orderCommodity);
                 //如果订单id为空，则订单置为待分配资源状态
                 if (StrUtil.isBlank(resourcesId)){
@@ -840,6 +889,7 @@ public class OrderServiceImpl implements IOrderService {
                     orderMapper.updateById(order);
                     orderCommodity.setOrderQuantity(orderCommodity.getOrderQuantity() + 1);
                     orderCommodityMapper.updateById(orderCommodity);
+                    orderStatusTimelineService.setCompletedTime(orderId);
                 }
             }else {
                 return Result.success("订单正在处理中", false);
@@ -849,6 +899,7 @@ public class OrderServiceImpl implements IOrderService {
                 lock.unlock();
             }
         }
+
         return Result.success("支付成功",true);
     }
 
@@ -860,10 +911,10 @@ public class OrderServiceImpl implements IOrderService {
         RLock lock = redissonClient.getLock(RedissonLockStatus.ORDER_STATUS_UPDATE_LOCK + orderId);
         try{
             if (lock.tryLock()) {
-                //分配资源，新增订单资源
+                //查询订单
                 ServerResources serverResources = serverResourcesMapper.findByOrderId(order.getId());
-                String resourcesId = renewalResources(order,serverResources);
-                //如果订单id为空，则订单置为待分配资源状态
+                renewalResources(order,serverResources);
+                //将订单置为已完成状态
                 order.setStatus(OrderStatus.COMPLETED);
                 orderMapper.updateById(order);
             }else {
@@ -928,7 +979,7 @@ public class OrderServiceImpl implements IOrderService {
         byCommodityId.setSalesStatus(SalesStatus.ON_SALE);
         int i = serverResourcesMapper.updateById(byCommodityId);
         if (i < 1){
-            throw new BaseException("资源分配失败，请创建工单联系管理员");
+            throw new BaseException("资源续费失败，请创建工单联系管理员");
         }else {
             return byCommodityId.getId();
         }

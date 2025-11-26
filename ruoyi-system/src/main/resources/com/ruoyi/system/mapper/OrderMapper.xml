@@ -157,20 +157,23 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
 
 
     <select id="getRenewalOrderInfoById" resultType="com.ruoyi.system.domain.vo.OrderInfoVo">
-        select o.id as orderId,
-               o.status,
-               payment_period as payCycle,
-               amount as price,
-               c.commodity_name as commodityName,
-               c.description as commodityDesc,
-               c.bandwidth as bandwidth,
-               o.order_type,
-               ocr.resources_id
-               from `order` o
-               join order_commodity oc on o.id = oc.order_id
-               join order_commodity_resources ocr on oc.id = ocr.order_commodity_id
-               join commodity c on oc.commodity_id = c.id
-               where o.id = #{id} and o.user_id = #{userId} and o.is_deleted = 0
+        select
+            o.id as orderId,
+            o.payment_period as payCycle,
+            o.amount as price,
+            o.status,
+            o.payment_period as payCycle,
+            c.commodity_name as commodityName,
+            c.description as commodityDesc,
+            c.bandwidth as bandwidth,
+            orr.resources_ip as ip,
+            o.order_type,
+            o.user_id
+            from `order` o
+        join order_renewal_resources orr on o.id=orr.order_id
+        join server_resources sr on orr.resources_id = sr.id
+        join commodity c on sr.commodity_id = c.id
+        where o.id = #{id} and o.user_id = #{userId} and o.is_deleted = 0
     </select>
 
     <select id="getOrderInfoById" resultType="com.ruoyi.system.domain.vo.OrderInfoVo">
@@ -181,11 +184,21 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
                c.commodity_name as commodityName,
                c.description as commodityDesc,
                c.bandwidth as bandwidth,
-               o.order_type
+               o.order_type,
+               o.user_id
         from `order` o
                  join order_commodity oc on o.id = oc.order_id
                  join commodity c on oc.commodity_id = c.id
         where o.id = #{id} and o.user_id = #{userId} and o.is_deleted = 0
+    </select>
+
+
+    <select id="getOrderDetailById" resultType="com.ruoyi.system.domain.vo.OrderDetailVo">
+        select
+        id, user_id,status,amount, status,description,
+        order_time,order_type,payment_period, payment_type
+        from `order`
+        where id = #{id} and is_deleted = 0
     </select>
 
     <update id="updateById">

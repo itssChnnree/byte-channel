@@ -22,6 +22,10 @@ public class OrderInfoVo {
     @ApiModelProperty("订单ID")
     private String orderId;
 
+    //用户ID
+    @ApiModelProperty("用户id")
+    private String userId;
+
     //商品名
     @ApiModelProperty("商品名")
     private String commodityName;

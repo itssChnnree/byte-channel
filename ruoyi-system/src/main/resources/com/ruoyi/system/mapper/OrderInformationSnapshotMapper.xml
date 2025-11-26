@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.OrderInformationSnapshotMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.OrderInformationSnapshot" id="OrderInformationSnapshotMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="orderId" column="order_id" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="commodityId" column="commodity_id" jdbcType="VARCHAR"/>
+        <result property="commodityName" column="commodity_name" jdbcType="VARCHAR"/>
+        <result property="commodityDesc" column="commodity_desc" jdbcType="VARCHAR"/>
+        <result property="bandwidth" column="bandwidth" jdbcType="INTEGER"/>
+        <result property="businessSuitable" column="business_suitable" jdbcType="VARCHAR"/>
+        <result property="categoryId" column="category_id" jdbcType="VARCHAR"/>
+        <result property="categoryName" column="category_name" jdbcType="VARCHAR"/>
+        <result property="categoryDesc" column="category_desc" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.OrderInformationSnapshotVo" id="OrderInformationSnapshotVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="orderId" column="order_id" jdbcType="VARCHAR"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="commodityId" column="commodity_id" jdbcType="VARCHAR"/>
+        <result property="commodityName" column="commodity_name" jdbcType="VARCHAR"/>
+        <result property="commodityDesc" column="commodity_desc" jdbcType="VARCHAR"/>
+        <result property="bandwidth" column="bandwidth" jdbcType="INTEGER"/>
+        <result property="businessSuitable" column="business_suitable" jdbcType="VARCHAR"/>
+        <result property="categoryId" column="category_id" jdbcType="VARCHAR"/>
+        <result property="categoryName" column="category_name" jdbcType="VARCHAR"/>
+        <result property="categoryDesc" column="category_desc" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="OrderInformationSnapshotVOMap">
+        select id,
+               order_id,
+               user_id,
+               commodity_id,
+               commodity_name,
+               commodity_desc,
+               bandwidth,
+               business_suitable,
+               category_id,
+               category_name,
+               category_desc,
+               is_deleted,
+               create_user,
+               update_user,
+               create_time,
+               update_time
+        from order_information_snapshot
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="OrderInformationSnapshotVOMap">
+        select
+        id, order_id, user_id, commodity_id, commodity_name, commodity_desc, bandwidth, business_suitable, category_id,
+        category_name, category_desc, is_deleted, create_user, update_user, create_time, update_time
+        from order_information_snapshot
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="orderId != null and orderId != ''">
+                and order_id = #{orderId}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="commodityId != null and commodityId != ''">
+                and commodity_id = #{commodityId}
+            </if>
+            <if test="commodityName != null and commodityName != ''">
+                and commodity_name = #{commodityName}
+            </if>
+            <if test="commodityDesc != null and commodityDesc != ''">
+                and commodity_desc = #{commodityDesc}
+            </if>
+            <if test="bandwidth != null">
+                and bandwidth = #{bandwidth}
+            </if>
+            <if test="businessSuitable != null and businessSuitable != ''">
+                and business_suitable = #{businessSuitable}
+            </if>
+            <if test="categoryId != null and categoryId != ''">
+                and category_id = #{categoryId}
+            </if>
+            <if test="categoryName != null and categoryName != ''">
+                and category_name = #{categoryName}
+            </if>
+            <if test="categoryDesc != null and categoryDesc != ''">
+                and category_desc = #{categoryDesc}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+        </where>
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="OrderInformationSnapshotVOMap">
+        select
+        id, order_id, user_id, commodity_id, commodity_name, commodity_desc, bandwidth, business_suitable, category_id,
+        category_name, category_desc, is_deleted, create_user, update_user, create_time, update_time
+        from order_information_snapshot
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.orderId != null and dto.orderId != ''">
+                and order_id = #{dto.orderId}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.commodityId != null and dto.commodityId != ''">
+                and commodity_id = #{dto.commodityId}
+            </if>
+            <if test="dto.commodityName != null and dto.commodityName != ''">
+                and commodity_name = #{dto.commodityName}
+            </if>
+            <if test="dto.commodityDesc != null and dto.commodityDesc != ''">
+                and commodity_desc = #{dto.commodityDesc}
+            </if>
+            <if test="dto.bandwidth != null">
+                and bandwidth = #{dto.bandwidth}
+            </if>
+            <if test="dto.businessSuitable != null and dto.businessSuitable != ''">
+                and business_suitable = #{dto.businessSuitable}
+            </if>
+            <if test="dto.categoryId != null and dto.categoryId != ''">
+                and category_id = #{dto.categoryId}
+            </if>
+            <if test="dto.categoryName != null and dto.categoryName != ''">
+                and category_name = #{dto.categoryName}
+            </if>
+            <if test="dto.categoryDesc != null and dto.categoryDesc != ''">
+                and category_desc = #{dto.categoryDesc}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="OrderInformationSnapshotVOMap">
+        select
+        id, order_id, user_id, commodity_id, commodity_name, commodity_desc, bandwidth, business_suitable, category_id,
+        category_name, category_desc, is_deleted, create_user, update_user, create_time, update_time
+        from order_information_snapshot
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.orderId != null and dto.orderId != ''">
+                and order_id = #{dto.orderId}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.commodityId != null and dto.commodityId != ''">
+                and commodity_id = #{dto.commodityId}
+            </if>
+            <if test="dto.commodityName != null and dto.commodityName != ''">
+                and commodity_name = #{dto.commodityName}
+            </if>
+            <if test="dto.commodityDesc != null and dto.commodityDesc != ''">
+                and commodity_desc = #{dto.commodityDesc}
+            </if>
+            <if test="dto.bandwidth != null">
+                and bandwidth = #{dto.bandwidth}
+            </if>
+            <if test="dto.businessSuitable != null and dto.businessSuitable != ''">
+                and business_suitable = #{dto.businessSuitable}
+            </if>
+            <if test="dto.categoryId != null and dto.categoryId != ''">
+                and category_id = #{dto.categoryId}
+            </if>
+            <if test="dto.categoryName != null and dto.categoryName != ''">
+                and category_name = #{dto.categoryName}
+            </if>
+            <if test="dto.categoryDesc != null and dto.categoryDesc != ''">
+                and category_desc = #{dto.categoryDesc}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+        </where>
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into order_information_snapshot(id, order_id, user_id, commodity_id, commodity_name, commodity_desc,
+                                               bandwidth, business_suitable, category_id, category_name, category_desc,
+                                               is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id}, #{orderId}, #{userId}, #{commodityId}, #{commodityName}, #{commodityDesc}, #{bandwidth},
+                #{businessSuitable}, #{categoryId}, #{categoryName}, #{categoryDesc}, #{isDeleted}, #{createUser},
+                #{updateUser}, #{createTime}, #{updateTime})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into order_information_snapshot(id,order_id, user_id, commodity_id, commodity_name, commodity_desc,
+        bandwidth, business_suitable, category_id, category_name, category_desc, is_deleted, create_user, update_user,
+        create_time, update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.orderId}, #{entity.userId}, #{entity.commodityId}, #{entity.commodityName},
+            #{entity.commodityDesc}, #{entity.bandwidth}, #{entity.businessSuitable}, #{entity.categoryId},
+            #{entity.categoryName}, #{entity.categoryDesc}, #{entity.isDeleted}, #{entity.createUser},
+            #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into order_information_snapshot(id,order_id, user_id, commodity_id, commodity_name, commodity_desc,
+        bandwidth, business_suitable, category_id, category_name, category_desc, is_deleted, create_user, update_user,
+        create_time, update_time)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.orderId}, #{entity.userId}, #{entity.commodityId}, #{entity.commodityName},
+            #{entity.commodityDesc}, #{entity.bandwidth}, #{entity.businessSuitable}, #{entity.categoryId},
+            #{entity.categoryName}, #{entity.categoryDesc}, #{entity.isDeleted}, #{entity.createUser},
+            #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
+        </foreach>
+        on duplicate key update
+        order_id = values(order_id),
+        user_id = values(user_id),
+        commodity_id = values(commodity_id),
+        commodity_name = values(commodity_name),
+        commodity_desc = values(commodity_desc),
+        bandwidth = values(bandwidth),
+        business_suitable = values(business_suitable),
+        category_id = values(category_id),
+        category_name = values(category_name),
+        category_desc = values(category_desc),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time)
+    </insert>
+
+</mapper>
+

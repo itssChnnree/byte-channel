@@ -611,8 +611,24 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         return Result.success(new PageInfo<>(serverResourcesVos));
     }
 
-
-
+    /**
+     * [获取新购订单资源详情]
+     *
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/11/20
+     **/
+    @Override
+    public Result getOrderAdd(String orderId) {
+        OrderNewVo orderAdd = serverResourcesMapper.getOrderAdd(orderId);
+        if (ObjectUtils.isEmpty(orderAdd)){
+            return Result.fail("订单不存在");
+        }
+        if(!SecurityUtils.hasPermi()&&!SecurityUtils.getStrUserId().equals(orderAdd.getUserId())){
+            return Result.fail("您没有权限查看此订单");
+        }
+        return Result.success(orderAdd);
+    }
 
     //获取到期时间类型,1为7天内到期，2为15天，3为一月
     private Date getExpireTime(Integer expireTimeType){

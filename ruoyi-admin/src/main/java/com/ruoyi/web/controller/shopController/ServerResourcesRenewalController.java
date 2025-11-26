@@ -8,7 +8,7 @@ import io.swagger.annotations.Api;
 import javax.annotation.Resource;
 
 /**
- * [˵��/����]
+ * [服务器资源自动续费表]
  *
  * @author chenxiangyue
  * @version v1.0.0
