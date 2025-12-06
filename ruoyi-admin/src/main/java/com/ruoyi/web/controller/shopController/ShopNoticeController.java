@@ -41,6 +41,17 @@ public class ShopNoticeController {
         return shopNoticeService.add(shopNoticeDto);
     }
 
+
+    @ApiOperation("变更公告状态")
+    @PutMapping("/changeStatus")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result changeStatus(String id) {
+        if (StrUtil.isBlank(id)){
+            return Result.fail("请选择变更状态的公告");
+        }
+        return shopNoticeService.changeStatus(id);
+    }
+
     @ApiOperation("删除公告")
     @DeleteMapping("/deleteById")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
@@ -64,7 +75,7 @@ public class ShopNoticeController {
         return shopNoticeService.list(shopNoticeDto);
     }
 
-    @ApiOperation("查询标题公告列表")
+    @ApiOperation("前台查询标题公告列表")
     @GetMapping("/titleList")
     public Result titleList(){
         return shopNoticeService.titleList();
@@ -77,6 +88,15 @@ public class ShopNoticeController {
             return Result.fail("请选择查询的公告");
         }
         return shopNoticeService.getById(id);
+    }
+
+    @GetMapping("/getByIdSystem")
+    @ApiOperation("后台查询公告详情")
+    public Result<ShopNoticeVo> getByIdSystem(String id) {
+        if (StrUtil.isBlank(id)){
+            return Result.fail("请选择查询的公告");
+        }
+        return shopNoticeService.getByIdSystem(id);
     }
 
 

@@ -29,6 +29,7 @@ public class ShopNoticeFileDto {
     @ApiModelProperty("文件路径")
     private String fileUrl;
 
-
+    @ApiModelProperty("文件名")
+    private String fileName;
 
 }

@@ -39,6 +39,18 @@ public class ShopNoticeVo {
     @ApiModelProperty("状态,0为发布，1为草稿")
     private String status;
 
+    @ApiModelProperty("创建时间")
+    private Date createTime;
+
+    @ApiModelProperty("更新时间")
+    private Date updateTime;
+
+    @ApiModelProperty("修改人")
+    private String updateUser;
+
+    @ApiModelProperty("创建人")
+    private String createUser;
+
     @ApiModelProperty("附件列表")
     private List<ShopNoticeFileVo> shopNoticeFiles;
 

@@ -67,10 +67,11 @@ public class ShopNoticeServiceImpl implements IShopNoticeService {
                 return Result.fail("最多上传5个附件");
             }
             //生成文件对象
-            List<ShopNoticeFile> shopNoticeFiles = shopNoticeDto.getFileUrls().stream().map(fileUrl ->
+            List<ShopNoticeFile> shopNoticeFiles = shopNoticeDto.getFileUrls().stream().map(fileDto ->
                     ShopNoticeFile.builder()
                         .shopNoticeId(shopNotice.getId())
-                        .fileUrl(fileUrl)
+                        .fileUrl(fileDto.getFileUrl())
+                        .fileName(fileDto.getFileName())
                         .build()).collect(Collectors.toList());
             int insertBatch = shopNoticeFileMapper.insertBatch(shopNoticeFiles);
         }
@@ -96,6 +97,47 @@ public class ShopNoticeServiceImpl implements IShopNoticeService {
     }
 
     /**
+     * [后台查询公告详情]
+     *
+     * @param id 公告id
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.vo.ShopNoticeVo>
+     * @author 陈湘岳 2025/11/27
+     **/
+    @Override
+    public Result<ShopNoticeVo> getByIdSystem(String id) {
+        ShopNoticeVo shopNoticeVo = shopNoticeMapper.getByIdSystem(id);
+        if (shopNoticeVo == null){
+            return Result.fail("公告不存在");
+        }
+        List<ShopNoticeFileVo> shopNoticeFileVos = shopNoticeFileMapper.selectList(shopNoticeVo.getId());
+        shopNoticeVo.setShopNoticeFiles(shopNoticeFileVos);
+        return Result.success(shopNoticeVo);
+    }
+
+
+    /**
+     * [变更公告状态]
+     *
+     * @param id 公告id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/11/27
+     **/
+    @Override
+    public Result changeStatus(String id) {
+        ShopNotice shopNotice = shopNoticeMapper.selectById(id);
+        if (shopNotice == null){
+            return Result.fail("公告不存在");
+        }
+        if ("1".equals(shopNotice.getStatus())){
+            shopNotice.setStatus("0");
+        }else {
+            shopNotice.setStatus("1");
+        }
+        int i = shopNoticeMapper.updateById(shopNotice);
+        return Result.success(shopNotice);
+    }
+
+    /**
      * [更新公告]
      *
      * @param shopNoticeDto
@@ -115,10 +157,11 @@ public class ShopNoticeServiceImpl implements IShopNoticeService {
                 return Result.fail("最多上传5个附件");
             }
             //生成文件对象
-            List<ShopNoticeFile> shopNoticeFiles = shopNoticeDto.getFileUrls().stream().map(fileUrl ->
+            List<ShopNoticeFile> shopNoticeFiles = shopNoticeDto.getFileUrls().stream().map(fileDto ->
                     ShopNoticeFile.builder()
                             .shopNoticeId(shopNotice.getId())
-                            .fileUrl(fileUrl)
+                            .fileUrl(fileDto.getFileUrl())
+                            .fileName(fileDto.getFileName())
                             .build()).collect(Collectors.toList());
             int insertBatch = shopNoticeFileMapper.insertBatch(shopNoticeFiles);
         }

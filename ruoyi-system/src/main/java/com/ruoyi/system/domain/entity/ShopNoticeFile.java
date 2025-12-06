@@ -5,6 +5,7 @@ import java.util.Date;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 
 
@@ -42,4 +43,9 @@ public class ShopNoticeFile extends ByteBaseEntity implements Serializable {
      */
     @TableField(value = "file_url")
     private String fileUrl;
+    /**
+     * 文件名
+     */
+    @TableField("file_name")
+    private String fileName;
 }

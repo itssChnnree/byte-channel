@@ -76,4 +76,20 @@ public interface IShopNoticeService {
      * @return com.ruoyi.system.http.Result
      **/
     Result update( ShopNoticeDto shopNoticeDto);
+
+    /**
+     * [后台查询公告详情]
+     * @author 陈湘岳 2025/11/27
+     * @param id 公告id
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.vo.ShopNoticeVo>
+     **/
+    Result<ShopNoticeVo> getByIdSystem(String id);
+
+    /**
+     * [变更公告状态]
+     * @author 陈湘岳 2025/11/27
+     * @param id 公告id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result changeStatus(String id);
 }

@@ -178,7 +178,7 @@
 
     <select id="selectList" resultType="com.ruoyi.system.domain.vo.ShopNoticeVo">
         select
-        id, notice_title, notice_type, notice_content,
+        id, notice_title, notice_type,
         sort, is_deleted, sn.status,su.nick_name as create_user,
         su2.nick_name as update_user,
         sn.create_time,sn.update_time
@@ -202,9 +202,9 @@
 
     <select id="userlist" resultType="com.ruoyi.system.domain.vo.ShopNoticeVo">
         select
-        id, notice_title, notice_type, notice_content,
+        id, notice_title, notice_type,
         sort, is_deleted, sn.status,
-        sn.create_time,sn.update_time
+        sn.create_time,sn.update_time,'官方' as create_user
         from shop_notice sn
         where
         1 = 1 and is_deleted = 0
@@ -229,6 +229,26 @@
             and sn.`status` = '0'
         order by sort, create_time desc
         limit 5
+    </select>
+
+
+    <select id="getByIdSystem" resultType="com.ruoyi.system.domain.vo.ShopNoticeVo">
+        select sn.id,
+               notice_title,
+               notice_type,
+               notice_content,
+               sort,
+               is_deleted,
+               sn.status,
+               su.nick_name as create_user,
+               su2.nick_name as update_user,
+               sn.create_time,
+               sn.update_time
+        from shop_notice sn
+        left join sys_user su on sn.create_user = su.user_id
+        left join sys_user su2 on sn.update_user = su2.user_id
+        where id = #{id}
+          and is_deleted = 0
     </select>
 
 

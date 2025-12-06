@@ -44,7 +44,7 @@ public class ShopNoticeDto extends PageBase {
     private String status;
 
     @ApiModelProperty("附件列表")
-    private List<String> fileUrls;
+    private List<ShopNoticeFileDto> fileUrls;
 
 
 }

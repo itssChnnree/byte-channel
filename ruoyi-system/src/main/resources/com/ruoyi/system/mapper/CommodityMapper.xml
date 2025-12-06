@@ -137,7 +137,7 @@
         from `order` o
             left join order_commodity oo on o.id=oo.order_id
             left join commodity c on oo.commodity_id=c.id
-        where o.id = #{id}
+        where o.id = #{orderId}
           and c.is_deleted = 0
     </select>
     

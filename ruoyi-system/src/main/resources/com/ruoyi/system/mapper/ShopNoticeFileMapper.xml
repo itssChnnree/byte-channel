@@ -162,7 +162,7 @@
 
     <select id="selectList" resultType="com.ruoyi.system.domain.vo.ShopNoticeFileVo">
         select
-        id, shop_notice_id, file_url
+        id, shop_notice_id, file_url,file_name
         from shop_notice_file
         where shop_notice_id = #{shopNoticeId}
     </select>
@@ -177,11 +177,11 @@
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into shop_notice_file(id,shop_notice_id, file_url, status, is_deleted, create_user, update_user,
+        insert into shop_notice_file(id,shop_notice_id, file_url,file_name, status, is_deleted, create_user, update_user,
         create_time, update_time)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.shopNoticeId}, #{entity.fileUrl}, #{entity.status}, #{entity.isDeleted},
+            (#{entity.id},#{entity.shopNoticeId}, #{entity.fileUrl}, #{entity.fileName}, #{entity.status}, #{entity.isDeleted},
             #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
         </foreach>
     </insert>

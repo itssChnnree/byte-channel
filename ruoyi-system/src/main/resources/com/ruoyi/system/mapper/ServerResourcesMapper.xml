@@ -57,7 +57,7 @@
             resource_tenant = null,
             lease_expiration_time=null
         where  id in
-        <foreach item="item" index="index" collection="serverResourcesIds" separator="," close=")" open="(">
+        <foreach item="item" index="index" collection="resourcesId" separator="," close=")" open="(">
             #{item}
         </foreach>
     </update>

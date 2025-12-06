@@ -24,6 +24,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
@@ -343,30 +344,39 @@ public class OrderServiceImpl implements IOrderService {
         if (order == null){
             return Result.fail("订单不存在");
         }
-        if ( OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
-            return Result.fail("订单超时自动取消");
-        }
-        if (OrderStatus.USER_CANCELED.equals(order.getStatus())){
-            return Result.fail("用户已取消订单");
-        }
-        if (OrderStatus.WAIT_REFUND.equals(order.getStatus())){
-            return Result.fail("订单正在退款中");
-        }
-        if (OrderStatus.REFUND_SUCCESS.equals(order.getStatus())){
-            return Result.fail("订单已退款");
-        }
         String strUserId = SecurityUtils.getStrUserId();
         if (!strUserId.equals(order.getCreateUser())){
             return Result.fail("对该订单暂无操作权限");
         }
-        CompletableFuture<OrderByCommodityDto> uCompletableFuture = CompletableFuture.supplyAsync(() -> orderCommodityMapper.findCommodityByOrderId(orderId));
-        CompletableFuture<Commodity> completableFuture = CompletableFuture.supplyAsync(() -> commodityMapper.findCommodityByOrderId(orderId));
+       //已取消 超时系统取消
+        if ( OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
+            return Result.fail("订单超时自动取消");
+        }
+        //已取消 用户主动取消
+        if (OrderStatus.USER_CANCELED.equals(order.getStatus())){
+            return Result.fail("用户已取消订单");
+        }
+        //待退款
+        if (OrderStatus.WAIT_REFUND.equals(order.getStatus())){
+            return Result.fail("订单正在退款中");
+        }
+        //已退款
+        if (OrderStatus.REFUND_SUCCESS.equals(order.getStatus())){
+            return Result.fail("订单已退款");
+        }
+
+        CompletableFuture<OrderByCommodityDto> uCompletableFuture
+                = CompletableFuture.supplyAsync(() -> orderCommodityMapper.findCommodityByOrderId(orderId));
+        CompletableFuture<Commodity> completableFuture
+                = CompletableFuture.supplyAsync(() -> commodityMapper.findCommodityByOrderId(orderId));
         //撤销推广
         cancelPromo(order);
         //释放资源
         releaseResources(orderId);
         //增加库存
         addCommodityStockLock(uCompletableFuture, completableFuture);
+        //订单时间线
+        orderStatusTimelineService.setUserCanceledAndWaitRefundTime(orderId);
         String status = null;
         String result = null;
         if (OrderStatus.WAIT_PAY.equals(order.getStatus())){
@@ -436,7 +446,11 @@ public class OrderServiceImpl implements IOrderService {
 
     private void releaseResources(String orderId){
         List<OrderCommodityResources> byOrderId = orderCommodityResourcesMapper.findByOrderId(orderId);
+        //查询这个订单下面资源，如果没有不释放
         List<String> collect = byOrderId.stream().map(OrderCommodityResources::getResourcesId).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty( collect)){
+            return;
+        }
         int i = serverResourcesMapper.updateServerResourcesSaleStatus(collect);
     }
 

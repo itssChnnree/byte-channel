@@ -58,4 +58,13 @@ public interface ShopNoticeMapper extends BaseMapper<ShopNotice> {
      * @return com.ruoyi.system.domain.vo.ShopNoticeVo
      **/
     ShopNoticeVo queryById(@Param("id") String id);
+
+
+    /**
+     * 系统查询公告详情]
+     * @author 陈湘岳 2025/11/27
+     * @param id 公告id
+     * @return com.ruoyi.system.domain.vo.ShopNoticeVo
+     **/
+    ShopNoticeVo getByIdSystem(String id);
 }
