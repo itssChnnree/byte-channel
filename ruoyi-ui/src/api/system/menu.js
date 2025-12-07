@@ -13,7 +13,7 @@ export function listMenu(query) {
 export function getMenu(menuId) {
   return request({
     url: '/system/menu/' + menuId,
-    method: 'get'
+    method: 'ge t'
   })
 }
 
