@@ -55,6 +55,18 @@
   ],
   "routing": {
     "domainStrategy": "IPIfNonMatch",
-    "rules": []
+    "rules": [
+      {
+        "type": "field",
+        "inboundTag": "socks",
+        "outboundTag": "socks"
+      },
+      {
+        "type": "field",
+        "domain": [
+        ],
+        "outboundTag": "block"
+      }
+    ]
   }
 }
