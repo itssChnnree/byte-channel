@@ -221,7 +221,83 @@ install_xray() {
     fi
 }
 
-# 下载文件
+# 创建默认配置文件函数
+create_default_config() {
+    local config_file="$1"
+
+    print_warning "创建默认配置文件..."
+
+    cat > "$config_file" << 'EOF'
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 52548,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "566c6bc0-703f-4fcb-a51d-f52ec3ae82bb",
+            "flow": "xtls-rprx-vision"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "lacity.gov:443",
+          "xver": 0,
+          "serverNames": [
+            "lacity.gov",
+            "www.lacity.gov"
+          ],
+          "privateKey": "",
+          "shortIds": [""],
+          "fingerprint": "chrome"
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ]
+      },
+      "tag": "inbound-52548"
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "block"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "domain": [],
+        "outboundTag": "block"
+      }
+    ]
+  }
+}
+EOF
+
+    print_success "默认配置文件已创建"
+}
+
+# 下载文件（优化版）
 download_files() {
     print_info "创建临时目录: $TEMP_DIR"
     mkdir -p "$TEMP_DIR"
@@ -232,7 +308,8 @@ download_files() {
     local retry_count=0
 
     while [ $retry_count -lt $max_retries ]; do
-        if curl -L -o "$TEMP_DIR/xray-core-in" "$XRAY_CORE_URL" --progress-bar; then
+        # 添加超时和重试参数
+        if curl -L --connect-timeout 30 --max-time 60 --retry 3 --retry-delay 5 -o "$TEMP_DIR/xray-core-in" "$XRAY_CORE_URL" --progress-bar 2>/dev/null; then
             # 检查文件是否为有效的可执行文件
             if file "$TEMP_DIR/xray-core-in" | grep -q "ELF.*executable"; then
                 chmod +x "$TEMP_DIR/xray-core-in"
@@ -254,13 +331,47 @@ download_files() {
         fi
     done
 
-    # 下载配置文件
+    # 下载配置文件（优化版）
     print_info "下载配置文件..."
-    if curl -L -o "$TEMP_DIR/xray-in-config.json" "$CONFIG_URL" --progress-bar; then
-        print_success "配置文件下载完成"
-    else
-        print_error "配置文件下载失败"
-        exit 1
+
+    # 尝试多个配置文件URL
+    local config_urls=(
+        "$CONFIG_URL"
+        "https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
+    )
+
+    local download_success=false
+
+    for url in "${config_urls[@]}"; do
+        print_info "尝试从: $url"
+        # 添加超时、重试和更详细的错误处理
+        if curl -L --connect-timeout 30 --max-time 60 --retry 2 --retry-delay 3 -o "$TEMP_DIR/xray-in-config.json" "$url" --progress-bar 2>/dev/null; then
+            # 验证下载的文件
+            if [ -s "$TEMP_DIR/xray-in-config.json" ]; then
+                # 检查是否是有效的JSON
+                if python3 -m json.tool "$TEMP_DIR/xray-in-config.json" > /dev/null 2>&1 ||
+                   python -m json.tool "$TEMP_DIR/xray-in-config.json" > /dev/null 2>&1; then
+                    print_success "配置文件下载完成"
+                    download_success=true
+                    break
+                else
+                    print_warning "下载的文件不是有效的JSON格式"
+                    rm -f "$TEMP_DIR/xray-in-config.json"
+                fi
+            else
+                print_warning "下载的文件为空"
+                rm -f "$TEMP_DIR/xray-in-config.json"
+            fi
+        else
+            print_warning "从 $url 下载失败"
+        fi
+        sleep 1
+    done
+
+    # 如果所有URL都失败，创建默认配置
+    if [ "$download_success" = false ]; then
+        print_warning "无法从远程下载配置文件，将使用默认配置"
+        create_default_config "$TEMP_DIR/xray-in-config.json"
     fi
 }
 
@@ -294,6 +405,11 @@ setup_config() {
         mv "$TEMP_DIR/xray-in-config.json" "$XRAY_CONFIG_FILE"
         chmod 644 "$XRAY_CONFIG_FILE"
         print_success "配置文件已安装: $XRAY_CONFIG_FILE"
+
+        # 显示配置文件基本信息
+        echo -e "${YELLOW}配置文件信息:${NC}"
+        echo "  文件大小: $(wc -c < "$XRAY_CONFIG_FILE") 字节"
+        echo "  文件行数: $(wc -l < "$XRAY_CONFIG_FILE")"
     else
         print_error "配置文件不存在"
         exit 1
