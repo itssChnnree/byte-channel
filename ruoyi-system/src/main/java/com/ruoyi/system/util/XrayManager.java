@@ -1,6 +1,7 @@
 package com.ruoyi.system.util;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.URLUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.exception.base.BaseException;
@@ -101,6 +102,20 @@ public class XrayManager {
         } catch (Exception e) {
             log.error("检测资源节点防火墙状态异常"+e.getMessage());
             throw new BaseException("检测资源节点防火墙状态异常");
+        }
+        return post;
+    }
+
+    //修改节点屏蔽域名
+    public static String updateBlockDomains(String ip,String domainList){
+        String url = URLUtil.completeUrl("http://" + ip + ":9080//updateBlockDomains",null);
+        String post;
+        log.info("xray-资源节点修改屏蔽域名调用url["+url+"]");
+        try {
+            post = HttpUtil.post(url, domainList);
+        } catch (Exception e) {
+            log.error("修改节点屏蔽域名异常"+e.getMessage());
+            throw new BaseException("修改节点屏蔽域名异常");
         }
         return post;
     }

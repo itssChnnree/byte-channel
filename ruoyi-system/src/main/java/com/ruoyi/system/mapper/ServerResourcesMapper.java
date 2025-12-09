@@ -179,4 +179,12 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return com.ruoyi.system.domain.vo.OrderNewVo
      **/
     OrderNewVo getOrderAdd(@Param("orderId") String orderId);
+
+
+    /**
+     * [查询所有资源]
+     * @author 陈湘岳 2025/11/21
+     * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    List<ServerResources> findAll();
 }

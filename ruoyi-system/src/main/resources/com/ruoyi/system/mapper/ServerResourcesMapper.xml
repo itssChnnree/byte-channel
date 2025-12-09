@@ -582,6 +582,11 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
     </select>
 
 
+    <select id="findAll" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select * from server_resources where is_deleted = 0
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, resources_user_name, node_port, public_broker_key, sni, short_id, user_id, commodity_id,password, is_deleted, create_user, update_user, create_time, update_time)
