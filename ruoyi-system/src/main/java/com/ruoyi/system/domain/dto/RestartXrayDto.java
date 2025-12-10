@@ -25,4 +25,6 @@ public class RestartXrayDto {
     private Integer port;
 
     private String userId;
+
+    private String domains;
 }

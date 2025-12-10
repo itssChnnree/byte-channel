@@ -17,15 +17,9 @@ import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.system.constant.AvailableStatus;
-import com.ruoyi.system.constant.PaymentPeriodConstant;
-import com.ruoyi.system.constant.ResourcesStatus;
-import com.ruoyi.system.constant.SalesStatus;
-import com.ruoyi.system.domain.dto.ResourceProcessingDto;
-import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
-import com.ruoyi.system.domain.dto.ServerUpdateDto;
+import com.ruoyi.system.constant.*;
+import com.ruoyi.system.domain.dto.*;
 import com.ruoyi.system.domain.entity.*;
-import com.ruoyi.system.domain.dto.ServerResourcesDto;
 import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
 import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.http.Result;
@@ -79,6 +73,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
     @Resource
     private ServerResourcesMapstruct serverResourcesMapstruct;
+
+    @Resource
+    private ResourceBlockDomainMapper resourceBlockDomainMapper;
 
     @Resource
     private ServerResourcesMapper serverResourcesMapper;
@@ -166,7 +163,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         String userId = UUID.randomUUID().toString();
 
         String post = XrayManager.restartXray(commodity.getDest(), commodity.getServerNames(),
-                resourceAllocationTemporaryStorage.getNodePort(), userId, resourceProcessingDto.getResourcesIp());
+                resourceAllocationTemporaryStorage.getNodePort(), userId, resourceProcessingDto.getResourcesIp(),getBlockDomainJson());
 
 
         if ("JsonError".contains( post)|| "RequestFieldError".contains(post)){
@@ -405,7 +402,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         String userId = UUID.randomUUID().toString();
 
         String post = XrayManager.restartXray(commodity.getDest(), commodity.getServerNames(),
-                Integer.parseInt(serverResources.getNodePort()), userId, serverResources.getResourcesIp());
+                Integer.parseInt(serverResources.getNodePort()), userId, serverResources.getResourcesIp(),getBlockDomainJson());
 
 
         if ("JsonError".contains( post)|| "RequestFieldError".contains(post)){
@@ -442,6 +439,18 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             return Result.fail("新增失败");
         }
 
+    }
+
+
+
+    private String getBlockDomainJson(){
+        List<ResourceBlockDomain> allNormal = resourceBlockDomainMapper.findAllNormal(EntityStatus.NORMAL);
+        List<String> collect = allNormal.stream().map(resourceBlockDomain ->
+                resourceBlockDomain.getPrefixType() + ":" + resourceBlockDomain.getDomain()).collect(Collectors.toList());
+        BlackDomainArr blackDomainArr = new BlackDomainArr();
+        blackDomainArr.setDomains(collect);
+        //转json
+        return JSON.toJSONString(blackDomainArr);
     }
 
 

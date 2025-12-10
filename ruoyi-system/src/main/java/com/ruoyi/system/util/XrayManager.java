@@ -27,7 +27,7 @@ public class XrayManager {
 
     //重启xray
     //在节点服务启动xray
-    public static String restartXray(String dest, String serverNames, Integer port, String userId,String resourcesIp) {
+    public static String restartXray(String dest, String serverNames, Integer port, String userId,String resourcesIp,String blockDomains) {
         RestartXrayDto restartXrayDto = new RestartXrayDto();
         restartXrayDto.setDest(dest);
         List<String> split = StrUtil.split(serverNames, ",");
