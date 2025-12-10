@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.ResourceBlockDomainMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.ResourceBlockDomain" id="ResourceBlockDomainMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="domain" column="domain" jdbcType="VARCHAR"/>
+        <result property="prefixType" column="prefix_type" jdbcType="VARCHAR"/>
+        <result property="reason" column="reason" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.ResourceBlockDomainVo" id="ResourceBlockDomainVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="domain" column="domain" jdbcType="VARCHAR"/>
+        <result property="prefixType" column="prefix_type" jdbcType="VARCHAR"/>
+        <result property="reason" column="reason" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="ResourceBlockDomainVOMap">
+        select id,
+               domain,
+               prefix_type,
+               reason,
+               is_deleted,
+               create_user,
+               update_user,
+               create_time,
+               update_time,
+               status
+        from resource_block_domain
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="ResourceBlockDomainVOMap">
+        select
+        id, domain, prefix_type, reason, is_deleted, create_user, update_user, create_time, update_time, status
+        from resource_block_domain
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="domain != null and domain != ''">
+                and domain = #{domain}
+            </if>
+            <if test="prefixType != null and prefixType != ''">
+                and prefix_type = #{prefixType}
+            </if>
+            <if test="reason != null and reason != ''">
+                and reason = #{reason}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="ResourceBlockDomainVOMap">
+        select
+        id, domain, prefix_type, reason, is_deleted, create_user, update_user, create_time, update_time, status
+        from resource_block_domain
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.domain != null and dto.domain != ''">
+                and domain = #{dto.domain}
+            </if>
+            <if test="dto.prefixType != null and dto.prefixType != ''">
+                and prefix_type = #{dto.prefixType}
+            </if>
+            <if test="dto.reason != null and dto.reason != ''">
+                and reason = #{dto.reason}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="ResourceBlockDomainVOMap">
+        select
+        id, domain, prefix_type, reason, is_deleted, create_user, update_user, create_time, update_time, status
+        from resource_block_domain
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.domain != null and dto.domain != ''">
+                and domain = #{dto.domain}
+            </if>
+            <if test="dto.prefixType != null and dto.prefixType != ''">
+                and prefix_type = #{dto.prefixType}
+            </if>
+            <if test="dto.reason != null and dto.reason != ''">
+                and reason = #{dto.reason}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+        </where>
+    </select>
+
+
+
+    <select id="findAllNormal" resultType="com.ruoyi.system.domain.entity.ResourceBlockDomain">
+        select
+        id, domain, prefix_type, reason, is_deleted,
+        su.nick_name as create_user, update_user,
+        rbd.create_time, rbd.update_time, rbd.status
+        from resource_block_domain rbd
+        left join sys_user su on rbd.create_user = su.user_id
+        where is_deleted = 0
+        <if test="status != null and status != ''">
+            and rbd.status = #{status}
+        </if>
+    </select>
+
+    <select id="findByPrefixTypeAndDomain" resultType="com.ruoyi.system.domain.entity.ResourceBlockDomain">
+        select
+        *
+        from resource_block_domain
+        where is_deleted = 0
+        and prefix_type = #{prefixType}
+        and domain = #{domain}
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into resource_block_domain(id, domain, prefix_type, reason, is_deleted, create_user, update_user,
+                                          create_time, update_time, status)
+        values (#{id}, #{domain}, #{prefixType}, #{reason}, #{isDeleted}, #{createUser}, #{updateUser},
+                #{createTime}, #{updateTime}, #{status})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into resource_block_domain(id,domain, prefix_type, reason, is_deleted, create_user, update_user,
+        create_time, update_time, status)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.domain}, #{entity.prefixType}, #{entity.reason}, #{entity.isDeleted},
+            #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into resource_block_domain(id,domain, prefix_type, reason, is_deleted, create_user, update_user,
+        create_time, update_time, status)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.domain}, #{entity.prefixType}, #{entity.reason}, #{entity.isDeleted},
+            #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+        </foreach>
+        on duplicate key update
+        domain = values(domain),
+        prefix_type = values(prefix_type),
+        reason = values(reason),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time),
+        status = values(status)
+    </insert>
+
+</mapper>
+
