@@ -1,6 +1,8 @@
 package com.ruoyi.system.mapper;
 
 
+import com.ruoyi.system.domain.dto.ResourceBlockDomainDto;
+import com.ruoyi.system.domain.vo.ResourceBlockDomainVo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
@@ -39,5 +41,14 @@ public interface ResourceBlockDomainMapper extends BaseMapper<ResourceBlockDomai
      * @return com.ruoyi.system.domain.entity.ResourceBlockDomain
      **/
     ResourceBlockDomain findByPrefixTypeAndDomain(@Param("prefixType")String prefixType, @Param("domain") String domain);
+
+
+    /**
+     * [根据条件分页查询频闭域名]
+     * @author 陈湘岳 2025/12/11
+     * @param resourceBlockDomainDto 查询状态
+     * @return java.util.List<ResourceBlockDomainVo>
+     **/
+    List<ResourceBlockDomainVo> pageList(ResourceBlockDomainDto resourceBlockDomainDto);
 
 }

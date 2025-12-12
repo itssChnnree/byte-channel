@@ -24,8 +24,11 @@ logging:
 
 
 mybatis-plus  configuration:
-  log-impl: org.apache.ibatis.logging.stdout.StdOutImpl//打印sql语句
-  mapper-locations: com/example/mapper/xml/*.xml // 配置mapper的扫描，找到所有的mapper.xml映射文件
+  log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: com/example/mapper/xml/*.xml
+  global-config:
+    db-config:
+      update-strategy: not_null
 
 
 # 用户配置

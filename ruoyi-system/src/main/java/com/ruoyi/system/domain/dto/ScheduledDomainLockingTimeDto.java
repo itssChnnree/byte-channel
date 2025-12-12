@@ -2,10 +2,13 @@ package com.ruoyi.system.domain.dto;
 
 import java.util.Date;
 
+import com.ruoyi.system.domain.base.PageBase;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import io.swagger.annotations.ApiModelProperty;
+
+import javax.validation.constraints.NotNull;
 
 
 /**
@@ -18,30 +21,16 @@ import io.swagger.annotations.ApiModelProperty;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ScheduledDomainLockingTimeDto {
+public class ScheduledDomainLockingTimeDto extends PageBase {
 
     @ApiModelProperty("主键id")
     private String id;
 
     @ApiModelProperty("预约重启时间")
+    @NotNull(message = "预约重启时间不能为空")
     private Date scheduledTime;
 
-    @ApiModelProperty("0为未删除，1为已删除")
-    private Integer isDeleted;
-
-    @ApiModelProperty("创建人")
-    private String createUser;
-
-    @ApiModelProperty("修改人")
-    private String updateUser;
-
-    @ApiModelProperty("创建时间")
-    private Date createTime;
-
-    @ApiModelProperty("修改时间")
-    private Date updateTime;
-
-    @ApiModelProperty("状态（暂时弃用）")
+    @ApiModelProperty("状态")
     private String status;
 
 

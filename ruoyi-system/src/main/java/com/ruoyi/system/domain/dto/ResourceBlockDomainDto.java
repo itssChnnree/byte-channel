@@ -5,6 +5,7 @@ import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.system.constant.EntityStatus;
 import com.ruoyi.system.domain.base.PageBase;
+import com.ruoyi.system.group.InsertGroup;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -152,6 +152,21 @@
     </select>
 
 
+    <select id="pageList" resultType="com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo">
+        select
+        id, scheduled_time, is_deleted, create_user, update_user, create_time, update_time, status
+        from scheduled_domain_locking_time
+        where
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.scheduledTime != null">
+                and scheduled_time = #{dto.scheduledTime}
+            </if>
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into scheduled_domain_locking_time(id, scheduled_time, is_deleted, create_user, update_user, create_time,

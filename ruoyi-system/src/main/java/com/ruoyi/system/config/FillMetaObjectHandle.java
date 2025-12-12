@@ -25,7 +25,7 @@ public class FillMetaObjectHandle implements MetaObjectHandler {
             return;
         }
         // 创建人
-//        this.strictInsertFill(metaObject, "id", String.class, UUID.fastUUID().toString(true));
+        this.strictInsertFill(metaObject, "id", String.class, UUID.fastUUID().toString(true));
         // 创建人
         if (metaObject.getValue("createUser") == null){
             this.strictInsertFill(metaObject, "createUser", String.class, this.getLoginUser());

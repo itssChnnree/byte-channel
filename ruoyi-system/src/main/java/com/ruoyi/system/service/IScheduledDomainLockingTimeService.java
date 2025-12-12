@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ruoyi.system.domain.dto.ScheduledDomainLockingTimeDto;
 import com.ruoyi.system.domain.entity.ScheduledDomainLockingTime;
 import com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo;
+import com.ruoyi.system.http.Result;
+
+import javax.validation.Valid;
 
 
 /**
@@ -16,4 +19,27 @@ import com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo;
 public interface IScheduledDomainLockingTimeService {
 
 
+    /**
+     * [新增]
+     * @author 陈湘岳 2025/12/8
+     * @param scheduledDomainLockingTime
+     * @return java.lang.String
+     **/
+    Result add(ScheduledDomainLockingTimeDto scheduledDomainLockingTime);
+
+    /**
+     * [根据id删除预约时间]
+     * @author 陈湘岳 2025/12/11
+     * @param id 预约时间id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result deleteById(String id);
+
+    /**
+     * [分页查询]
+     * @author 陈湘岳 2025/12/11
+     * @param scheduledDomainLockingTimeDto
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result page(ScheduledDomainLockingTimeDto scheduledDomainLockingTimeDto);
 }

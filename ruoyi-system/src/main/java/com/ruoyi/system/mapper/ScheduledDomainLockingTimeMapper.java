@@ -1,12 +1,16 @@
 package com.ruoyi.system.mapper;
 
 
+import com.ruoyi.system.domain.dto.ScheduledDomainLockingTimeDto;
+import com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.system.domain.entity.ScheduledDomainLockingTime;
+
+import java.util.List;
 
 /**
  * 域名屏蔽重启节点预约时间(ScheduledDomainLockingTime
@@ -28,4 +32,12 @@ public interface ScheduledDomainLockingTimeMapper extends BaseMapper<ScheduledDo
      **/
     ScheduledDomainLockingTime findMinScheduledTime(@Param("status")String  status);
 
+
+    /**
+     * [分页查询]
+     * @author 陈湘岳 2025/12/11
+     * @param scheduledDomainLockingTimeDto
+     * @return java.util.List<com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo>
+     **/
+    List<ScheduledDomainLockingTimeVo> pageList(ScheduledDomainLockingTimeDto scheduledDomainLockingTimeDto);
 }

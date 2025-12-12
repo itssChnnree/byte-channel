@@ -34,10 +34,12 @@ public class XrayManager {
         restartXrayDto.setServerNames(split);
         restartXrayDto.setPort(port);
         restartXrayDto.setUserId(userId);
+        restartXrayDto.setDomains(blockDomains);
         //调用节点方法启动节点
         String post;
         try {
-            post = HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", JSON.toJSONString(restartXrayDto), 5000);
+            String requestBody = JSON.toJSONString(restartXrayDto);
+            post = HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", requestBody, 5000);
         } catch (Exception e) {
             throw new BaseException("重置失败，节点服务异常");
         }
@@ -108,14 +110,14 @@ public class XrayManager {
 
     //修改节点屏蔽域名
     public static String updateBlockDomains(String ip,String domainList){
-        String url = URLUtil.completeUrl("http://" + ip + ":9080//updateBlockDomains",null);
+        String url = "http://" + ip + ":9080/updateBlockDomains";
         String post;
         log.info("xray-资源节点修改屏蔽域名调用url["+url+"]");
         try {
             post = HttpUtil.post(url, domainList);
         } catch (Exception e) {
-            log.error("修改节点屏蔽域名异常"+e.getMessage());
-            throw new BaseException("修改节点屏蔽域名异常");
+            log.error("修改["+ip+"]节点屏蔽域名异常"+e.getMessage());
+            return null;
         }
         return post;
     }

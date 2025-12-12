@@ -47,7 +47,7 @@ public class ResourceBlockDomainVo {
     @ApiModelProperty("修改时间")
     private Date updateTime;
 
-    @ApiModelProperty("状态（暂时弃用）")
+    @ApiModelProperty("状态")
     private String status;
 
 

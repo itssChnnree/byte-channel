@@ -22,17 +22,12 @@ import java.io.Serializable;
  * @date 2025-12-08 21:47:48
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @TableName(value = "failed_domain_blocking_log")
 public class FailedDomainBlockingLog extends ByteBaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
-    /**
-     * 主键id
-     */
-    @TableId
-    @TableField(value = "id")
-    private String id;
     /**
      * 资源id
      */
