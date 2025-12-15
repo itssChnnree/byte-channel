@@ -2,6 +2,7 @@ package com.ruoyi.system.domain.vo;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,7 @@ public class ScheduledDomainLockingTimeVo {
     private String id;
 
     @ApiModelProperty("预约重启时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date scheduledTime;
 
     @ApiModelProperty("0为未删除，1为已删除")

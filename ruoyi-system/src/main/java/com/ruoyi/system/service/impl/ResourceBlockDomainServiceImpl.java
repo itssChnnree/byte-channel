@@ -87,7 +87,9 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
         if (insert <= 0){
             throw new RuntimeException("新增屏蔽域名失败");
         }
-        nowOrLateUpdate(resourceBlockDomainDto.getIsAddToRecentUpdatePlan(), resourceBlockDomainDto.getScheduleTime());
+        if(EntityStatus.NORMAL.equals(resourceBlockDomain.getStatus())){
+            nowOrLateUpdate(resourceBlockDomainDto.getIsAddToRecentUpdatePlan(), resourceBlockDomainDto.getScheduleTime());
+        }
         return Result.success("新增屏蔽域名成功");
     }
 
@@ -105,6 +107,9 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
                 flush();
             }else {
                 ScheduledDomainLockingTime scheduledDomainLockingTime = getScheduledDomainLockingTime(scheduleTime);
+                if (scheduledDomainLockingTime.getScheduledTime().before(new Date())){
+                    throw new RuntimeException("预约时间不可小于当前时间");
+                }
                 int insert1 = scheduledDomainLockingTimeMapper.insert(scheduledDomainLockingTime);
                 if (insert1<=0){
                     throw new RuntimeException("预约时间添加失败");

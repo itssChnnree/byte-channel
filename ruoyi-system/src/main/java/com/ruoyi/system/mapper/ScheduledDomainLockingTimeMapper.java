@@ -5,6 +5,7 @@ import com.ruoyi.system.domain.dto.ScheduledDomainLockingTimeDto;
 import com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
@@ -40,4 +41,13 @@ public interface ScheduledDomainLockingTimeMapper extends BaseMapper<ScheduledDo
      * @return java.util.List<com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo>
      **/
     List<ScheduledDomainLockingTimeVo> pageList(ScheduledDomainLockingTimeDto scheduledDomainLockingTimeDto);
+
+
+    /**
+     * [获取最近预约时间]
+     * @author 陈湘岳 2025/12/12
+     * @param status
+     * @return com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo
+     **/
+    ScheduledDomainLockingTimeVo getMinTime(@Param("status") String status);
 }

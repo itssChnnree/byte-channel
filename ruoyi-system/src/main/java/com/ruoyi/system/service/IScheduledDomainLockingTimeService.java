@@ -42,4 +42,20 @@ public interface IScheduledDomainLockingTimeService {
      * @return com.ruoyi.system.http.Result
      **/
     Result page(ScheduledDomainLockingTimeDto scheduledDomainLockingTimeDto);
+
+    /**
+     * [根据id修改预约重启时间]
+     * @author 陈湘岳 2025/12/12
+     * @param scheduledDomainLockingTime 修改参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result updateById(ScheduledDomainLockingTimeDto scheduledDomainLockingTime);
+
+    /**
+     * [获取最近预约时间]
+     * @author 陈湘岳 2025/12/14
+     * @param
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getMinTime();
 }

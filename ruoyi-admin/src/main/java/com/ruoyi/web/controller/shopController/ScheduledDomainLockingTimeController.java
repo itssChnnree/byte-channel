@@ -3,11 +3,14 @@ package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
 import com.ruoyi.system.domain.dto.ScheduledDomainLockingTimeDto;
+import com.ruoyi.system.group.InsertGroup;
+import com.ruoyi.system.group.UpdateGroup;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IScheduledDomainLockingTimeService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.annotations.Api;
 
@@ -33,7 +36,7 @@ public class ScheduledDomainLockingTimeController {
     @PostMapping("/add")
     @ApiOperation("添加域名屏蔽重启节点预约时间")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
-    public Result add(@RequestBody @Valid ScheduledDomainLockingTimeDto scheduledDomainLockingTime, BindingResult bindingResult) {
+    public Result add(@RequestBody @Validated(InsertGroup.class) ScheduledDomainLockingTimeDto scheduledDomainLockingTime, BindingResult bindingResult) {
         if (bindingResult.hasErrors()){
             return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
         }
@@ -63,5 +66,26 @@ public class ScheduledDomainLockingTimeController {
         }
         return scheduledDomainLockingTimeService.page(scheduledDomainLockingTimeDto);
     }
+
+
+    @PostMapping("/updateById")
+    @ApiOperation("更新域名屏蔽重启节点预约时间")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result updateById(@RequestBody @Validated(UpdateGroup.class) ScheduledDomainLockingTimeDto scheduledDomainLockingTime, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()){
+            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return scheduledDomainLockingTimeService.updateById(scheduledDomainLockingTime);
+    }
+
+
+    @ApiOperation("获取最近预约时间")
+    @GetMapping("/getMinTime")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result getMinTime() {
+        return scheduledDomainLockingTimeService.getMinTime();
+    }
+
+
 
 }

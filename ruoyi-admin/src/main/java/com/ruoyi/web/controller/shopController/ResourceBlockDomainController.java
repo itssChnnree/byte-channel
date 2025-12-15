@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.shopController;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.system.domain.dto.ResourceBlockDomainDto;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IResourceBlockDomainService;
@@ -42,14 +43,15 @@ public class ResourceBlockDomainController {
     }
 
 
-    @DeleteMapping("/deleteById")
+    @PostMapping("/deleteById")
     @ApiOperation("删除屏蔽域名")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
-    public Result deleteById(String id, Date scheduleTime, Boolean isAddToRecentUpdatePlan) {
-        if (StrUtil.isBlank(id)){
+    public Result deleteById(@RequestBody ResourceBlockDomainDto resourceBlockDomain) {
+        if (StrUtil.isBlank(resourceBlockDomain.getId())){
             return Result.fail("请选择移除屏蔽的域名");
         }
-        return resourceBlockDomainService.deleteById(id,scheduleTime,isAddToRecentUpdatePlan);
+        return resourceBlockDomainService.deleteById(resourceBlockDomain.getId(),
+                resourceBlockDomain.getScheduleTime(),resourceBlockDomain.getIsAddToRecentUpdatePlan());
     }
 
 

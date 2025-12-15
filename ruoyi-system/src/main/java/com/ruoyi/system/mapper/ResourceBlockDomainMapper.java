@@ -49,6 +49,6 @@ public interface ResourceBlockDomainMapper extends BaseMapper<ResourceBlockDomai
      * @param resourceBlockDomainDto 查询状态
      * @return java.util.List<ResourceBlockDomainVo>
      **/
-    List<ResourceBlockDomainVo> pageList(ResourceBlockDomainDto resourceBlockDomainDto);
+    List<ResourceBlockDomainVo> pageList(@Param("dto") ResourceBlockDomainDto resourceBlockDomainDto);
 
 }

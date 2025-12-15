@@ -158,12 +158,24 @@
         from scheduled_domain_locking_time
         where
             1 = 1 and is_deleted = 0
-            <if test="dto.id != null and dto.id != ''">
-                and id = #{dto.id}
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
             </if>
-            <if test="dto.scheduledTime != null">
-                and scheduled_time = #{dto.scheduledTime}
+        order by scheduled_time
+    </select>
+
+
+    <select id="getMinTime" resultType="com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo">
+        select
+        id, scheduled_time, is_deleted, create_user, update_user, create_time, update_time, status
+        from scheduled_domain_locking_time
+        where
+            1 = 1 and is_deleted = 0
+            <if test="status != null and status != ''">
+                and status = #{status}
             </if>
+        order by scheduled_time
+        limit 1
     </select>
 
 
