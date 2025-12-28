@@ -1,0 +1,1 @@
+sudo mkdir -p /xraySh && cd /xraySh && sudo curl -L -o xrayInStart.sh https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xrayInStart.sh && sudo chmod +x xrayInStart.sh && echo "文件已下载到: /xraySh/xrayInStart.sh"
