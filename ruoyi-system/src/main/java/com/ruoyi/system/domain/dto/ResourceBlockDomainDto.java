@@ -52,13 +52,4 @@ public class ResourceBlockDomainDto extends PageBase {
     @ApiModelProperty("是否加入最近更新计划")
     private Boolean isAddToRecentUpdatePlan;
 
-    public void setStatus(String status){
-        if (EntityStatus.NORMAL.equals( status)){
-            this.status = status;
-        }else {
-            this.status = EntityStatus.DISABLED;
-        }
-    }
-
-
 }

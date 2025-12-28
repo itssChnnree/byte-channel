@@ -152,4 +152,12 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     Result getOrderAdd(String orderId);
+
+    /**
+     * [通过资源id删除资源]
+     * @author 陈湘岳 2025/12/15
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result deleteById(String id);
 }

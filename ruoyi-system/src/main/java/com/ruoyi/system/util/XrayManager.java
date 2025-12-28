@@ -2,12 +2,14 @@ package com.ruoyi.system.util;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.system.domain.dto.RestartXrayDto;
 import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +29,8 @@ public class XrayManager {
 
     //重启xray
     //在节点服务启动xray
-    public static String restartXray(String dest, String serverNames, Integer port, String userId,String resourcesIp,String blockDomains) {
+    public static String restartXray(String dest, String serverNames, Integer port,
+                                     String userId,String resourcesIp,List<String> blockDomains) {
         RestartXrayDto restartXrayDto = new RestartXrayDto();
         restartXrayDto.setDest(dest);
         List<String> split = StrUtil.split(serverNames, ",");
@@ -41,6 +44,7 @@ public class XrayManager {
             String requestBody = JSON.toJSONString(restartXrayDto);
             post = HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", requestBody, 5000);
         } catch (Exception e) {
+            log.error("重置失败，节点服务异常"+e.getMessage());
             throw new BaseException("重置失败，节点服务异常");
         }
 
@@ -110,11 +114,13 @@ public class XrayManager {
 
     //修改节点屏蔽域名
     public static String updateBlockDomains(String ip,String domainList){
+        RestTemplate restTemplate = SpringUtil.getBean(RestTemplate.class);
         String url = "http://" + ip + ":9080/updateBlockDomains";
         String post;
         log.info("xray-资源节点修改屏蔽域名调用url["+url+"]");
         try {
-            post = HttpUtil.post(url, domainList);
+            post = restTemplate.postForObject(url, domainList, String.class);
+//            post = HttpUtil.post(url, domainList);
         } catch (Exception e) {
             log.error("修改["+ip+"]节点屏蔽域名异常"+e.getMessage());
             return null;

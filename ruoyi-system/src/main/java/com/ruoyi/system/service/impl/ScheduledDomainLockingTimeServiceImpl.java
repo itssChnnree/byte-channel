@@ -46,7 +46,11 @@ public class ScheduledDomainLockingTimeServiceImpl implements IScheduledDomainLo
     public Result add(ScheduledDomainLockingTimeDto scheduledDomainLockingTimeDto) {
         ScheduledDomainLockingTime scheduledDomainLockingTime = scheduledDomainLockingTimeMapstruct.changeDto2(scheduledDomainLockingTimeDto);
         if (scheduledDomainLockingTime.getScheduledTime().before(new Date())){
-            return Result.fail("预约时间不可小于当前时间");
+            return Result.fail("预约时间不可早于当前时间");
+        }
+        Integer nearTime = scheduledDomainLockingTimeMapper.getNearTime(scheduledDomainLockingTimeDto.getScheduledTime(), EntityStatus.UNHANDLED);
+        if (nearTime != null && nearTime >0){
+            return Result.fail("所选时间15分钟之内已存在预约时间");
         }
         scheduledDomainLockingTime.setStatus(EntityStatus.UNHANDLED);
         int insert = scheduledDomainLockingTimeMapper.insert(scheduledDomainLockingTime);

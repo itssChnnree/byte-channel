@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ruoyi.system.domain.dto.FailedDomainBlockingLogDto;
 import com.ruoyi.system.domain.entity.FailedDomainBlockingLog;
 import com.ruoyi.system.domain.vo.FailedDomainBlockingLogVo;
+import com.ruoyi.system.http.Result;
 
 
 /**
@@ -16,4 +17,20 @@ import com.ruoyi.system.domain.vo.FailedDomainBlockingLogVo;
 public interface IFailedDomainBlockingLogService {
 
 
+    /**
+     * [分页查询未成功记录]
+     * @author 陈湘岳 2025/12/27
+     * @param pageNum
+     * @param pageSize
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result page(Integer pageNum, Integer pageSize);
+
+    /**
+     * [根据id变更处理状态]
+     * @author 陈湘岳 2025/12/28
+     * @param id  id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result handle(String id);
 }

@@ -96,6 +96,17 @@ public class ServerResourcesController{
     }
 
 
+    @DeleteMapping("/deleteById")
+    @ApiOperation("通过资源id删除资源")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result deleteById(String id) {
+        if (StrUtil.isBlank(id)){
+            return Result.fail("资源id不能为空");
+        }
+        return serverResourcesService.deleteById(id);
+    }
+
+
 
     @GetMapping("/getById")
     @ApiOperation("查询详情")

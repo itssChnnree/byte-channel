@@ -26,5 +26,5 @@ public class RestartXrayDto {
 
     private String userId;
 
-    private String domains;
+    private List<String> domains;
 }

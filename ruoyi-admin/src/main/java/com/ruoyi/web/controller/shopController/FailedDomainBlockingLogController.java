@@ -1,7 +1,10 @@
 package com.ruoyi.web.controller.shopController;
 
 
+import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IFailedDomainBlockingLogService;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.annotations.Api;
 
@@ -23,4 +26,28 @@ public class FailedDomainBlockingLogController {
     IFailedDomainBlockingLogService failedDomainBlockingLogService;
 
 
+    @GetMapping("/page")
+    @ApiOperation("分页查询域名屏蔽未成功记录")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result page(Integer pageNum, Integer pageSize) {
+        if (pageNum == null || pageNum< 1){
+            pageNum = 1;
+        }
+        if (pageSize == null || pageSize < 1){
+            pageSize = 10;
+        }
+        return failedDomainBlockingLogService.page(pageNum,pageSize);
+    }
+
+
+    @PutMapping("/handle")
+    @ApiOperation("处理域名屏蔽未成功记录")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result handle(String id) {
+        if (id == null){
+            return Result.fail("请选择要处理的记录");
+        }
+        return failedDomainBlockingLogService.handle(id);
+    }
+    
 }

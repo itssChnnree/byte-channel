@@ -29,23 +29,13 @@ public class FailedDomainBlockingLogVo {
     @ApiModelProperty("失败理由")
     private String failReason;
 
-    @ApiModelProperty("0为未删除，1为已删除")
-    private Integer isDeleted;
+    @ApiModelProperty("资源ip")
+    private String ip;
 
-    @ApiModelProperty("创建人")
-    private String createUser;
+    @ApiModelProperty("商品名称")
+    private String commodityName;
 
-    @ApiModelProperty("修改人")
-    private String updateUser;
-
-    @ApiModelProperty("创建时间")
-    private Date createTime;
-
-    @ApiModelProperty("修改时间")
-    private Date updateTime;
-
-    @ApiModelProperty("状态（暂时弃用）")
-    private String status;
-
+    @ApiModelProperty("商品分类名称")
+    private String categoryName;
 
 }

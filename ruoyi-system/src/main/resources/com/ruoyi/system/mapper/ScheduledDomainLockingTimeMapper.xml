@@ -161,7 +161,7 @@
             <if test="dto.status != null and dto.status != ''">
                 and status = #{dto.status}
             </if>
-        order by scheduled_time
+        order by status desc ,scheduled_time
     </select>
 
 
@@ -176,6 +176,14 @@
             </if>
         order by scheduled_time
         limit 1
+    </select>
+
+
+    <select id="getNearTime" resultType="java.lang.Integer">
+        select 1 from scheduled_domain_locking_time where status = #{status}
+        and is_deleted = 0 and scheduled_time between
+                DATE_SUB(#{time}, INTERVAL 15 MINUTE)
+                and DATE_ADD(#{time}, INTERVAL 15 MINUTE) limit 1
     </select>
 
 

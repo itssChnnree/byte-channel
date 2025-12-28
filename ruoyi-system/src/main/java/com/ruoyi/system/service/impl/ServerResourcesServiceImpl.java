@@ -443,14 +443,12 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
 
 
-    private String getBlockDomainJson(){
-        List<ResourceBlockDomain> allNormal = resourceBlockDomainMapper.findAllNormal(EntityStatus.NORMAL);
+    private List<String> getBlockDomainJson(){
+        List<ResourceBlockDomain> allNormal = resourceBlockDomainMapper.findAllNormal(EntityStatus.NORMAL_LIST);
         List<String> collect = allNormal.stream().map(resourceBlockDomain ->
                 resourceBlockDomain.getPrefixType() + ":" + resourceBlockDomain.getDomain()).collect(Collectors.toList());
-        BlackDomainArr blackDomainArr = new BlackDomainArr();
-        blackDomainArr.setDomains(collect);
         //转json
-        return JSON.toJSONString(blackDomainArr);
+        return collect;
     }
 
 
@@ -637,6 +635,27 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             return Result.fail("您没有权限查看此订单");
         }
         return Result.success(orderAdd);
+    }
+
+
+    /**
+     * [通过资源id删除资源]
+     *
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/12/15
+     **/
+    @Override
+    public Result deleteById(String id) {
+        ServerResources serverResources = serverResourcesMapper.selectById(id);
+        if (ObjectUtils.isEmpty(serverResources)){
+            return Result.fail("资源不存在");
+        }
+        if (SalesStatus.ON_SALE.equals(serverResources.getSalesStatus())){
+            return Result.fail("资源正在出售中，请勿删除");
+        }
+        int delete = serverResourcesMapper.deleteById(id);
+        return delete > 0 ? Result.success("删除成功") : Result.fail("删除失败");
     }
 
     //获取到期时间类型,1为7天内到期，2为15天，3为一月

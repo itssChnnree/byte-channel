@@ -18,13 +18,15 @@
         <result property="id" column="id" jdbcType="VARCHAR"/>
         <result property="serverResourcesId" column="server_resources_id" jdbcType="VARCHAR"/>
         <result property="failReason" column="fail_reason" jdbcType="VARCHAR"/>
-        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
-        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-        <result property="status" column="status" jdbcType="VARCHAR"/>
     </resultMap>
+
+
+
+    <update id="updateStatus">
+        update failed_domain_blocking_log
+        set status = #{status}
+        where id = #{id}
+    </update>
 
     <!--��ѯ����-->
     <select id="queryById" resultMap="FailedDomainBlockingLogVOMap">
@@ -150,6 +152,27 @@
             </if>
             <if test="dto.status != null and dto.status != ''">
                 and status = #{dto.status}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="pageList" resultType="com.ruoyi.system.domain.vo.FailedDomainBlockingLogVo">
+        select
+        fdbl.id,
+        fdbl.server_resources_id as serverResourcesId,
+        fail_reason,
+        resources_ip as ip,
+        c.commodity_name as commodityName,
+        cc.category_name as categoryName
+        from failed_domain_blocking_log fdbl
+        left join server_resources sr on fdbl.server_resources_id = sr.id
+        left join commodity c on sr.commodity_id = c.id
+        left join commodity_category cc on c.category_id = cc.id
+        <where>
+            1 = 1 and fdbl.is_deleted = 0 and sr.is_deleted = 0
+            <if test="status != null and status != ''">
+                and fdbl.status = #{status}
             </if>
         </where>
     </select>

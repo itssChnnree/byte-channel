@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.system.domain.entity.ScheduledDomainLockingTime;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -40,7 +41,7 @@ public interface ScheduledDomainLockingTimeMapper extends BaseMapper<ScheduledDo
      * @param scheduledDomainLockingTimeDto
      * @return java.util.List<com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo>
      **/
-    List<ScheduledDomainLockingTimeVo> pageList(ScheduledDomainLockingTimeDto scheduledDomainLockingTimeDto);
+    List<ScheduledDomainLockingTimeVo> pageList(@Param("dto") ScheduledDomainLockingTimeDto scheduledDomainLockingTimeDto);
 
 
     /**
@@ -50,4 +51,12 @@ public interface ScheduledDomainLockingTimeMapper extends BaseMapper<ScheduledDo
      * @return com.ruoyi.system.domain.vo.ScheduledDomainLockingTimeVo
      **/
     ScheduledDomainLockingTimeVo getMinTime(@Param("status") String status);
+
+    /**
+     * [获取邻近时间]
+     * @author 陈湘岳 2025/12/27
+     * @param time 目标时间
+     * @return java.lang.Integer
+     **/
+    Integer getNearTime(@Param("time") Date time,@Param("status") String status);
 }

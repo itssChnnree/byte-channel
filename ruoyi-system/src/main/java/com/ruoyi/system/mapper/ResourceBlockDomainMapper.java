@@ -25,12 +25,12 @@ public interface ResourceBlockDomainMapper extends BaseMapper<ResourceBlockDomai
 
 
     /**
-     * [查询所有资源屏蔽域名]
+     * [查询状态为状态集合中的域名屏蔽]
      * @author 陈湘岳 2025/12/8
-     * @param status 状态
+     * @param statusList 状态集合
      * @return java.util.List<com.ruoyi.system.domain.entity.ResourceBlockDomain>
      **/
-    List<ResourceBlockDomain> findAllNormal(@Param("status") String status);
+    List<ResourceBlockDomain> findAllNormal(@Param("statusList") List<String> statusList);
 
 
     /**
@@ -51,4 +51,23 @@ public interface ResourceBlockDomainMapper extends BaseMapper<ResourceBlockDomai
      **/
     List<ResourceBlockDomainVo> pageList(@Param("dto") ResourceBlockDomainDto resourceBlockDomainDto);
 
+
+    /**
+     * [更新状态为正常]
+     * @author 陈湘岳 2025/12/11
+     * @param sourceStatus 源状态
+     * @param targetStatus 目标状态
+     * @return int
+     **/
+    int updateStatusToNormal(@Param("sourceStatus") String sourceStatus,
+                             @Param("targetStatus")String targetStatus);
+
+
+    /**
+     * [删除指定状态的数据]
+     * @author 陈湘岳 2025/12/28
+     * @param status 状态
+     * @return int
+     **/
+    int deleteByStatus(@Param("status") String status);
 }

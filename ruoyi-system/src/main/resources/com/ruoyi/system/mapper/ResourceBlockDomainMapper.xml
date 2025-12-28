@@ -28,6 +28,17 @@
         <result property="status" column="status" jdbcType="VARCHAR"/>
     </resultMap>
 
+    <update id="updateStatusToNormal">
+        update resource_block_domain
+        set status = #{targetStatus}
+        where status = #{sourceStatus}
+    </update>
+
+    <delete id="deleteByStatus">
+        delete from resource_block_domain
+        where status = #{status}
+    </delete>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="ResourceBlockDomainVOMap">
         select id,
@@ -176,8 +187,11 @@
         from resource_block_domain rbd
         left join sys_user su on rbd.create_user = su.user_id
         where is_deleted = 0
-        <if test="status != null and status != ''">
-            and rbd.status = #{status}
+        <if test="statusList != null and statusList.size() > 0">
+            and rbd.status in
+            <foreach item="item" index="index" collection="statusList" separator="," open="(" close=")">
+                #{item}
+            </foreach>
         </if>
     </select>
 

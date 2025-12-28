@@ -83,11 +83,17 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
         if (byPrefixTypeAndDomain != null){
             return Result.fail("该配置已存在");
         }
+        //限制状态为正常或者禁用
+        if (EntityStatus.NORMAL.equals( resourceBlockDomainDto.getStatus())){
+            resourceBlockDomain.setStatus(EntityStatus.TO_BE_EFFECTIVE);
+        }else {
+            resourceBlockDomain.setStatus(EntityStatus.DISABLED);
+        }
         int insert = resourceBlockDomainMapper.insert(resourceBlockDomain);
         if (insert <= 0){
             throw new RuntimeException("新增屏蔽域名失败");
         }
-        if(EntityStatus.NORMAL.equals(resourceBlockDomain.getStatus())){
+        if(EntityStatus.TO_BE_EFFECTIVE.equals(resourceBlockDomain.getStatus())){
             nowOrLateUpdate(resourceBlockDomainDto.getIsAddToRecentUpdatePlan(), resourceBlockDomainDto.getScheduleTime());
         }
         return Result.success("新增屏蔽域名成功");
@@ -131,8 +137,14 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
     @Override
     @Transactional
     public Result deleteById(String id, Date scheduleTime, Boolean isAddToRecentUpdatePlan) {
-        int i = resourceBlockDomainMapper.deleteById(id);
-        if (i <= 0){
+        ResourceBlockDomain resourceBlockDomain = resourceBlockDomainMapper.selectById(id);
+        if (resourceBlockDomain == null){
+            return Result.fail("该域名不存在");
+        }
+        //状态变为待删除
+        resourceBlockDomain.setStatus(EntityStatus.TO_BE_DELETED);
+        int update = resourceBlockDomainMapper.updateById(resourceBlockDomain);
+        if (update <= 0){
             return Result.fail("删除失败");
         }
         nowOrLateUpdate(isAddToRecentUpdatePlan, scheduleTime);
@@ -164,7 +176,22 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
     @Override
     @Transactional
     public Result update(ResourceBlockDomainDto resourceBlockDomainDto) {
+        ResourceBlockDomain entity = resourceBlockDomainMapper.selectById(resourceBlockDomainDto.getId());
+        if(entity == null){
+            return Result.fail("该屏蔽域名不存在");
+        }
         ResourceBlockDomain resourceBlockDomain = resourceBlockDomainMapstruct.changeDto2(resourceBlockDomainDto);
+        //判断没有更新前缀及域名则直接更新
+        if (entity.getPrefixType().equals(resourceBlockDomainDto.getPrefixType())
+                && entity.getDomain().equals(resourceBlockDomainDto.getDomain())){
+            int update = resourceBlockDomainMapper.updateById(resourceBlockDomain);
+            return update > 0 ? Result.success("更新成功") : Result.fail("更新失败");
+        }
+        if (EntityStatus.NORMAL.equals( resourceBlockDomainDto.getStatus())){
+            resourceBlockDomain.setStatus(EntityStatus.TO_BE_EFFECTIVE);
+        }else {
+            resourceBlockDomain.setStatus(EntityStatus.TO_BE_INVALID);
+        }
         int update = resourceBlockDomainMapper.updateById(resourceBlockDomain);
         if (update <= 0){
             return Result.fail("更新失败");
@@ -191,7 +218,7 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
 
     //刷新所有节点资源
     private void flush(){
-        List<ResourceBlockDomain> allNormal = resourceBlockDomainMapper.findAllNormal(EntityStatus.NORMAL);
+        List<ResourceBlockDomain> allNormal = resourceBlockDomainMapper.findAllNormal(EntityStatus.NORMAL_LIST);
         List<String> collect = allNormal.stream().map(resourceBlockDomain ->
                 resourceBlockDomain.getPrefixType() + ":" + resourceBlockDomain.getDomain()).collect(Collectors.toList());
         BlackDomainArr blackDomainArr = new BlackDomainArr();
@@ -220,6 +247,11 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
             }
 
         });
-
+        //将待生效状态变为正常
+        resourceBlockDomainMapper.updateStatusToNormal(EntityStatus.TO_BE_EFFECTIVE, EntityStatus.NORMAL);
+        //待失效状态变为禁用
+        resourceBlockDomainMapper.updateStatusToNormal(EntityStatus.TO_BE_INVALID, EntityStatus.DISABLED);
+        //删除待删除数据
+        resourceBlockDomainMapper.deleteByStatus(EntityStatus.TO_BE_DELETED);
     }
 }
