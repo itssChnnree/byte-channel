@@ -13,7 +13,7 @@ public interface RedissonLockStatus {
      String COMMODITY_STOCK_CHANGE_LOCK = "COMMODITY_STOCK_CHANGE_LOCK:";
 
     //订单取消状态标志
-     String ORDER_CANCEL_STATUS_LOCK = "ORDER_CANCEL_STATUS_LOCK:";
+//     String ORDER_CANCEL_STATUS_LOCK = "ORDER_CANCEL_STATUS_LOCK:";
 
      //订单确认支付处理
      String ORDER_STATUS_UPDATE_LOCK = "ORDER_STATUS_UPDATE_LOCK:";

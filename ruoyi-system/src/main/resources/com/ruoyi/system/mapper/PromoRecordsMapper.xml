@@ -201,6 +201,46 @@ id, user_id, referrals_user_id, promo_code_records_id, cashback_amount, status, 
     </select>
 
 
+    <select id="getReturnCashByUserId" resultType="java.math.BigDecimal">
+        select sum(cashback_amount)
+        from promo_records
+        where user_id = #{userId} and status = #{status} and is_deleted = 0
+    </select>
+
+    <select id="getReturnPeopleNum" resultType="java.lang.Integer">
+        select count(1)
+        from promo_records
+        where user_id = #{userId} and status = #{status} and is_deleted = 0
+    </select>
+
+
+    <select id="getRecords" resultType="com.ruoyi.system.domain.vo.PromoRecordsPageVo">
+        select
+        pr.id, pr.user_id, pr.status,
+        su.user_name as referralsUserName,
+        promo_code_records_id as promoCodeRecordsId,
+        cashback_amount as cashbackAmount,
+        cashback_percentage as cashbackPercentage,
+        pcr.promo_code AS promoCodeRecords,
+        pr.purchase_amount as purchaseAmount,
+        pr.create_time as createTime
+        from promo_records pr
+        left join promo_code_records pcr on pr.promo_code_records_id = pcr.id
+        left join sys_user su on pr.referrals_user_id = su.user_id
+        where
+        1 = 1 and pr.is_deleted = 0 and pr.user_id = #{userId}
+        <if test="dto.status != null and dto.status != ''">
+            and pr.status = #{dto.status}
+        </if>
+        <if test="dto.referralsUserEmail != null and dto.referralsUserEmail != ''">
+            and su.email = #{dto.referralsUserEmail}
+        </if>
+        <if test="dto.promoCodeRecords != null and dto.promoCodeRecords != ''">
+            and pcr.promo_code = #{dto.promoCodeRecords}
+        </if>
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into promo_records(id,user_id, referrals_user_id, promo_code_records_id,order_id, cashback_amount, status, purchase_amount, cashback_percentage, is_deleted, create_user, update_user, create_time, update_time)

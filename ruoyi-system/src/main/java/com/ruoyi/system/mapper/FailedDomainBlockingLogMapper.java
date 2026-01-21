@@ -29,7 +29,10 @@ public interface FailedDomainBlockingLogMapper extends BaseMapper<FailedDomainBl
      * @param status 状态
      * @return java.util.List<com.ruoyi.system.domain.vo.FailedDomainBlockingLogVo>
      **/
-    List<FailedDomainBlockingLogVo> pageList(@Param("status")String status);
+    List<FailedDomainBlockingLogVo> pageList(@Param("status")String status,
+                                             @Param("ip")String ip ,
+                                             @Param("commodityId")String commodityId,
+                                             @Param("categoryId")String categoryId);
 
 
     /**

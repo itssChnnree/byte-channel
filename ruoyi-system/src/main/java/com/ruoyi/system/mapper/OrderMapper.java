@@ -46,6 +46,16 @@ public interface OrderMapper extends BaseMapper<Order> {
      **/
     Order queryById(@Param("id") String id);
 
+
+    /**
+     * [通过订单id查询订单]
+     * @author 陈湘岳 2025/8/19
+     * @param id 订单id
+     * @return com.ruoyi.system.domain.entity.Order
+     **/
+    Order queryByIdForUpdate(@Param("id") String id);
+
+
     /**
      * [根据订单id修改订单状态]
      * @author 陈湘岳 2025/10/16

@@ -29,14 +29,14 @@ public class FailedDomainBlockingLogController {
     @GetMapping("/page")
     @ApiOperation("分页查询域名屏蔽未成功记录")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")
-    public Result page(Integer pageNum, Integer pageSize) {
+    public Result page(Integer pageNum, Integer pageSize ,String ip , String commodityId, String categoryId) {
         if (pageNum == null || pageNum< 1){
             pageNum = 1;
         }
         if (pageSize == null || pageSize < 1){
             pageSize = 10;
         }
-        return failedDomainBlockingLogService.page(pageNum,pageSize);
+        return failedDomainBlockingLogService.page(pageNum,pageSize,ip,commodityId,categoryId);
     }
 
 

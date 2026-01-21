@@ -189,7 +189,7 @@
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into shopping_cart(id, user_id, commodity_id, commodity_num, is_deleted, create_user, update_user,
                                   create_time, update_time)
-        values (#{entity.id}, #{userId}, #{commodityId}, #{commodityNum}, #{isDeleted}, #{createUser}, #{updateUser},
+        values (#{id}, #{userId}, #{commodityId}, #{commodityNum}, #{isDeleted}, #{createUser}, #{updateUser},
                 #{createTime}, #{updateTime})
     </insert>
 
@@ -208,7 +208,7 @@
         create_time, update_time)
         values
         <foreach collection="entities" item="entity" separator=",">
-            (#{entity.id},#{entity.userId}, #{entity.commodityId}, #{entity.commodityNum}, #{entity.isDeleted},
+            (#{id},#{entity.userId}, #{entity.commodityId}, #{entity.commodityNum}, #{entity.isDeleted},
             #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime})
         </foreach>
         on duplicate key update

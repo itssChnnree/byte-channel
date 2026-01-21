@@ -31,6 +31,6 @@ public interface WalletBalanceDetailMapper extends BaseMapper<WalletBalanceDetai
      * @param userId 用户id
      * @return com.baomidou.mybatisplus.core.metadata.IPage<com.ruoyi.system.domain.vo.WalletBalanceDetailVo>
      **/
-    IPage<WalletBalanceDetailVo> pageQuery(@Param("userId")String userId);
+    List<WalletBalanceDetailVo> pageQuery(@Param("userId")String userId);
 
 }

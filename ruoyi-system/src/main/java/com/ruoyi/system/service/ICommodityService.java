@@ -85,4 +85,12 @@ public interface ICommodityService {
      * @return com.ruoyi.system.http.Result
      **/
     Result findResourcesById(String id);
+
+    /**
+     * [是否可再次购买]
+     * @author 陈湘岳 2025/9/19
+     * @param id 商品id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result canBuyAgain(String id);
 }

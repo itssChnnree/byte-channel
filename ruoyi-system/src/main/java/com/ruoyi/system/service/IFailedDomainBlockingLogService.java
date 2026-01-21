@@ -24,7 +24,7 @@ public interface IFailedDomainBlockingLogService {
      * @param pageSize
      * @return com.ruoyi.system.http.Result
      **/
-    Result page(Integer pageNum, Integer pageSize);
+    Result page(Integer pageNum, Integer pageSize,String ip , String commodityId, String categoryId);
 
     /**
      * [根据id变更处理状态]

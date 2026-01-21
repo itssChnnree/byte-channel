@@ -20,4 +20,13 @@ public interface IPromoCodeRecordsService{
      * @return com.ruoyi.system.http.Result
      **/
     Result createPromoCodeRecords();
+
+
+    /**
+     * [获取推广码]
+     * @author 陈湘岳 2025/12/29
+     * @param
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getPromoCodeRecords();
 }

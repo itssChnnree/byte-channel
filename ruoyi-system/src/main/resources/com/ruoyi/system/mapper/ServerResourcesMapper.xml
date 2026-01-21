@@ -547,8 +547,13 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         where id = #{resourcesId} and is_deleted = 0
     </select>
 
+    <select id="findByIdForUpdate" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select * from server_resources
+        where id = #{resourcesId} and is_deleted = 0 for update
+    </select>
 
-    <select id="findByOrderId" resultType="com.ruoyi.system.domain.entity.ServerResources">
+
+    <select id="findByOrderIdForUpdate" resultType="com.ruoyi.system.domain.entity.ServerResources">
         select
             sr.id,sr.resources_ip, resources_port, resources_password,
             resources_status, resource_tenant, lease_expiration_time,
@@ -561,7 +566,7 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         where 1=1
           and sr.is_deleted = 0
           and sr.available_status = 1
-          and o.id = #{id}
+          and o.id = #{id} for update
     </select>
 
 

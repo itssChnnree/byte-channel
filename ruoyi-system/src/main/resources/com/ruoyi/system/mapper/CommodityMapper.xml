@@ -422,6 +422,29 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
     </select>
 
 
+    <select id="queryCanBuyById" resultType="com.ruoyi.system.domain.vo.CommodityVo">
+        select
+            id, commodity_name, commodity_price,
+            commodity_discounted_price, category_id,
+            inventory, description, category,
+            status, available_status,
+            if(oversold=oversold_configurations,0,1) as hasStock,
+            business_suitable as businessSuitable,
+            bandwidth
+        from commodity where id = #{id} and is_deleted = 0
+    </select>
+
+
+    <select id="selectByIdForUpdate" resultType="com.ruoyi.system.domain.entity.Commodity">
+        select
+            id, commodity_name, commodity_price, commodity_discounted_price, category_id,
+            oversold_configurations, oversold, inventory, alarm_threshold, description,
+            category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
+        from commodity
+        where id = #{id} and is_deleted = 0 and available_status = 1 for update
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into commodity(id,commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status,dest,server_names, create_user, update_user, create_time, update_time)

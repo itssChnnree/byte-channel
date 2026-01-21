@@ -40,11 +40,5 @@ private String orderCommodityId;
     */
 @TableField(value = "resources_id")
 private String resourcesId;
-/**
-    * 0为未删除，1为已删除
-    */
-@TableField(value = "is_deleted")
-private Integer isDeleted;
-
 
 }

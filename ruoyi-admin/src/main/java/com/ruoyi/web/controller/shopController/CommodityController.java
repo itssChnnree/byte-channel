@@ -86,6 +86,16 @@ public class CommodityController {
     }
 
 
+    @GetMapping("/canBuyAgain")
+    @ApiOperation("查询商品是否可再次购买")
+    public Result canBuyAgain(String id){
+        if (StrUtil.isBlank(id)){
+            return Result.fail("请选择再次购买的商品");
+        }
+        return commodityService.canBuyAgain(id);
+    }
+
+
     @GetMapping("/findResourcesById")
     @ApiOperation("查询资源管理中的商品详情")
     @PreAuthorize("@ss.hasPermi('shop:background:admin')")

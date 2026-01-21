@@ -4,8 +4,11 @@ import cn.hutool.core.util.StrUtil;
 import com.ruoyi.common.core.dto.EmailRegisterDto;
 import com.ruoyi.common.helper.email.EmailConstant;
 import com.ruoyi.common.helper.email.EmailSender;
+import com.ruoyi.system.constant.EntityStatus;
+import com.ruoyi.system.domain.entity.PromoCodeRecords;
 import com.ruoyi.system.domain.entity.WalletBalance;
 import com.ruoyi.system.http.Result;
+import com.ruoyi.system.mapper.PromoCodeRecordsMapper;
 import com.ruoyi.system.mapper.WalletBalanceMapper;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,7 @@ import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.framework.manager.factory.AsyncFactory;
 import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysUserService;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.annotation.Resource;
@@ -58,10 +62,14 @@ public class SysRegisterService
     @Resource
     private WalletBalanceMapper walletBalanceMapper;
 
+    @Resource
+    private PromoCodeRecordsMapper promoCodeRecordsMapper;
+
 
     /**
      * 注册
      */
+    @Transactional
     public String register(RegisterBody registerBody)
     {
         String msg = "", password = registerBody.getPassword();
@@ -90,16 +98,29 @@ public class SysRegisterService
             {
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(sysUser.getUserName(), Constants.REGISTER, MessageUtils.message("user.register.success")));
                 //创建余额记录
-                WalletBalance walletBalance = new WalletBalance();
-                walletBalance.setUserId(sysUser.getUserId().toString());
-                walletBalance.setInviteesNumber(0);
-                walletBalance.setCreateUser(sysUser.getUserId().toString());
-                walletBalance.setUpdateUser(sysUser.getUserId().toString());
-                walletBalance.setBalance(BigDecimal.valueOf(0.0));
+                WalletBalance walletBalance = getWalletBalance(sysUser);
                 walletBalanceMapper.insert(walletBalance);
+                promoCodeRecordsMapper.insert(getPromoCodeRecords(sysUser));
             }
         }
         return msg;
+    }
+
+    private  WalletBalance getWalletBalance(SysUser sysUser) {
+        WalletBalance walletBalance = new WalletBalance();
+        walletBalance.setUserId(sysUser.getUserId().toString());
+        walletBalance.setInviteesNumber(0);
+        walletBalance.setCreateUser(sysUser.getUserId().toString());
+        walletBalance.setUpdateUser(sysUser.getUserId().toString());
+        walletBalance.setBalance(BigDecimal.valueOf(0.0));
+        return walletBalance;
+    }
+
+    private PromoCodeRecords getPromoCodeRecords(SysUser sysUser) {
+        PromoCodeRecords promoCodeRecords = new PromoCodeRecords();
+        promoCodeRecords.setUserId(sysUser.getUserId().toString());
+        promoCodeRecords.setStatus(EntityStatus.NORMAL);
+        return promoCodeRecords;
     }
 
 

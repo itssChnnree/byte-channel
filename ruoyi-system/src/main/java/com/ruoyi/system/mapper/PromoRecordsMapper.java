@@ -3,10 +3,16 @@ package com.ruoyi.system.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ruoyi.system.domain.dto.PromoRecordsDto;
 import com.ruoyi.system.domain.entity.PromoRecords;
+import com.ruoyi.system.domain.vo.PromoRecordsPageVo;
+import com.ruoyi.system.domain.vo.PromoRecordsVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 推广记录表(PromoRecords)�����ݿ���ʲ�
@@ -28,4 +34,32 @@ public interface PromoRecordsMapper extends BaseMapper<PromoRecords> {
      */
     PromoRecords findByOrderId(@Param("orderId") String orderId);
 
+
+    /**
+     * 通过用户id查询已返现金额
+     *
+     * @param userId 用户id
+     * @return 已返现金额
+     */
+    BigDecimal getReturnCashByUserId(@Param("userId") String userId, @Param("status") String status);
+
+
+    /**
+     * [获取已成功返现的人数]
+     * @author 陈湘岳 2026/1/5
+     * @param userId 查询用户的id
+     * @param status 状态
+     * @return java.lang.Integer
+     **/
+    Integer getReturnPeopleNum(@Param("userId") String userId,@Param("status") String status);
+
+
+    /**
+     * [分页查询邀请记录]
+     * @author 陈湘岳 2026/1/5
+     * @param promoRecordsDto
+     * @return java.util.List<com.ruoyi.system.domain.vo.PromoRecordsVo>
+     **/
+    List<PromoRecordsPageVo> getRecords(@Param("dto") PromoRecordsDto promoRecordsDto,
+                                        @Param("userId") String userId);
 }

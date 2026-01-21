@@ -46,6 +46,14 @@
         from `order`
         where id = #{id} and is_deleted = 0
     </select>
+
+    <!--��ѯ����-->
+    <select id="queryByIdForUpdate" resultMap="OrderMap">
+        select
+            id, user_id, amount,payment_period,payment_id, payment_type, status, description,order_time, is_deleted, create_user, update_user, create_time, update_time
+        from `order`
+        where id = #{id} and is_deleted = 0 for update
+    </select>
     
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="OrderVOMap">

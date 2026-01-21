@@ -124,4 +124,11 @@ public interface IOrderService{
     Result getOrderDetailById(String orderId);
 
 
+    /**
+     * [续费订单取消]
+     * @author 陈湘岳 2026/1/19
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result cancelOrderRenewal(String orderId);
 }

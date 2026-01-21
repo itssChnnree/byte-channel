@@ -3,11 +3,7 @@ package com.ruoyi.common.utils;
 import java.lang.management.ManagementFactory;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.Date;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
@@ -187,5 +183,63 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
         LocalDateTime localDateTime = LocalDateTime.of(temporalAccessor, LocalTime.of(0, 0, 0));
         ZonedDateTime zdt = localDateTime.atZone(ZoneId.systemDefault());
         return Date.from(zdt.toInstant());
+    }
+
+
+    /**
+     * 判断指定时间是否距今超过指定天数
+     * @param targetDate 要判断的时间
+     * @param days 天数
+     * @param includeToday 是否包含当天（true: ≥ 指定天数; false: > 指定天数）
+     * @return 是否超过指定天数
+     */
+    public static boolean isOverDays(Date targetDate, int days, boolean includeToday) {
+        if (targetDate == null) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime targetDateTime = targetDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        LocalDateTime daysAgo = now.minusDays(days);
+
+        if (includeToday) {
+            // 包含当天：目标时间 ≤ daysAgo
+            return !targetDateTime.isAfter(daysAgo);
+        } else {
+            // 不包含当天：目标时间 < daysAgo
+            return targetDateTime.isBefore(daysAgo);
+        }
+    }
+
+    /**
+     * 判断是否超过30天（不包含第30天）
+     */
+    public static boolean isOver30Days(Date targetDate) {
+        return isOverDays(targetDate, 30, false);
+    }
+
+    /**
+     * 判断是否超过30天（包含第30天）
+     */
+    public static boolean isOver30DaysInclusive(Date targetDate) {
+        return isOverDays(targetDate, 30, true);
+    }
+
+    /**
+     * 获取距今天数
+     */
+    public static long getDaysFromNow(Date targetDate) {
+        if (targetDate == null) {
+            return 0;
+        }
+
+        Instant now = Instant.now();
+        Instant target = targetDate.toInstant();
+
+        // 计算天数差
+        long days = java.time.Duration.between(target, now).toDays();
+        return days;
     }
 }

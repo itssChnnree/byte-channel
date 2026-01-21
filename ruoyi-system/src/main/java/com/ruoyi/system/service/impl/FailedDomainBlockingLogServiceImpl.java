@@ -11,6 +11,7 @@ import com.ruoyi.system.service.IFailedDomainBlockingLogService;
 import com.ruoyi.system.domain.entity.FailedDomainBlockingLog;
 import com.ruoyi.system.domain.vo.FailedDomainBlockingLogVo;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.annotation.Resources;
@@ -40,9 +41,9 @@ public class FailedDomainBlockingLogServiceImpl implements IFailedDomainBlocking
      * @author 陈湘岳 2025/12/27
      **/
     @Override
-    public Result page(Integer pageNum, Integer pageSize) {
+    public Result page(Integer pageNum, Integer pageSize,String ip , String commodityId, String categoryId) {
         PageUtils.startPage(pageNum, pageSize);
-        List<FailedDomainBlockingLogVo> failedDomainBlockingLogVos = failedDomainBlockingLogMapper.pageList(EntityStatus.UNHANDLED);
+        List<FailedDomainBlockingLogVo> failedDomainBlockingLogVos = failedDomainBlockingLogMapper.pageList(EntityStatus.UNHANDLED, ip, commodityId, categoryId);
         return Result.success(new PageInfo<>(failedDomainBlockingLogVos));
     }
 
@@ -55,6 +56,7 @@ public class FailedDomainBlockingLogServiceImpl implements IFailedDomainBlocking
      * @author 陈湘岳 2025/12/28
      **/
     @Override
+    @Transactional
     public Result handle(String id) {
         int i = failedDomainBlockingLogMapper.updateStatus(id, EntityStatus.HANDLED);
         return i > 0 ? Result.success() : Result.fail("修改失败");

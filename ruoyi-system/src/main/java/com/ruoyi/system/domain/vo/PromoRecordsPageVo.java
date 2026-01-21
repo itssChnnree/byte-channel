@@ -1,14 +1,12 @@
-package com.ruoyi.system.domain.dto;
+package com.ruoyi.system.domain.vo;
 
-import java.math.BigDecimal;
-import java.util.Date;
-
-import com.ruoyi.system.domain.base.PageBase;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
 
 
 /**
@@ -21,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PromoRecordsDto extends PageBase {
+public class PromoRecordsPageVo {
 
     @ApiModelProperty("主键id")
    private String id;
@@ -29,29 +27,32 @@ public class PromoRecordsDto extends PageBase {
     @ApiModelProperty("推荐人用户id")
    private String userId;
     
-    @ApiModelProperty("被推荐人用户id")
-   private String referralsUserId;
-
-    @ApiModelProperty("被推荐用户邮箱")
-    private String referralsUserEmail;
+    @ApiModelProperty("被推荐人名称")
+   private String referralsUserName;
     
     @ApiModelProperty("推广码记录id")
-    private String promoCodeRecordsId;
+   private String promoCodeRecordsId;
 
     @ApiModelProperty("推广码")
     private String promoCodeRecords;
-
-
+    
     @ApiModelProperty("返现金额")
-    private BigDecimal cashbackAmount;
+   private Double cashbackAmount;
     
     @ApiModelProperty("状态")
-    private String status;
+   private String status;
     
     @ApiModelProperty("被推荐人购买金额")
-    private BigDecimal purchaseAmount;
+   private Double purchaseAmount;
     
     @ApiModelProperty("返现比例")
    private String cashbackPercentage;
+
+    @ApiModelProperty("创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTime;
+    
+
+    
 
 }

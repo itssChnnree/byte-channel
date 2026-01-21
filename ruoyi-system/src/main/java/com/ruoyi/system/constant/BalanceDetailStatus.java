@@ -14,4 +14,16 @@ public interface BalanceDetailStatus {
 
     //减少
     String REDUCE = "REDUCE";
+
+    //余额购买
+    String BUY = "BUY";
+
+    //充值
+    String RECHARGE = "RECHARGE";
+
+    //退款
+    String REFUND = "REFUND";
+
+    //提现
+    String WITHDRAW = "WITHDRAW";
 }

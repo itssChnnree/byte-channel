@@ -17,11 +17,14 @@ import com.ruoyi.system.mapper.CommodityMapper;
 import com.ruoyi.system.mapper.ServerResourcesMapper;
 import com.ruoyi.system.mapstruct.CommodityMapstruct;
 import com.ruoyi.system.service.ICommodityService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +58,7 @@ public class CommodityServiceImpl  implements ICommodityService {
      * @author 陈湘岳 2025/7/29
      **/
     @Override
+    @Transactional
     public Result insert(CommodityDto commodityDto) {
         try {
             DefaultValueUtil.setDefaultData(commodityDto);
@@ -82,8 +86,15 @@ public class CommodityServiceImpl  implements ICommodityService {
      * @author 陈湘岳 2025/8/1
      **/
     @Override
+    @Transactional
     public Result update(CommodityDto commodityDto) {
-        Commodity commodity = commodityMapstruct.changeDto2(commodityDto);
+        //一锁
+        Commodity commodity = commodityMapper.selectByIdForUpdate(commodityDto.getId());
+        //二判
+        if (commodity == null){
+            return Result.fail("商品不存在");
+        }
+        BeanUtils.copyProperties(commodityDto,commodity);
         if (!StrUtil.isBlank(commodityDto.getCategoryId())){
             CommodityCategory commodityCategory = commodityCategoryMapper.selectById(commodityDto.getCategoryId());
             if (commodityCategory == null||commodityCategory.getIsDeleted()==1){
@@ -193,12 +204,14 @@ public class CommodityServiceImpl  implements ICommodityService {
      * @author 陈湘岳 2025/9/7
      **/
     @Override
+    @Transactional
     public Result updateAvailableStatus(String commodityId) {
-        Commodity commodity = commodityMapper.selectById(commodityId);
+        //一锁
+        Commodity commodity = commodityMapper.selectByIdForUpdate(commodityId);
+        //二判
         if (commodity == null){
             return Result.fail("商品不存在");
         }
-
         if (commodity.getAvailableStatus() == 1){
             commodity.setAvailableStatus(0);
         }else {
@@ -222,5 +235,28 @@ public class CommodityServiceImpl  implements ICommodityService {
             return Result.fail("未查询到商品信息");
         }
         return Result.success(resourcesCommodityVo);
+    }
+
+
+    /**
+     * [是否可再次购买]
+     *
+     * @param id 商品id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/19
+     **/
+    @Override
+    public Result canBuyAgain(String id) {
+        CommodityVo commodity = commodityMapper.queryCanBuyById(id);
+        if (commodity == null){
+            return Result.fail("商品不存在");
+        }
+        if (!commodity.getHasStock()){
+            return Result.fail("商品已售完");
+        }
+        if(commodity.getAvailableStatus()==0){
+            return Result.fail("商品已下架");
+        }
+        return Result.success(commodity);
     }
 }

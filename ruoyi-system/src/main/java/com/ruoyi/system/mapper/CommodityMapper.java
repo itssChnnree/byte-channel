@@ -27,15 +27,6 @@ import java.util.List;
 public interface CommodityMapper extends BaseMapper<Commodity> {
 
 
-
-//    /**
-//     * [根据类别id查询类]
-//     * @author 陈湘岳 2025/7/29
-//     * @param categoryId 类别id
-//     * @return java.util.List<com.ruoyi.system.domain.entity.Commodity>
-//     **/
-//    List<Commodity> findByCategoryId(@Param("categoryId") String categoryId);
-
     /**
      * [根据类别id查询是否存在所属商品]
      * @author 陈湘岳 2025/7/29
@@ -68,6 +59,24 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
      * @return com.ruoyi.system.domain.vo.CommodityVo
      **/
     CommodityVo queryById(@Param("id") String id);
+
+    /**
+     * [查询可以再次购买的商品详情]
+     * @author 陈湘岳 2025/8/1
+     * @param id 商品id
+     * @return com.ruoyi.system.domain.vo.CommodityVo
+     **/
+    CommodityVo queryCanBuyById(@Param("id") String id);
+
+
+
+    /**
+     * [加写锁查询]
+     * @author 陈湘岳 2026/1/17
+     * @param id 商品id
+     * @return com.ruoyi.system.domain.entity.Commodity
+     **/
+    Commodity selectByIdForUpdate(@Param("id") String id);
 
 
     /**

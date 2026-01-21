@@ -1,7 +1,10 @@
 package com.ruoyi.system.domain.vo;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,25 +30,18 @@ public class WalletBalanceDetailVo{
    private String userId;
     
     @ApiModelProperty("变更金额")
-   private Double changeAmount;
+    @JsonIgnore
+   private BigDecimal changeAmount;
+
+    @ApiModelProperty("变更时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTime;
     
     @ApiModelProperty("变更类型")
    private String type;
-    
-    @ApiModelProperty("0为未删除，1为已删除")
-   private Integer isDeleted;
-    
-    @ApiModelProperty("创建人")
-   private String createUser;
-    
-    @ApiModelProperty("修改人")
-   private String updateUser;
-    
-    @ApiModelProperty("创建时间")
-   private Date createTime;
-    
-    @ApiModelProperty("修改时间")
-   private Date updateTime;
-    
+
+    public String getChangeAmountStr(){
+        return changeAmount.toString();
+    }
 
 }

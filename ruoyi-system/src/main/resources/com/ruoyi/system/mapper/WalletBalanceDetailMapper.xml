@@ -19,11 +19,6 @@
                 <result property="userId" column="user_id" jdbcType="VARCHAR"/>
                 <result property="changeAmount" column="change_amount" jdbcType="NUMERIC"/>
                 <result property="type" column="type" jdbcType="VARCHAR"/>
-                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
-                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <!--��ѯ����-->
@@ -149,7 +144,7 @@ id, user_id, change_amount, type, is_deleted, create_user, update_user, create_t
 
     <select id="pageQuery" resultType="com.ruoyi.system.domain.vo.WalletBalanceDetailVo">
         select
-        id, user_id, change_amount, type
+        id, user_id, change_amount, type,create_time
         from wallet_balance_detail
         where 1 = 1 and is_deleted = 0 and user_id = #{userId}
         order by create_time desc

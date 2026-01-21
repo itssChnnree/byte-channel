@@ -97,6 +97,17 @@ public class OrderController {
     }
 
 
+    @GetMapping("/cancelRenewalOrder")
+    @ApiOperation("续费订单取消")
+    public Result cancelOrderRenewal(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderService.cancelOrderRenewal(orderId);
+    }
+
+
+
     @ApiOperation("续费订单第三方支付或余额支付")
     @PostMapping("/renewalOrderIsPay")
     public Result renewalOrderIsPay(String orderId,Boolean isBalance) {

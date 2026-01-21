@@ -167,7 +167,7 @@ id, user_id, balance, invitees_number, referral_bonus_credits, is_deleted, creat
             id, user_id, balance, invitees_number, referral_bonus_credits,
             is_deleted, create_user, update_user, create_time, update_time
         from wallet_balance
-        where user_id = #{userId} and is_deleted = 0
+        where user_id = #{userId} and is_deleted = 0 for update
     </select>
 
 

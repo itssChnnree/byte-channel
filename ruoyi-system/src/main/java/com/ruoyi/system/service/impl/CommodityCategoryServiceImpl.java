@@ -15,6 +15,7 @@ import com.ruoyi.system.mapper.CommodityMapper;
 import com.ruoyi.system.mapstruct.CommodityCategoryMapstruct;
 import com.ruoyi.system.service.ICommodityCategoryService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
@@ -66,7 +67,9 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
      * @author 陈湘岳 2025/7/28
      **/
     @Override
+    @Transactional
     public Result update(CommodityCategoryDto commodityCategoryDto) {
+        //一锁
         CommodityCategory commodityCategory = commodityCategoryMapstruct.changeDto2(commodityCategoryDto);
         int i = commodityCategoryMapper.updateById(commodityCategory);
         if (i > 0){
@@ -85,6 +88,7 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
      * @author 陈湘岳 2025/7/29
      **/
     @Override
+    @Transactional
     public Result deleteByIds(ListDto listDto) {
         if (CollectionUtils.isEmpty(listDto.getIds())){
             return Result.fail("请选择要删除的类别");
@@ -154,6 +158,7 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
      * @author 陈湘岳 2025/9/8
      **/
     @Override
+    @Transactional
     public Result updateAvailableStatus(String commodityCategoryId) {
         CommodityCategory commodityCategory = commodityCategoryMapper.selectById(commodityCategoryId);
         if (commodityCategory == null){

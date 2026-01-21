@@ -74,7 +74,8 @@ spring:
     mode: HTML
     encoding: UTF-8
     cache: false
-
+  transaction:
+    default-timeout: 15  # 设置默认事务超时15秒
 
 # token配置
 token:

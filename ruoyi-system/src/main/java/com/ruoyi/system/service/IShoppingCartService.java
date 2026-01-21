@@ -16,31 +16,4 @@ import javax.validation.Valid;
  */
 public interface IShoppingCartService{
 
-
-    /**
-     * [新增或修改购物车中商品]
-     * @author 陈湘岳 2025/8/9
-     * @param shoppingCartDto
-     * @return com.ruoyi.system.http.Result
-     **/
-    Result addShoppingCart(ShoppingCartDto shoppingCartDto);
-
-
-
-    /**
-     * [分页查询购物车中商品]
-     * @author 陈湘岳 2025/8/9
-     * @param pageBase
-     * @return com.ruoyi.system.http.Result
-     **/
-    Result pageQuery(PageBase pageBase);
-
-
-    /**
-     * [批量删除购物车商品]
-     * @author 陈湘岳 2025/8/9
-     * @param listDto
-     * @return com.ruoyi.system.http.Result
-     **/
-    Result deleteByIds(ListDto listDto);
 }

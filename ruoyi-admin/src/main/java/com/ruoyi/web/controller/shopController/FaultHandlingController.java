@@ -43,6 +43,7 @@ public class FaultHandlingController{
 
     @PostMapping("/update")
     @ApiOperation("修改故障处理流程")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
     public Result update(@RequestBody @Validated(UpdateGroup.class) FaultHandlingDto faultHandlingDto,
                          BindingResult bindingResult){
         if (bindingResult.hasErrors()){

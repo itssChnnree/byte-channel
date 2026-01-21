@@ -8,9 +8,7 @@ import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
 import com.ruoyi.system.domain.vo.OrderNewVo;
 import com.ruoyi.system.domain.vo.ServerResourcesDetailVo;
 import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
-import com.ruoyi.system.domain.vo.ServerResourcesVo;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -54,6 +52,14 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return com.ruoyi.system.domain.vo.ServerResourcesVo
      **/
     ServerResources findById(@Param("resourcesId") String resourcesId);
+
+    /**
+     * [查询资源详情带锁]
+     * @author 陈湘岳 2025/8/1
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.domain.vo.ServerResourcesVo
+     **/
+    ServerResources findByIdForUpdate(@Param("resourcesId") String resourcesId);
 
 
     /**
@@ -169,7 +175,7 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @param id 订单id
      * @return com.ruoyi.system.domain.entity.ServerResources
      **/
-    ServerResources findByOrderId(@Param("id") String id);
+    ServerResources findByOrderIdForUpdate(@Param("id") String id);
 
 
     /**

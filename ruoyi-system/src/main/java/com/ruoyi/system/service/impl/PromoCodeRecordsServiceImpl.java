@@ -1,13 +1,20 @@
 package com.ruoyi.system.service.impl;
 
 
+
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.system.constant.EntityStatus;
 import com.ruoyi.system.domain.entity.PromoCodeRecords;
+import com.ruoyi.system.domain.vo.PromoCodeRecordsVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.PromoCodeRecordsMapper;
 import com.ruoyi.system.service.IPromoCodeRecordsService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Date;
 
 /**
  * 推广码记录表(PromoCodeRecords)�����ʵ����
@@ -30,8 +37,35 @@ public class PromoCodeRecordsServiceImpl implements IPromoCodeRecordsService {
      * @author 陈湘岳 2025/8/14
      **/
     @Override
+    @Transactional
     public Result createPromoCodeRecords() {
+        PromoCodeRecordsVo oldPromoCodeRecords = promoCodeRecordsMapper.findPromoCodeRecords(EntityStatus.NORMAL);
+        boolean over30Days = DateUtils.isOver30Days(oldPromoCodeRecords.getCreateTime());
+        if (!over30Days){
+            return Result.fail("您30天内已成功生成过邀请码，请过段时间再试");
+        }
+        //将历史推广码失效
+        promoCodeRecordsMapper.updateStatus(SecurityUtils.getStrUserId(), EntityStatus.DISABLED);
+        //生成新推广码
+        String code = ServerResourcesServiceImpl.generateRandomString(10);
+        PromoCodeRecords promoCodeRecords = new PromoCodeRecords();
+        promoCodeRecords.setPromoCode(code);
+        promoCodeRecords.setUserId(SecurityUtils.getStrUserId());
+        promoCodeRecords.setStatus(EntityStatus.NORMAL);
+        int insert = promoCodeRecordsMapper.insert(promoCodeRecords);
+        return insert > 0 ? Result.success(promoCodeRecords) : Result.fail();
+    }
 
-        return null;
+
+    /**
+     * [获取推广码]
+     *
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/12/29
+     **/
+    @Override
+    public Result getPromoCodeRecords() {
+        PromoCodeRecordsVo promoCodeRecords = promoCodeRecordsMapper.findPromoCodeRecords(EntityStatus.NORMAL);
+        return Result.success(promoCodeRecords);
     }
 }
