@@ -153,8 +153,8 @@ id, user_id, change_amount, type, is_deleted, create_user, update_user, create_t
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into wallet_balance_detail(id,user_id, change_amount, type, is_deleted, create_user, update_user, create_time, update_time)
-        values (#{id},#{userId}, #{changeAmount}, #{type}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
+        insert into wallet_balance_detail(id,user_id, change_amount,now_amount, type, is_deleted, create_user, update_user, create_time, update_time)
+        values (#{id},#{userId}, #{changeAmount},#{nowAmount}, #{type}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">

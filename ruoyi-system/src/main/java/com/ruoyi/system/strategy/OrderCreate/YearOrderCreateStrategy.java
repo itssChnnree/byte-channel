@@ -9,6 +9,7 @@ import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.entity.PromoCodeRecords;
+import com.ruoyi.system.util.LogEsUtil;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ public class YearOrderCreateStrategy implements OrderCreateStrategy{
 
     @Override
     public Order createOrder(int num, Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {
+        LogEsUtil.info("按年创建订单");
         BigDecimal price = null;
         //存在折扣价则使用折扣价，不存在则使用原价
         if (ObjectUtil.isNotEmpty(normalCommodity.getCommodityDiscountedPrice())){

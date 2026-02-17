@@ -4,6 +4,7 @@ import java.lang.management.ManagementFactory;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
@@ -47,6 +48,23 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
     public static String getDate()
     {
         return dateTimeNow(YYYY_MM_DD);
+    }
+
+    /**
+     * [将yyyy-MM-dd'T'HH:mmXXX时间格式转为yyyy-MM-dd hh:mm:ss]
+     * @author 陈湘岳 2024/2/27
+     * @param dateTimeStr 传入的yyyy-MM-dd'T'HH:mmXXX时间格式
+     * @return java.lang.String 转换后的时间格式
+     **/
+    public static String convertToYYYYMMDDhhmmss(String dateTimeStr) {
+        // 使用ISO_DATE_TIME格式解析输入字符串
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ISO_DATE_TIME;
+        ZonedDateTime zonedDateTime = ZonedDateTime.parse(dateTimeStr, inputFormatter);
+
+        // 定义输出格式
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
+        // 格式化输出
+        return outputFormatter.format(zonedDateTime);
     }
 
     public static final String getTime()

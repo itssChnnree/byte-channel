@@ -160,4 +160,12 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     Result deleteById(String id);
+
+    /**
+     * [获取续费类型资源订单快照]
+     * @author 陈湘岳 2026/1/23
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getOrderRenewal(String orderId);
 }

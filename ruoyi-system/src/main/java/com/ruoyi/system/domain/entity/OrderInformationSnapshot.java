@@ -84,6 +84,10 @@ public class OrderInformationSnapshot extends ByteBaseEntity implements Serializ
     @TableField(value = "category_desc")
     private String categoryDesc;
 
-
+    /**
+     * ip
+     */
+    @TableField(value = "ip")
+    private String ip;
 
 }

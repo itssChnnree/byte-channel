@@ -74,7 +74,7 @@ public class OrderController {
 
 
     @GetMapping("/getOrderInfo")
-    @ApiOperation("获取新购订单信息-订单详情下面的")
+    @ApiOperation("新购-支付页详情查询")
     public Result getOrderInfo(String orderId){
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");
@@ -121,7 +121,7 @@ public class OrderController {
     }
 
     @GetMapping("/getRenewalOrderInfo")
-    @ApiOperation("获取续费订单信息-订单详情下面的")
+    @ApiOperation("支付页-续费订单查询")
     public Result getRenewalOrderInfo(String orderId){
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");

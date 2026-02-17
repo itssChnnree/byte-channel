@@ -31,4 +31,26 @@ public class CacheConfig {
                 .expireAfterWrite(1, TimeUnit.HOURS)
                 .build();
     }
+
+    //traceId 请求开始时间记录
+    @Bean(name = "requestStartTime")
+    public Cache<String, Long> requestStartTime() {
+        return Caffeine.newBuilder()
+                .initialCapacity(100)
+                .maximumSize(3000)
+                //距离上次推送一个小时以后过期
+                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .build();
+    }
+
+    //traceId 缓存至相同索引
+    @Bean(name = "traceIdIndex")
+    public Cache<String, String> traceIdIndex() {
+        return Caffeine.newBuilder()
+                .initialCapacity(100)
+                .maximumSize(3000)
+                //距离上次推送一个小时以后过期
+                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .build();
+    }
 }

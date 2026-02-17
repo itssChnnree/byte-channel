@@ -6,6 +6,7 @@ import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.entity.PromoCodeRecords;
+import com.ruoyi.system.util.LogEsUtil;
 
 import java.math.BigDecimal;
 
@@ -22,6 +23,7 @@ public class OrderCreateContext {
     private OrderCreateStrategy orderCreateStrategy;
 
     public OrderCreateContext(String orderCreateType) {
+        LogEsUtil.info("创建付款策略："+orderCreateType);
         orderCreateStrategy = SpringUtil.getBean(orderCreateType);
     }
 

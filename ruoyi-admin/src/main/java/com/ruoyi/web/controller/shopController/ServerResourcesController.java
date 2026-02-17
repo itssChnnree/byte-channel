@@ -210,9 +210,15 @@ public class ServerResourcesController{
 
 
     @GetMapping("/getOrderAdd")
-    @ApiOperation("获取新购资源详情")
+    @ApiOperation("获取新购资源商品快照")
     public Result getOrderAdd(String orderId){
         return serverResourcesService.getOrderAdd(orderId);
+    }
+
+    @GetMapping("/getOrderRenewal")
+    @ApiOperation("获取续费资源商品快照")
+    public Result getOrderRenewal(String orderId){
+        return serverResourcesService.getOrderRenewal(orderId);
     }
 
 

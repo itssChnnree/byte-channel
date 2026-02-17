@@ -152,6 +152,8 @@ id, user_id, order_commodity_id, resources_id, is_deleted, create_user, update_u
             </if>
         </where>
     </select>
+
+
     <select id="findByOrderId" resultType="com.ruoyi.system.domain.entity.OrderCommodityResources">
         select
             ocr.id,

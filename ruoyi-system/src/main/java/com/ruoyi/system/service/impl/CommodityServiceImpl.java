@@ -17,6 +17,7 @@ import com.ruoyi.system.mapper.CommodityMapper;
 import com.ruoyi.system.mapper.ServerResourcesMapper;
 import com.ruoyi.system.mapstruct.CommodityMapstruct;
 import com.ruoyi.system.service.ICommodityService;
+import com.ruoyi.system.util.LogEsUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,10 +64,12 @@ public class CommodityServiceImpl  implements ICommodityService {
         try {
             DefaultValueUtil.setDefaultData(commodityDto);
         } catch (IllegalAccessException e) {
+            LogEsUtil.error("新增商品失败",e);
             throw new RuntimeException("默认值设置失败");
         }
         CommodityCategory commodityCategory = commodityCategoryMapper.selectById(commodityDto.getCategoryId());
         if (commodityCategory == null||commodityCategory.getIsDeleted()==1){
+            LogEsUtil.warn("新增商品所属商品类别不存在");
             return Result.fail("商品类别不存在");
         }
         Commodity commodity = commodityMapstruct.changeDto2(commodityDto);
@@ -92,12 +95,14 @@ public class CommodityServiceImpl  implements ICommodityService {
         Commodity commodity = commodityMapper.selectByIdForUpdate(commodityDto.getId());
         //二判
         if (commodity == null){
+            LogEsUtil.warn("修改商品不存在，商品id："+commodityDto.getId());
             return Result.fail("商品不存在");
         }
         BeanUtils.copyProperties(commodityDto,commodity);
         if (!StrUtil.isBlank(commodityDto.getCategoryId())){
             CommodityCategory commodityCategory = commodityCategoryMapper.selectById(commodityDto.getCategoryId());
             if (commodityCategory == null||commodityCategory.getIsDeleted()==1){
+                LogEsUtil.warn("修改商品所属商品类别不存在，商品id："+commodityDto.getId()+",商品类别id:"+commodityDto.getCategoryId());
                 return Result.fail("商品类别不存在");
             }
         }
@@ -119,18 +124,21 @@ public class CommodityServiceImpl  implements ICommodityService {
     @Override
     public Result deleteByIds(ListDto listDto) {
         if (CollectionUtils.isEmpty(listDto.getIds())){
+            LogEsUtil.warn("未选择删除的商品");
             return Result.fail("请选择要删除的商品");
         }else{
             List<String> strings = serverResourcesMapper.haveServerResources(listDto.getIds());
             //筛选出不存在商品的类别
             List<String> collect = listDto.getIds().stream().filter(id -> !strings.contains(id)).collect(Collectors.toList());
             if (CollectionUtils.isEmpty( collect)){
-                return Result.fail("所选类别下存在商品");
+                LogEsUtil.warn("所选商品下存在资源");
+                return Result.fail("所选商品下存在资源");
             }
             int delete = commodityMapper.deleteBatchIds(collect);
             if (delete > 0){
                 return Result.success("已删除该商品");
             }else {
+                LogEsUtil.warn("删除商品失败");
                 return Result.fail("删除失败");
             }
         }
@@ -210,6 +218,7 @@ public class CommodityServiceImpl  implements ICommodityService {
         Commodity commodity = commodityMapper.selectByIdForUpdate(commodityId);
         //二判
         if (commodity == null){
+            LogEsUtil.warn("变更状态商品不存在，商品id："+commodityId);
             return Result.fail("商品不存在");
         }
         if (commodity.getAvailableStatus() == 1){

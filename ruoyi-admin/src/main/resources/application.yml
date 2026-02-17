@@ -121,3 +121,16 @@ xss:
 shop:
   name: ByteChannel
 
+
+elasticsearch:
+  clusterName: docker-cluster
+  userName: elastic
+  password: testpassword123
+  hosts: localhost:9200
+  scheme: http
+  connectTimeOut: 1000
+  socketTimeOut: 30000
+  connectionRequestTimeOut: 500
+  maxConnectNum: 100
+  maxConnectNumPerRoute: 100
+

@@ -40,8 +40,16 @@ public class WalletBalanceDetailVo{
     @ApiModelProperty("变更类型")
    private String type;
 
+    @ApiModelProperty("变更前金额")
+    @JsonIgnore
+    private BigDecimal nowAmount;
+
     public String getChangeAmountStr(){
         return changeAmount.toString();
+    }
+
+    public String getNowAmountStr(){
+        return nowAmount.toString();
     }
 
 }

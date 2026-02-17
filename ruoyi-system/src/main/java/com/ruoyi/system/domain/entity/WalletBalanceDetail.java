@@ -41,6 +41,11 @@ private Double changeAmount;
 @TableField(value = "type")
 private String type;
 
+    /**
+     * 当前金额
+     */
+    @TableField(value = "now_amount")
+    private Double nowAmount;
 
 
 }

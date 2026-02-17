@@ -156,8 +156,21 @@ id, order_id, resources_ip, resources_id, user_id, is_deleted, create_user, upda
             </if>
         </where>
     </select>
-    
-    
+
+
+    <select id="findByOrderId" resultType="com.ruoyi.system.domain.vo.OrderRenewalResourcesVo">
+        select orr.id,resources_id,
+               c.id as commodity_id,
+               orr.order_id,
+               orr.resources_ip
+        from order_renewal_resources orr
+        left join server_resources sr on orr.resources_id = sr.id
+        left join commodity c on sr.commodity_id = c.id
+    where orr.is_deleted = 0 and order_id = #{orderId}
+
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into order_renewal_resources(id,order_id, resources_ip, resources_id, user_id, is_deleted, create_user, update_user, create_time, update_time)

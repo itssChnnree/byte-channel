@@ -571,24 +571,38 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
 
 
     <select id="getOrderAdd" resultType="com.ruoyi.system.domain.vo.OrderNewVo">
-        select oc.commodity_id,
+        select ois.commodity_id,
                ois.commodity_name,
                ois.commodity_desc as commodityDesc,
                ois.category_id as categoryId,
                ois.category_name,
                ois.category_desc as categoryDesc,
                ois.bandwidth,
-               o.user_id
+               o.user_id,
+               ois.ip as ip
         from `order` o
-                 left join order_commodity oc on o.id = oc.order_id
                  left join order_information_snapshot ois on o.id = ois.order_id
-                 left join order_commodity_resources ocr on oc.id = ocr.order_commodity_id
         where o.id= #{orderId}
     </select>
 
 
     <select id="findAll" resultType="com.ruoyi.system.domain.entity.ServerResources">
         select * from server_resources where is_deleted = 0
+    </select>
+
+    <select id="getOrderRenewal" resultType="com.ruoyi.system.domain.vo.OrderRenewalVo">
+        select ois.commodity_id,
+               ois.commodity_name,
+               ois.commodity_desc as commodityDesc,
+               ois.category_id as categoryId,
+               ois.category_name,
+               ois.category_desc as categoryDesc,
+               ois.bandwidth,
+               o.user_id,
+               ois.ip as ip
+        from `order` o
+                 left join order_information_snapshot ois on o.id = ois.order_id
+        where o.id= #{orderId}
     </select>
 
 

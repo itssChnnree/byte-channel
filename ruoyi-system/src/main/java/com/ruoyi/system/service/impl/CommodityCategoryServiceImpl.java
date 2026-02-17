@@ -14,6 +14,7 @@ import com.ruoyi.system.mapper.CommodityCategoryMapper;
 import com.ruoyi.system.mapper.CommodityMapper;
 import com.ruoyi.system.mapstruct.CommodityCategoryMapstruct;
 import com.ruoyi.system.service.ICommodityCategoryService;
+import com.ruoyi.system.util.LogEsUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -52,8 +53,10 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
         CommodityCategory commodityCategory = commodityCategoryMapstruct.changeDto2(commodityCategoryDto);
         int insert = commodityCategoryMapper.insert(commodityCategory);
         if (insert > 0){
+            LogEsUtil.info("添加商品类别成功："+commodityCategory);
             return Result.success(commodityCategory);
         }else {
+            LogEsUtil.warn("添加商品类别失败"+commodityCategory);
             return Result.fail("添加失败");
         }
     }
@@ -73,8 +76,10 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
         CommodityCategory commodityCategory = commodityCategoryMapstruct.changeDto2(commodityCategoryDto);
         int i = commodityCategoryMapper.updateById(commodityCategory);
         if (i > 0){
+            LogEsUtil.info("修改商品类别成功："+commodityCategory);
             return Result.success(commodityCategory);
         }else {
+            LogEsUtil.warn("修改商品类别失败："+commodityCategory);
             return Result.fail("修改失败");
         }
     }
@@ -97,12 +102,15 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
             //筛选出不存在商品的类别
             List<String> collect = listDto.getIds().stream().filter(id -> !strings.contains(id)).collect(Collectors.toList());
             if (CollectionUtils.isEmpty( collect)){
+                LogEsUtil.warn("删除商品类别下存在商品："+collect);
                 return Result.fail("所选类别下存在商品");
             }
             int delete = commodityCategoryMapper.deleteBatchIds(collect);
             if (delete > 0){
+                LogEsUtil.info("删除商品类别成功："+collect);
                 return Result.success("已删除未存在商品的类别");
             }else {
+                LogEsUtil.warn("删除商品类别失败："+collect);
                 return Result.fail("删除失败");
             }
         }
@@ -162,6 +170,7 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
     public Result updateAvailableStatus(String commodityCategoryId) {
         CommodityCategory commodityCategory = commodityCategoryMapper.selectById(commodityCategoryId);
         if (commodityCategory == null){
+            LogEsUtil.warn("变更商品分类状态失败，商品分类不存在，商品分类id为："+commodityCategoryId);
             return Result.fail("商品分类不存在");
         }
 
@@ -171,6 +180,7 @@ public class CommodityCategoryServiceImpl  implements ICommodityCategoryService 
             commodityCategory.setAvailableStatus(1);
         }
         commodityCategoryMapper.updateById( commodityCategory);
+        LogEsUtil.info("变更商品分类状态成功，商品分类id为："+commodityCategoryId);
         return Result.success("变更状态成功");
     }
 }

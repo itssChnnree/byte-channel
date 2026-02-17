@@ -34,21 +34,8 @@ public class OrderRenewalResourcesVo{
     
     @ApiModelProperty("购买用户id")
    private String userId;
-    
-    @ApiModelProperty("0为未删除，1为已删除")
-   private Integer isDeleted;
-    
-    @ApiModelProperty("创建人")
-   private String createUser;
-    
-    @ApiModelProperty("修改人")
-   private String updateUser;
-    
-    @ApiModelProperty("创建时间")
-   private Date createTime;
-    
-    @ApiModelProperty("修改时间")
-   private Date updateTime;
-    
+
+    @ApiModelProperty("商品id")
+    private String commodityId;
 
 }

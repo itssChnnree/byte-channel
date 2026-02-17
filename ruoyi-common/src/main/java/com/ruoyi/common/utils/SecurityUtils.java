@@ -52,6 +52,21 @@ public class SecurityUtils
     }
 
     /**
+     * 用户ID
+     **/
+    public static String getLogUserId()
+    {
+        try
+        {
+            return getLoginUser().getUserId().toString();
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+
+    /**
      * 获取部门ID
      **/
     public static Long getDeptId()

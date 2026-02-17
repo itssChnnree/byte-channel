@@ -6,6 +6,7 @@ import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.entity.ResourceAllocationTemporaryStorage;
 import com.ruoyi.system.domain.vo.OrderNewVo;
+import com.ruoyi.system.domain.vo.OrderRenewalVo;
 import com.ruoyi.system.domain.vo.ServerResourcesDetailVo;
 import com.ruoyi.system.domain.vo.ServerResourcesPageVo;
 import org.apache.ibatis.annotations.Param;
@@ -185,6 +186,14 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return com.ruoyi.system.domain.vo.OrderNewVo
      **/
     OrderNewVo getOrderAdd(@Param("orderId") String orderId);
+
+    /**
+     * [查询续费资源订单]
+     * @author 陈湘岳 2025/11/21
+     * @param orderId 订单id
+     * @return com.ruoyi.system.domain.vo.OrderNewVo
+     **/
+    OrderRenewalVo getOrderRenewal(@Param("orderId") String orderId);
 
 
     /**

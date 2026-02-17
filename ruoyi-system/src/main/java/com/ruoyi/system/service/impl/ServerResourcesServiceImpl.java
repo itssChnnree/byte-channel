@@ -639,6 +639,25 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
 
     /**
+     * [获取续费类型资源订单快照]
+     *
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/1/23
+     **/
+    @Override
+    public Result getOrderRenewal(String orderId) {
+        OrderNewVo orderAdd = serverResourcesMapper.getOrderAdd(orderId);
+        if (ObjectUtils.isEmpty(orderAdd)){
+            return Result.fail("订单不存在");
+        }
+        if(!SecurityUtils.hasPermi()&&!SecurityUtils.getStrUserId().equals(orderAdd.getUserId())){
+            return Result.fail("您没有权限查看此订单");
+        }
+        return Result.success(orderAdd);
+    }
+
+    /**
      * [通过资源id删除资源]
      *
      * @param id 资源id

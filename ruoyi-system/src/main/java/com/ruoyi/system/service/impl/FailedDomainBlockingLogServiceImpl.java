@@ -10,6 +10,7 @@ import com.ruoyi.system.mapper.FailedDomainBlockingLogMapper;
 import com.ruoyi.system.service.IFailedDomainBlockingLogService;
 import com.ruoyi.system.domain.entity.FailedDomainBlockingLog;
 import com.ruoyi.system.domain.vo.FailedDomainBlockingLogVo;
+import com.ruoyi.system.util.LogEsUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +60,7 @@ public class FailedDomainBlockingLogServiceImpl implements IFailedDomainBlocking
     @Transactional
     public Result handle(String id) {
         int i = failedDomainBlockingLogMapper.updateStatus(id, EntityStatus.HANDLED);
+        LogEsUtil.info("屏蔽域名未成功处理记录，id："+id+",处理结果为："+i);
         return i > 0 ? Result.success() : Result.fail("修改失败");
     }
 }
