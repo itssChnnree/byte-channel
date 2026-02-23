@@ -6,7 +6,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
@@ -20,6 +19,7 @@ import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.service.IOrderService;
 import com.ruoyi.system.strategy.OrderCreate.OrderCreateContext;
 import com.ruoyi.system.util.LogEsUtil;
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -180,24 +180,32 @@ public class OrderServiceImpl implements IOrderService {
         //查询推广码
         PromoCodeRecords promoCodeRecords = promoCodeRecordsMapper.selectPromoCode(orderByRenewalDto.getPromoCode());
         if (StrUtil.isNotBlank(orderByRenewalDto.getPromoCode())&&ObjectUtil.isNull(promoCodeRecords)){
+            LogEsUtil.warn("推广码不存在或已过期，推广码："+orderByRenewalDto.getPromoCode());
             return Result.fail("邀请码已过期");
         }
         //一锁
         ServerResources resourcesMapperById = serverResourcesMapper.findByIdForUpdate(orderByRenewalDto.getResourcesId());
         //二判
         if (resourcesMapperById == null){
+            LogEsUtil.warn("资源不存在或已下架，资源id：" + orderByRenewalDto.getResourcesId());
             return Result.fail("资源不存在");
         }
         if (AvailableStatus.AVAILABLE_STATUS_DOWN.equals(resourcesMapperById.getAvailableStatus())){
+            LogEsUtil.warn("资源已下架，资源id：" + orderByRenewalDto.getResourcesId());
             return Result.fail("资源已下架");
         }
-        if (!SecurityUtils.getStrUserId().equals(resourcesMapperById.getResourceTenant())
-                ||resourcesMapperById.getLeaseExpirationTime().before(new Date())){
-            return Result.fail("资源不属于当前用户或资源已到期");
+        if (!SecurityUtils.getStrUserId().equals(resourcesMapperById.getResourceTenant())){
+            LogEsUtil.warn("资源不属于当前用户，资源id：" + orderByRenewalDto.getResourcesId());
+            return Result.fail("资源不属于当前用户");
+        }
+        if (resourcesMapperById.getLeaseExpirationTime().before(new Date())){
+            LogEsUtil.warn("资源已到期，资源id：" + orderByRenewalDto.getResourcesId());
+            return Result.fail("资源已到期,无法进行续费");
         }
         //这里商品下架也是可以续费的
         Commodity byResourcesId = commodityMapper.findByResourcesId(resourcesMapperById.getId());
         if (byResourcesId == null){
+            LogEsUtil.warn("续费资源所属商品不存在，资源id：" + orderByRenewalDto.getResourcesId());
             return Result.fail("续费资源所属商品不存在");
         }
         //创建订单计算上下文
@@ -205,8 +213,10 @@ public class OrderServiceImpl implements IOrderService {
         Order renewalOrder = orderCreateContext.createRenewalOrder(byResourcesId, promoCodeRecords);
         int insert = orderMapper.insert(renewalOrder);
         if (insert<1){
+            LogEsUtil.warn("生成订单失败");
             throw new RuntimeException("生成订单失败，请稍后再试");
         }
+        LogEsUtil.info("生成订单信息：" + renewalOrder);
         orderStatusTimelineService.createOrderAndTimeline(renewalOrder.getId());
         //新增推广记录
         insertPromoRecords(promoCodeRecords,renewalOrder);
@@ -254,6 +264,7 @@ public class OrderServiceImpl implements IOrderService {
                 .userId(order.getUserId())
                 .build();
         int insert = orderRenewalResourcesMapper.insert(orderRenewalResources);
+        LogEsUtil.info("订单续费资源信息：" + orderRenewalResources);
     }
 
 
@@ -394,6 +405,7 @@ public class OrderServiceImpl implements IOrderService {
         OrderStatusTimelineVo byOrderId = orderStatusTimelineService.getByOrderId(orderId);
         boolean timeBeforeHours = isTimeBeforeHours(byOrderId.getCompletedTime(), 24);
         if (!timeBeforeHours){
+            LogEsUtil.info("订单已超过规定的可退款期限,订单id为：" + orderId);
             return Result.fail("当前订单已超过规定的可退款期限");
         }
         //释放资源
@@ -415,7 +427,7 @@ public class OrderServiceImpl implements IOrderService {
             result = "订单退款成功";
         }
         orderMapper.updateStatusById(orderId, status);
-        log.info("订单取消成功,订单id为：{}",orderId);
+        LogEsUtil.info("订单取消成功,订单id为：{}",orderId);
         return Result.success(result);
     }
 
@@ -433,35 +445,43 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderMapper.queryByIdForUpdate(orderId);
         //二判
         if (order == null){
+            LogEsUtil.warn("订单不存在：" + orderId);
             return Result.fail("订单不存在");
         }
         if (!StrUtil.equals(OrderTypeConstant.RENEW,order.getOrderType())){
+            LogEsUtil.warn("订单类型不为续费，订单id为：" + orderId);
             return Result.fail("该订单不是续费订单");
         }
         String strUserId = SecurityUtils.getStrUserId();
         if (!strUserId.equals(order.getCreateUser())){
+            LogEsUtil.warn("用户对订单没有操作权限，订单id为：" + orderId);
             return Result.fail("对该订单暂无操作权限");
         }
         //已取消 超时系统取消
         if ( OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
+            LogEsUtil.warn("订单超时自动取消，订单id为：" + orderId);
             return Result.fail("订单超时自动取消");
         }
         //已取消 用户主动取消
         if (OrderStatus.USER_CANCELED.equals(order.getStatus())){
+            LogEsUtil.warn("用户已取消订单，订单id为：" + orderId);
             return Result.fail("用户已取消订单");
         }
         //待退款
         if (OrderStatus.WAIT_REFUND.equals(order.getStatus())){
+            LogEsUtil.info("订单正在退款中,订单id为：" + orderId);
             return Result.fail("订单正在退款中");
         }
         //已退款
         if (OrderStatus.REFUND_SUCCESS.equals(order.getStatus())){
+            LogEsUtil.info("订单已退款,订单id为：" + orderId);
             return Result.fail("订单已退款");
         }
-        log.info("订单取消,订单id为：{}",orderId);
+        LogEsUtil.info("订单取消,订单id为："+orderId);
         OrderStatusTimelineVo byOrderId = orderStatusTimelineService.getByOrderId(orderId);
         boolean timeBeforeHours = isTimeBeforeHours(byOrderId.getCompletedTime(), 24);
         if (!timeBeforeHours){
+            LogEsUtil.info("订单已超过规定的可退款期限,订单id为：" + orderId);
             return Result.fail("当前订单已超过规定的可退款期限");
         }
         OrderRenewalResourcesVo orderRenewalResources = orderRenewalResourcesMapper.findByOrderId(orderId);
@@ -481,12 +501,13 @@ public class OrderServiceImpl implements IOrderService {
         if (OrderStatus.WAIT_PAY.equals(order.getStatus())){
             status = OrderStatus.USER_CANCELED;
             result = "订单取消成功";
+            LogEsUtil.info("订单取消成功,订单id为："+orderId);
         }else {
             status = OrderStatus.WAIT_REFUND;
             result = "订单退款成功";
+            LogEsUtil.info("订单退款成功,订单id为："+orderId);
         }
         orderMapper.updateStatusById(orderId, status);
-        log.info("订单取消成功,订单id为：{}",orderId);
         return Result.success(result);
     }
 
@@ -507,7 +528,9 @@ public class OrderServiceImpl implements IOrderService {
 
         Date now = new Date();
         long thresholdMillis = now.getTime() - (hours * 60 * 60 * 1000L);
+        Date thresholdDate = new Date(thresholdMillis);
 
+        LogEsUtil.info("订单可退款时间为:"+thresholdDate+" 之前,订单完结时间为:"+targetDate);
         return targetDate.getTime() > thresholdMillis;
     }
 
@@ -568,35 +591,40 @@ public class OrderServiceImpl implements IOrderService {
             return;
         }
         int i = serverResourcesMapper.updateServerResourcesSaleStatus(collect);
-        log.info("释放新购资源成功,订单id为{},资源id为：{}",orderId,collect.get(0));
+        LogEsUtil.info("释放新购资源成功,订单id为"+orderId+",资源id为："+collect.get(0));
     }
 
     //续费订单释放资源,为true需要释放库存，false不需要
     private boolean releaseResourcesRenewal(String orderId,Order order, OrderRenewalResourcesVo byOrderId){
         //若订单未完成返回false，代表不需要回复库存
         if (!StrUtil.equals(order.getStatus(),OrderStatus.COMPLETED)){
+            log.info("订单未完成,订单id为："+orderId);
             return false;
         }
         if (byOrderId == null){
+            log.info("订单续费资源不存在,订单id为："+orderId);
             return false;
         }
         ServerResources byIdForUpdate = serverResourcesMapper.findByIdForUpdate(byOrderId.getResourcesId());
         if(byIdForUpdate == null){
+            log.info("资源不存在,订单id为："+orderId+",资源id为："+byOrderId.getResourcesId());
             return false;
         }
         //获取订单的续费周期
         String paymentPeriod = order.getPaymentPeriod();
         //计算租赁时间减去周期后的时间，即未续费时间
         Date date = calculateRenewalDate(byIdForUpdate.getLeaseExpirationTime(), paymentPeriod);
+        LogEsUtil.info("订单续费资源剔除续费周期后的时间为："+date);
         //若时间小于当前时间，则返回true，需要释放库存
         if (ObjectUtil.isNull(date)||date.before(new Date())){
             int i = serverResourcesMapper.updateServerResourcesSaleStatus(Arrays.asList(byIdForUpdate.getId()));
-            log.info("释放续费资源成功,订单id为{},资源id为：{}",orderId,byIdForUpdate.getId());
+            LogEsUtil.info("释放续费资源成功,当前订单已过期，需要释放库存,订单id为:"+orderId+",资源id为："+byIdForUpdate.getId());
             return true;
         }else {
             //将过期时间置为date
             byIdForUpdate.setLeaseExpirationTime( date);
             serverResourcesMapper.updateById(byIdForUpdate);
+            LogEsUtil.info("订单续费资源未过期,已扣除续费周期,订单id为:"+orderId+",资源id为："+byIdForUpdate.getId());
             return false;
         }
 
@@ -611,10 +639,12 @@ public class OrderServiceImpl implements IOrderService {
      */
     private static Date calculateRenewalDate(Date date, String period) {
         if (date == null) {
+            LogEsUtil.info("原始时间为空");
             throw new IllegalArgumentException("时间不能为空");
         }
 
         if (period == null) {
+            LogEsUtil.info("续费周期为空");
             throw new IllegalArgumentException("续费周期不能为空");
         }
 
@@ -624,15 +654,15 @@ public class OrderServiceImpl implements IOrderService {
         switch (period) {
             case PaymentPeriodConstant.MONTHLY:
                 // 减去一个月
-                calendar.add(Calendar.MONTH, -1);
+                calendar.add(Calendar.DAY_OF_YEAR, -30);
                 break;
             case PaymentPeriodConstant.QUARTERLY:
                 // 减去三个月
-                calendar.add(Calendar.MONTH, -3);
+                calendar.add(Calendar.DAY_OF_YEAR, -90);
                 break;
             case PaymentPeriodConstant.YEARLY:
                 // 减去一年
-                calendar.add(Calendar.YEAR, -1);
+                calendar.add(Calendar.DAY_OF_YEAR, -365);
                 break;
             default:
                 return new Date();
@@ -653,12 +683,13 @@ public class OrderServiceImpl implements IOrderService {
             }else {
                 promoRecords.setStatus(OrderStatus.REFUND);
             }
+            LogEsUtil.info("订单推广撤销成功,订单id为"+order.getId()+",推广记录id为："
+                    +promoRecords.getId()+",订单状态为："+order.getStatus()+",推广记录状态为："+promoRecords.getStatus());
             int i = promoRecordsMapper.updateById(promoRecords);
             if (i <= 0){
-                log.error("撤销订单推广失败"+promoRecords.getId());
+                LogEsUtil.warn("撤销订单推广失败"+promoRecords.getId());
                 throw new RuntimeException("撤销订单推广失败");
             }
-            log.info("推广撤销成功,订单id为{},推广记录id为：{}",order.getId(),promoRecords.getId());
         }
 
     }
@@ -670,12 +701,13 @@ public class OrderServiceImpl implements IOrderService {
         Commodity normalCommodity = commodityMapper.selectByIdForUpdate(commodityId);
         //二判
         if ( normalCommodity == null){
+            LogEsUtil.warn("商品不存在,订单id为"+orderId+",商品id为："+commodityId);
             //没有查询到商品直接结束，不阻塞主流程
             return;
         }
         addCommodityStock(num, normalCommodity);
         commodityMapper.update(normalCommodity);
-        log.info("商品库存变更成功,订单id为{},商品id为：{}",orderId,normalCommodity.getId());
+        LogEsUtil.info("商品库存变更成功,订单id为:"+orderId+",商品id为：" + normalCommodity.getId());
     }
 
 
@@ -903,7 +935,7 @@ public class OrderServiceImpl implements IOrderService {
 
     //调用订单平台获取订单信息
     private YiPayResponse getOrderInfo(Order order){
-        boolean b = Math.random() > 0.8;
+        boolean b = Math.random() > 0.3;
         return b?new YiPayResponse():null;
     }
 
@@ -1013,10 +1045,12 @@ public class OrderServiceImpl implements IOrderService {
             order.setPaymentType(OrderStatus.BALANCE_PAY);
             Boolean reduceBalance = reduceBalance(order);
             if (!reduceBalance){
+                LogEsUtil.warn("用户余额不足");
                 return Result.success("余额不足，请充值", false);
             }
             return bean.renewalResources(orderId, order);
         }else {
+            LogEsUtil.warn("未检测到支付信息");
             return Result.success("未检测到支付信息，请稍后再试", false);
         }
     }
@@ -1140,6 +1174,7 @@ public class OrderServiceImpl implements IOrderService {
     //续费资源
     private String renewalResources(Order order,ServerResources byCommodityId) {
          if(ObjectUtil.isNull(byCommodityId)){
+             LogEsUtil.warn("未查询到续费资源,订单id:"+order.getId());
             return null;
         }
          //判断是否到期,到期则在当前时间上续费，未到期则在到期时间上续费
@@ -1156,6 +1191,7 @@ public class OrderServiceImpl implements IOrderService {
         byCommodityId.setSalesStatus(SalesStatus.ON_SALE);
         int i = serverResourcesMapper.updateById(byCommodityId);
         if (i < 1){
+            LogEsUtil.warn("资源续费失败,订单id:"+order.getId()+",资源id："+byCommodityId.getId());
             throw new BaseException("资源续费失败，请创建工单联系管理员");
         }else {
             return byCommodityId.getId();
@@ -1170,13 +1206,13 @@ public class OrderServiceImpl implements IOrderService {
 
         switch (paymentPeriod) {
             case PaymentPeriodConstant.MONTHLY:
-                calendar.add(Calendar.MONTH, 1);
+                calendar.add(Calendar.DAY_OF_YEAR, 30);
                 break;
             case PaymentPeriodConstant.QUARTERLY:
-                calendar.add(Calendar.MONTH, 3);
+                calendar.add(Calendar.DAY_OF_YEAR, 90);
                 break;
             case PaymentPeriodConstant.YEARLY:
-                calendar.add(Calendar.YEAR, 1);
+                calendar.add(Calendar.DAY_OF_YEAR, 365);
                 break;
         }
         return calendar.getTime();

@@ -10,6 +10,7 @@ import com.ruoyi.system.domain.vo.PromoCodeRecordsVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.PromoCodeRecordsMapper;
 import com.ruoyi.system.service.IPromoCodeRecordsService;
+import com.ruoyi.system.util.LogEsUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,9 +40,10 @@ public class PromoCodeRecordsServiceImpl implements IPromoCodeRecordsService {
     @Override
     @Transactional
     public Result createPromoCodeRecords() {
-        PromoCodeRecordsVo oldPromoCodeRecords = promoCodeRecordsMapper.findPromoCodeRecords(EntityStatus.NORMAL);
+        PromoCodeRecordsVo oldPromoCodeRecords = promoCodeRecordsMapper.findPromoCodeRecords(EntityStatus.NORMAL,SecurityUtils.getStrUserId());
         boolean over30Days = DateUtils.isOver30Days(oldPromoCodeRecords.getCreateTime());
         if (!over30Days){
+            LogEsUtil.warn("30天内已成功生成过邀请码,用户id："+SecurityUtils.getStrUserId());
             return Result.fail("您30天内已成功生成过邀请码，请过段时间再试");
         }
         //将历史推广码失效
@@ -65,7 +67,7 @@ public class PromoCodeRecordsServiceImpl implements IPromoCodeRecordsService {
      **/
     @Override
     public Result getPromoCodeRecords() {
-        PromoCodeRecordsVo promoCodeRecords = promoCodeRecordsMapper.findPromoCodeRecords(EntityStatus.NORMAL);
+        PromoCodeRecordsVo promoCodeRecords = promoCodeRecordsMapper.findPromoCodeRecords(EntityStatus.NORMAL,SecurityUtils.getStrUserId());
         return Result.success(promoCodeRecords);
     }
 }

@@ -170,7 +170,7 @@ id, user_id, promo_code, status, is_deleted, create_user, update_user, create_ti
 
 
     <select id="findPromoCodeRecords" resultType="com.ruoyi.system.domain.vo.PromoCodeRecordsVo">
-        select * from promo_code_records where is_deleted = 0 and status = #{status} limit 1
+        select * from promo_code_records where is_deleted = 0 and status = #{status} and user_id = #{userId} limit 1
     </select>
 
     <!--新增所有列-->

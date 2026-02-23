@@ -7,6 +7,7 @@ import com.ruoyi.system.mapper.ResourceAllocationTemporaryStorageMapper;
 import com.ruoyi.system.mapper.ServerResourcesMapper;
 import com.ruoyi.system.mapstruct.ResourceAllocationTemporaryStorageMapstruct;
 import com.ruoyi.system.service.IResourceAllocationTemporaryStorageService;
+import com.ruoyi.system.util.LogEsUtil;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -42,11 +43,17 @@ public class ResourceAllocationTemporaryStorageServiceImpl  implements IResource
     public Result add(ResourceAllocationTemporaryStorageDto resourceAllocationTemporaryStorageDto) {
         ResourceAllocationTemporaryStorage byIp = serverResourcesMapper.findByIp(resourceAllocationTemporaryStorageDto.getResourcesIp());
         if (byIp != null){
+            LogEsUtil.info("ip重复新增");
             return Result.success(byIp);
         }
         ResourceAllocationTemporaryStorage resourceAllocationTemporaryStorage = resourceAllocationTemporaryStorageMapstruct.changeDto2(resourceAllocationTemporaryStorageDto);
         resourceAllocationTemporaryStorage.setCreateTime(new Date());
-        resourceAllocationTemporaryStorageMapper.insert(resourceAllocationTemporaryStorage);
+        int insert = resourceAllocationTemporaryStorageMapper.insert(resourceAllocationTemporaryStorage);
+        if (insert<=0){
+            LogEsUtil.warn("新增资源暂存失败："+resourceAllocationTemporaryStorage);
+            return Result.fail("新增失败");
+        }
+        LogEsUtil.info("新增资源暂存成功："+resourceAllocationTemporaryStorage);
         return Result.success(resourceAllocationTemporaryStorage);
     }
 
@@ -74,8 +81,10 @@ public class ResourceAllocationTemporaryStorageServiceImpl  implements IResource
     public Result deleteById(String id) {
         int i = resourceAllocationTemporaryStorageMapper.deleteById(id);
         if (i>0){
+            LogEsUtil.info("删除暂存资源成功："+id);
             return Result.success("删除成功");
         }else {
+            LogEsUtil.warn("删除暂存资源失败："+id);
             return Result.fail("删除失败");
         }
     }

@@ -52,6 +52,4 @@ public class OrderVo{
     private String paymentType;
 
     private Integer isDeleted;
-    
-
 }

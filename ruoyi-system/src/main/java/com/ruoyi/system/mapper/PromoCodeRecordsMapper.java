@@ -35,7 +35,7 @@ public interface PromoCodeRecordsMapper extends BaseMapper<PromoCodeRecords> {
      * @param status 状态
      * @return com.ruoyi.system.domain.entity.PromoCodeRecords
      **/
-    PromoCodeRecordsVo findPromoCodeRecords(@Param("status") String status);
+    PromoCodeRecordsVo findPromoCodeRecords(@Param("status") String status,@Param("userId")String userId);
 
 
     /**

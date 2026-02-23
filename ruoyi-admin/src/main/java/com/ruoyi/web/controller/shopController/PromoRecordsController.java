@@ -19,7 +19,6 @@ import javax.annotation.Resource;
 @Api(tags = "推广记录表")
 @RestController
 @RequestMapping("promoRecords")
-
 public class PromoRecordsController{
 
     @Resource(name = "promoRecordsService")
