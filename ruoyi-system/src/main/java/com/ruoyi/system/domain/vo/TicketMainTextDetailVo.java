@@ -45,6 +45,9 @@ public class TicketMainTextDetailVo {
     @ApiModelProperty(value = "工单报价")
     private TicketMainTextQuoteVo ticketMainTextQuoteVo;
 
+    @ApiModelProperty(value = "工单订单")
+    private TicketMainTextOrderVo ticketMainTextOrderVo;
+
     @ApiModelProperty(value = "工单正文文件集合 ")
     private List<TicketMainTextFileVo> ticketMainTextFileVos;
 }

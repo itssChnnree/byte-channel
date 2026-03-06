@@ -15,6 +15,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -129,6 +130,9 @@ public class OrderController {
         return orderService.getRenewalOrderInfo(orderId);
     }
 
+
+
+
 //-------------------------------------------------------通用-------------------------------------------------------
 
     @GetMapping("/getOrderStatus")
@@ -163,6 +167,13 @@ public class OrderController {
     }
 
 
+    @PostMapping("/pageQueryService")
+    @ApiOperation("分页查询订单-客服")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result pageQueryService(@RequestBody OrderDto orderDto){
+        return orderService.pageQueryService(orderDto);
+    }
+
 
     @PostMapping("/calculatePrice")
     @ApiOperation("计算价格")
@@ -176,13 +187,12 @@ public class OrderController {
 
 
     @GetMapping("/getOrderDetailById")
-    @ApiOperation("获取订单详情")
+    @ApiOperation("获取订单详情-订单信息详情和订单时间线部分")
     public Result getOrderDetailById(String orderId){
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");
         }
         return orderService.getOrderDetailById(orderId);
     }
-
 
 }

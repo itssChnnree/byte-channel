@@ -1,11 +1,51 @@
 package com.ruoyi.system.domain.vo;
 
+import java.util.Date;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import io.swagger.annotations.ApiModelProperty;
+
+
 /**
- * [报价订单-订单资源详情]
+ * 订单报价表(OrderQuote)
  *
- * @author 陈湘岳
+ * @author chenxiangyue
  * @version v1.0.0
- * @date 2025/11/19
+ * @date 2026-02-27 00:11:13
  */
-public class OrderQuoteVo implements OrderResourcesVo{
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class OrderQuoteVo {
+
+    @ApiModelProperty("主键id")
+    private String id;
+
+    @ApiModelProperty("购买用户id")
+    private String userId;
+
+    @ApiModelProperty("订单id")
+    private String orderId;
+
+    @ApiModelProperty("报价处理记录")
+    private String quoteProcessingRecord;
+
+    @ApiModelProperty("0为未删除，1为已删除")
+    private Integer isDeleted;
+
+    @ApiModelProperty("创建人")
+    private String createUser;
+
+    @ApiModelProperty("修改人")
+    private String updateUser;
+
+    @ApiModelProperty("创建时间")
+    private Date createTime;
+
+    @ApiModelProperty("修改时间")
+    private Date updateTime;
+
+
 }

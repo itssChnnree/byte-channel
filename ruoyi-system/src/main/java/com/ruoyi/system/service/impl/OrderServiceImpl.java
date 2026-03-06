@@ -12,6 +12,7 @@ import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.*;
 import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.service.IOrderStatusTimelineService;
+import com.ruoyi.system.service.IWalletBalanceService;
 import com.ruoyi.system.util.DefaultValueUtil;
 import com.ruoyi.system.domain.entity.*;
 import com.ruoyi.system.http.Result;
@@ -19,7 +20,6 @@ import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.service.IOrderService;
 import com.ruoyi.system.strategy.OrderCreate.OrderCreateContext;
 import com.ruoyi.system.util.LogEsUtil;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -82,10 +82,9 @@ public class OrderServiceImpl implements IOrderService {
     private RestTemplate restTemplate;
 
     @Resource
-    private WalletBalanceMapper walletBalanceMapper;
+    private IWalletBalanceService iWalletBalanceService;
 
-    @Resource
-    private WalletBalanceDetailMapper walletBalanceDetailMapper;
+
 
     @Resource
     private OrderRenewalResourcesMapper orderRenewalResourcesMapper;
@@ -431,6 +430,20 @@ public class OrderServiceImpl implements IOrderService {
         return Result.success(result);
     }
 
+
+    /**
+     * [分页查询订单-客服]
+     *
+     * @param orderDto 查询参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/2/26
+     **/
+    @Override
+    public Result pageQueryService(OrderDto orderDto) {
+        PageHelper.startPage(orderDto);
+        List<OrderVo> orderVoIPage = orderMapper.queryPage(orderDto, orderDto.getUserId());
+        return Result.success(new PageInfo<>(orderVoIPage));
+    }
 
     /**
      * [续费订单取消]
@@ -982,15 +995,14 @@ public class OrderServiceImpl implements IOrderService {
         if (validStatus != null){
             return validStatus;
         }
-        OrderServiceImpl bean = SpringUtil.getBean(OrderServiceImpl.class);
         //如果第三方已支付，则走第三方支付,未支付则判断是否余额支付，是走余额支付，否则支付失败
         YiPayResponse yiPayResponse = getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
             order.setPaymentType(yiPayResponse.getPayType());
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
-            return bean.allocationResources(orderId, order);
+            return allocationResources(orderId, order);
         }else {
-            return bean.noThreePay(orderId, isBalance, order, bean);
+            return noThreePay(orderId, isBalance, order);
         }
     }
 
@@ -1024,15 +1036,15 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
-    public Result<Boolean> noThreePay(String orderId, Boolean isBalance, Order order, OrderServiceImpl bean) {
+    public Result<Boolean> noThreePay(String orderId, Boolean isBalance, Order order) {
         if (isBalance){
             order.setPaymentType(OrderStatus.BALANCE_PAY);
-            Boolean reduceBalance = reduceBalance(order);
+            Boolean reduceBalance = iWalletBalanceService.reduceBalance(order);
             if (!reduceBalance){
                 return Result.success("余额不足，请充值", false);
             }
             LogEsUtil.info("订单已使用余额支付，支付id["+orderId+"]");
-            return bean.allocationResources(orderId, order);
+            return allocationResources(orderId, order);
         }else {
             return Result.success("未检测到支付信息，请稍后再试", false);
         }
@@ -1043,7 +1055,7 @@ public class OrderServiceImpl implements IOrderService {
     public Result<Boolean> renewalNoThreePay(String orderId, Boolean isBalance, Order order, OrderServiceImpl bean) {
         if (isBalance){
             order.setPaymentType(OrderStatus.BALANCE_PAY);
-            Boolean reduceBalance = reduceBalance(order);
+            Boolean reduceBalance = iWalletBalanceService.reduceBalance(order);
             if (!reduceBalance){
                 LogEsUtil.warn("用户余额不足");
                 return Result.success("余额不足，请充值", false);
@@ -1055,46 +1067,6 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
-
-    //余额扣减
-    private Boolean reduceBalance(Order order){
-        String userId = SecurityUtils.getStrUserId();
-        //获取用户余额
-        //一锁 余额
-        WalletBalance walletBalanceByUserId = walletBalanceMapper.findWalletBalanceByUserId(userId);
-        //二判 余额是否充足
-        if (ObjectUtil.isNull(walletBalanceByUserId)) {
-            LogEsUtil.warn("查询用户余额错误,用户id："+userId);
-            throw new RuntimeException("查询用户余额错误，请联系管理员");
-        }
-        if (walletBalanceByUserId.getBalance().compareTo(order.getAmount()) < 0){
-            LogEsUtil.info("用户余额不足,用户余额："+walletBalanceByUserId.getBalance()+",用户id："+userId);
-            return false;
-        }
-        //余额充足，则扣减余额
-        BigDecimal balance = walletBalanceByUserId.getBalance();
-        walletBalanceByUserId.setBalance(balance.subtract(order.getAmount()));
-        int i = walletBalanceMapper.updateById(walletBalanceByUserId);
-        if (i >= 1){
-            //添加余额变更记录
-            walletBalanceDetailMapper.insert(buildWalletBalanceDetail(walletBalanceByUserId, order));
-            LogEsUtil.info("用户余额变更成功,用户id："+userId+",扣减余额："+order.getAmount()+",扣减后余额："+walletBalanceByUserId.getBalance());
-            return true;
-        }else {
-            LogEsUtil.warn("扣减余额失败，用户id："+userId);
-            throw new RuntimeException("余额变更失败，请联系管理员");
-        }
-    }
-
-
-    private WalletBalanceDetail buildWalletBalanceDetail(WalletBalance walletBalance, Order order) {
-        WalletBalanceDetail walletBalanceDetail = new WalletBalanceDetail();
-        walletBalanceDetail.setUserId(walletBalance.getUserId());
-        walletBalanceDetail.setChangeAmount(order.getAmount().doubleValue());
-        walletBalanceDetail.setType(BalanceDetailStatus.BUY);
-        walletBalanceDetail.setNowAmount(walletBalance.getBalance().doubleValue());
-        return walletBalanceDetail;
-    }
 
 
     //分配资源

@@ -131,4 +131,12 @@ public interface IOrderService{
      * @return com.ruoyi.system.http.Result
      **/
     Result cancelOrderRenewal(String orderId);
+
+    /**
+     * [分页查询订单-客服]
+     * @author 陈湘岳 2026/2/26
+     * @param orderDto 查询参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result pageQueryService(OrderDto orderDto);
 }

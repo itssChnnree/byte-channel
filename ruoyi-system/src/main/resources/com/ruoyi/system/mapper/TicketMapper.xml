@@ -237,7 +237,17 @@
         order by create_time ${orderType}
     </select>
 
-
+    <select id="selectByQuoteId" resultType="com.ruoyi.system.domain.entity.Ticket">
+        select
+        t.id, t.user_id, ticket_type, t.status, description,
+        ticket_title, t.is_deleted, t.create_user, t.update_user, t.create_time,
+        t.update_time
+        from ticket t
+        join ticket_main_text tmt on t.id = tmt.ticket_id
+        join ticket_main_text_quote tmtq on tmt.id = tmtq.ticket_main_text_id
+        where tmtq.id = #{quoteId}
+          and tmtq.is_deleted = 0 and t.is_deleted = 0 and tmt.is_deleted = 0
+    </select>
 
 
     <!--新增所有列-->

@@ -57,4 +57,12 @@ public interface TicketMapper extends BaseMapper<Ticket> {
     List<TicketVo> selectList(@Param("dto") TicketDto ticketDto,@Param("userId")String userId,@Param("orderType")String orderType);
 
 
+    /**
+     * [根据报价单id查询工单]
+     * @author 陈湘岳 2025/10/13
+     * @param quoteId 报价单id
+     * @return com.ruoyi.system.domain.entity.Ticket
+     **/
+    Ticket selectByQuoteId(@Param("quoteId")String quoteId);
+
 }

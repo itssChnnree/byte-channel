@@ -99,3 +99,16 @@ ruoyi:
 
 resources:
   clashUrl: http://8.155.17.11:${server.port}/serverResources/download
+
+
+elasticsearch:
+  clusterName: docker-cluster
+  userName: elastic
+  password: nK28GkUVtjdfBvqoVR5
+  hosts: localhost:9200
+  scheme: http
+  connectTimeOut: 1000
+  socketTimeOut: 30000
+  connectionRequestTimeOut: 500
+  maxConnectNum: 100
+  maxConnectNumPerRoute: 100

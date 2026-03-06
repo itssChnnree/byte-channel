@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 
+import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.http.Result;
 
 /**
@@ -20,4 +21,12 @@ public interface IWalletBalanceService{
      * @return java.lang.String
      **/
     Result getWalletBalance();
+
+    /**
+     * [扣减余额]
+     * @author 陈湘岳 2026/3/1
+     * @param order
+     * @return java.lang.Boolean
+     **/
+    Boolean reduceBalance(Order order);
 }

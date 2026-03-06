@@ -9,15 +9,13 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.TicketStatus;
 import com.ruoyi.system.domain.dto.TicketDto;
 import com.ruoyi.system.domain.dto.TicketMainTextDto;
-import com.ruoyi.system.domain.entity.Ticket;
-import com.ruoyi.system.domain.entity.TicketMainText;
-import com.ruoyi.system.domain.entity.TicketMainTextFile;
-import com.ruoyi.system.domain.entity.TicketMainTextQuote;
+import com.ruoyi.system.domain.entity.*;
 import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.TicketMapstruct;
 import com.ruoyi.system.service.ITicketService;
+import com.ruoyi.system.util.LogEsUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +23,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -46,6 +45,12 @@ public class TicketServiceImpl  implements ITicketService {
 
     @Resource
     private TicketMapper ticketMapper;
+
+    @Resource
+    private OrderMapper orderMapper;
+
+    @Resource
+    private TicketMainTextOrderMapper ticketMainTextOrderMapper;
 
     @Resource
     private SysUserMapper  sysUserMapper;
@@ -74,24 +79,19 @@ public class TicketServiceImpl  implements ITicketService {
         Ticket ticket = ticketMapstruct.changeDto2(ticketDto);
         ticket.setStatus(TicketStatus.NEW);
         ticket.setUserId(SecurityUtils.getStrUserId());
-        ticketMapper.insert(ticket);
-        TicketMainText ticketMainText = new TicketMainText();
-        ticketMainText.setTicketId(ticket.getId());
-        ticketMainText.setUserName(sysUser.getNickName());
-        ticketMainText.setTicketMainText(ticketDto.getTicketMainText());
-        ticketMainText.setUserId(SecurityUtils.getStrUserId());
-        ticketMainTextMapper.insert(ticketMainText);
-        //如果不为空新增文件
-        if (!CollectionUtils.isEmpty(ticketDto.getFileUrlList())){
-            List<TicketMainTextFile> ticketMainTextFiles = new ArrayList<>();
-            ticketDto.getFileUrlList().forEach(fileUrl -> {
-                TicketMainTextFile ticketMainTextFile = new TicketMainTextFile();
-                ticketMainTextFile.setFileUrl(fileUrl);
-                ticketMainTextFile.setTicketMainTextId(ticketMainText.getId());
-                ticketMainTextFiles.add(ticketMainTextFile);
-            });
-            ticketMainTextFileMapper.insertBatch(ticketMainTextFiles);
+        //插入工单
+        int insert = ticketMapper.insert(ticket);
+        if (insert<=0){
+            LogEsUtil.warn("工单提交失败,工单信息："+ticketDto);
+            return Result.fail("工单提交失败");
         }
+        //生成工单正文
+        TicketMainText ticketMainText = buildTicketMainText(ticket.getId(), ticketDto.getTicketMainText(), sysUser.getNickName());
+        ticketMainTextMapper.insert(ticketMainText);
+        //插入工单正文文件
+        insertTicketMainTextFile(ticketDto.getFileUrlList(), ticketMainText.getId());
+        //插入工单正文订单
+        insertTicketMainTextOrder(ticketDto.getOrderId(), ticketMainText.getId(),SecurityUtils.getStrUserId());
         return Result.success(ticket);
     }
 
@@ -108,35 +108,86 @@ public class TicketServiceImpl  implements ITicketService {
     public Result replyTicket(TicketMainTextDto ticketDto) {
         Ticket ticket = ticketMapper.selectById(ticketDto.getTicketId());
         if (ticket==null){
+            LogEsUtil.warn("工单不存在,id:"+ticketDto.getTicketId());
             return Result.fail("工单不存在");
         }
         if (!StrUtil.equals(ticket.getUserId(),SecurityUtils.getStrUserId())){
+            LogEsUtil.warn("用户没有权限回复此工单,id:"+ticketDto.getTicketId());
             return Result.fail("您没有权限回复此工单");
         }
         if(TicketStatus.CLOSED.equals(ticket.getStatus())){
+            LogEsUtil.warn("工单已关闭,id:"+ticketDto.getTicketId());
             return Result.fail("工单已关闭");
         }
         SysUser sysUser = sysUserMapper.selectUserById(SecurityUtils.getUserId());
+        //构建工单正文
+        TicketMainText ticketMainText = buildTicketMainText(ticketDto.getTicketId(), ticketDto.getTicketMainText(), sysUser.getNickName());
+        int insert = ticketMainTextMapper.insert(ticketMainText);
+        if (insert<=0){
+            LogEsUtil.warn("工单回复失败,id:"+ticketDto.getTicketId());
+            return Result.fail("工单回复失败");
+        }
+        //插入工单正文文件
+        insertTicketMainTextFile(ticketDto.getFileUrlList(), ticketMainText.getId());
+        //插入工单正文订单
+        insertTicketMainTextOrder(ticketDto.getOrderId(), ticketMainText.getId(),SecurityUtils.getStrUserId());
+        ticketMapper.updateStatusById(ticketDto.getTicketId(),TicketStatus.WAITING_SERVICE_REPLY);
+        return Result.success("回复工单成功");
+    }
+
+    //生成工单正文
+    private TicketMainText buildTicketMainText(String ticketId, String text, String nickName){
         TicketMainText ticketMainText = new TicketMainText();
-        ticketMainText.setTicketId(ticket.getId());
-        ticketMainText.setTicketMainText(ticketDto.getTicketMainText());
+        ticketMainText.setTicketId(ticketId);
+        ticketMainText.setTicketMainText(text);
         ticketMainText.setUserId(SecurityUtils.getStrUserId());
-        ticketMainText.setUserName(sysUser.getNickName());
-        ticketMainTextMapper.insert(ticketMainText);
+        ticketMainText.setUserName(nickName);
+        return ticketMainText;
+    }
+
+    //插入工单正文文件
+    private void insertTicketMainTextFile(List<String> fileUrlList, String ticketMainTextId) {
         //如果不为空新增文件
-        if (!CollectionUtils.isEmpty(ticketDto.getFileUrlList())){
+        if (!CollectionUtils.isEmpty(fileUrlList)){
             List<TicketMainTextFile> ticketMainTextFiles = new ArrayList<>();
-            ticketDto.getFileUrlList().forEach(fileUrl -> {
+            fileUrlList.forEach(fileUrl -> {
                 TicketMainTextFile ticketMainTextFile = new TicketMainTextFile();
                 ticketMainTextFile.setFileUrl(fileUrl);
-                ticketMainTextFile.setTicketMainTextId(ticketMainText.getId());
+                ticketMainTextFile.setTicketMainTextId(ticketMainTextId);
                 ticketMainTextFiles.add(ticketMainTextFile);
             });
             ticketMainTextFileMapper.insertBatch(ticketMainTextFiles);
         }
-        ticketMapper.updateStatusById(ticketDto.getTicketId(),TicketStatus.WAITING_SERVICE_REPLY);
-        return Result.success("回复工单成功");
     }
+
+    //插入工单正文订单
+    private void insertTicketMainTextOrder(String orderId,String ticketMainTextId,String userId) {
+        if (!StrUtil.isEmpty(orderId)){
+            Order order = orderMapper.queryById(orderId);
+            if (ObjectUtils.isEmpty( order) || !StrUtil.equals(order.getUserId(),userId)){
+                LogEsUtil.warn("订单不存在或订单非用户所有,id:"+orderId+",userId:"+userId);
+                throw new RuntimeException("订单不存在或订单非用户所有");
+            }
+            TicketMainTextOrder ticketMainTextOrder = new TicketMainTextOrder();
+            ticketMainTextOrder.setOrderId(orderId);
+            ticketMainTextOrder.setTicketMainTextId(ticketMainTextId);
+            ticketMainTextOrderMapper.insert(ticketMainTextOrder);
+        }
+
+    }
+
+
+    //插入报价信息
+    private void insertTicketMainTextQuote(BigDecimal quote, String ticketMainTextId) {
+        if (!ObjectUtils.isEmpty(quote)){
+            TicketMainTextQuote ticketMainTextQuote = new TicketMainTextQuote();
+            ticketMainTextQuote.setTicketMainTextId(ticketMainTextId);
+            ticketMainTextQuote.setQuote(quote);
+            ticketMainTextQuote.setStatus(TicketStatus.QUOTE_NOT_PROCESSED);
+            ticketMainTextQuoteMapper.insert(ticketMainTextQuote);
+        }
+    }
+
 
     /**
      * [用户关闭工单]
@@ -187,6 +238,7 @@ public class TicketServiceImpl  implements ITicketService {
      * @author 陈湘岳 2025/10/11
      **/
     @Override
+    @Transactional
     public Result serviceReplyTicket(TicketMainTextDto ticketDto) {
         Ticket ticket = ticketMapper.selectById(ticketDto.getTicketId());
         if (ticket==null){
@@ -196,31 +248,14 @@ public class TicketServiceImpl  implements ITicketService {
             return Result.fail("工单已关闭");
         }
         SysUser sysUser = sysUserMapper.selectUserById(SecurityUtils.getUserId());
-        TicketMainText ticketMainText = new TicketMainText();
-        ticketMainText.setTicketId(ticket.getId());
-        ticketMainText.setTicketMainText(ticketDto.getTicketMainText());
-        ticketMainText.setUserId(SecurityUtils.getStrUserId());
-        ticketMainText.setUserName(sysUser.getNickName());
+        TicketMainText ticketMainText = buildTicketMainText(ticketDto.getTicketId(), ticketDto.getTicketMainText(), sysUser.getNickName());
         ticketMainTextMapper.insert(ticketMainText);
-        //如果不为空新增文件
-        if (!CollectionUtils.isEmpty(ticketDto.getFileUrlList())){
-            List<TicketMainTextFile> ticketMainTextFiles = new ArrayList<>();
-            ticketDto.getFileUrlList().forEach(fileUrl -> {
-                TicketMainTextFile ticketMainTextFile = new TicketMainTextFile();
-                ticketMainTextFile.setFileUrl(fileUrl);
-                ticketMainTextFile.setTicketMainTextId(ticketMainText.getId());
-                ticketMainTextFiles.add(ticketMainTextFile);
-            });
-            ticketMainTextFileMapper.insertBatch(ticketMainTextFiles);
-        }
-        //判断是否为报价单
-        if (!ObjectUtils.isEmpty(ticketDto.getQuote())){
-            TicketMainTextQuote ticketMainTextQuote = new TicketMainTextQuote();
-            ticketMainTextQuote.setTicketMainTextId(ticketMainText.getId());
-            ticketMainTextQuote.setQuote(ticketDto.getQuote());
-            ticketMainTextQuote.setStatus(TicketStatus.QUOTE_NOT_PROCESSED);
-            ticketMainTextQuoteMapper.insert(ticketMainTextQuote);
-        }
+        //新增工单正文文件
+        insertTicketMainTextFile(ticketDto.getFileUrlList(), ticketMainText.getId());
+        //插入报价单
+        insertTicketMainTextQuote(ticketDto.getQuote(), ticketMainText.getId());
+        //插入订单
+        insertTicketMainTextOrder(ticketDto.getOrderId(), ticketMainText.getId(),ticket.getUserId());
         ticketMapper.updateStatusById(ticketDto.getTicketId(),TicketStatus.WAITING_USER_REPLY);
         return Result.success("回复工单成功");
     }
@@ -310,12 +345,17 @@ public class TicketServiceImpl  implements ITicketService {
         CompletableFuture<Void> setQuoteCompletableFuture = CompletableFuture.runAsync(() -> {
             setQuote(collect, byTicketId);
         });
-        CompletableFuture<Void> voidCompletableFuture = CompletableFuture.allOf(setFileCompletableFuture, setQuoteCompletableFuture);
+
+        //设置订单
+        CompletableFuture<Void> setOrderCompletableFuture = CompletableFuture.runAsync(() -> {
+            setOrder(collect, byTicketId);
+        });
+        CompletableFuture<Void> voidCompletableFuture
+                = CompletableFuture.allOf(setFileCompletableFuture, setQuoteCompletableFuture,setOrderCompletableFuture);
         try {
             voidCompletableFuture.get();
         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            log.error("设置文件或报价失败{}", e.getMessage());
+            LogEsUtil.error("设置文件或报价失败:"+ e.getMessage(),e);
             return Result.fail("查询工单详情失败");
         }
         ticketDetailVo.setTicketMainTextDetailVos(byTicketId);
@@ -362,6 +402,26 @@ public class TicketServiceImpl  implements ITicketService {
         byTicketId.forEach(ticketMainTextDetailVo -> {
             if (map.containsKey(ticketMainTextDetailVo.getId())){
                 ticketMainTextDetailVo.setTicketMainTextQuoteVo(map.get(ticketMainTextDetailVo.getId()));
+            }
+        });
+    }
+
+    //设置订单
+    private void setOrder(List<String> collect, List<TicketMainTextDetailVo> byTicketId) {
+        //获取工单正文文件
+        List<TicketMainTextOrderVo> byTicketMainTextId = ticketMainTextOrderMapper.findByTicketMainTextId(collect);
+        //键为工单正文id  值为工单正文下的文件集合
+        Map<String,TicketMainTextOrderVo> map = new HashMap<>();
+        //循环工单正文文件集合,生成  工单正文id:工单正文下的文件集合
+        byTicketMainTextId.forEach(ticketMainTextOrderVo->{
+            if (!map.containsKey(ticketMainTextOrderVo.getTicketMainTextId())){
+                map.put(ticketMainTextOrderVo.getTicketMainTextId(),ticketMainTextOrderVo);
+            }
+        });
+        //循环工单正文集合,为工单正文设置工单正文下的报价集合
+        byTicketId.forEach(ticketMainTextDetailVo -> {
+            if (map.containsKey(ticketMainTextDetailVo.getId())){
+                ticketMainTextDetailVo.setTicketMainTextOrderVo(map.get(ticketMainTextDetailVo.getId()));
             }
         });
     }

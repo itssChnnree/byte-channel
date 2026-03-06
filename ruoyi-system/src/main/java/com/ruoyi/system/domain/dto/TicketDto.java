@@ -56,6 +56,9 @@ public class TicketDto extends PageBase {
     @NotBlank(message = "工单正文不能为空")
     private String ticketMainText;
 
+    @ApiModelProperty("订单id")
+    private String orderId;
+
     @ApiModelProperty("工单正文文件路径")
     private List<String> fileUrlList;
 

@@ -156,7 +156,7 @@ id, user_id, promo_code, status, is_deleted, create_user, update_user, create_ti
         select
             id, user_id, promo_code, status, is_deleted, create_user, update_user, create_time, update_time
         from promo_code_records
-        where promo_code = #{code} and is_deleted = 0
+        where promo_code = #{code} and status = 'NORMAL' and is_deleted = 0
     </select>
 
 

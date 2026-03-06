@@ -3,48 +3,75 @@
 <mapper namespace="com.ruoyi.system.mapper.ServerResourcesRenewalMapper">
 
     <resultMap type="com.ruoyi.system.domain.entity.ServerResourcesRenewal" id="ServerResourcesRenewalMap">
-                <result property="id" column="id" jdbcType="VARCHAR"/>
-                <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
-                <result property="renewalSwitch" column="renewal_switch" jdbcType="INTEGER"/>
-                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
-                <result property="renewalPeriod" column="renewal_period" jdbcType="INTEGER"/>
-                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
-                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-                <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
+        <result property="renewalSwitch" column="renewal_switch" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="renewalPeriod" column="renewal_period" jdbcType="VARCHAR"/>
+        <result property="renewalTime" column="renewal_time" jdbcType="TIMESTAMP"/>
+        <result property="renewalPromo" column="renewal_promo" jdbcType="VARCHAR"/>
+        <result property="isAgreeOriginalPrice" column="is_agree_original_price" jdbcType="INTEGER"/>
+        <result property="acceptablePriceIncreasePct" column="acceptable_price_increase_pct" jdbcType="INTEGER"/>
+        <result property="currentPriceSnapshot" column="current_price_snapshot" jdbcType="NUMERIC"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
     </resultMap>
-    
+
     <resultMap type="com.ruoyi.system.domain.vo.ServerResourcesRenewalVo" id="ServerResourcesRenewalVOMap">
-                <result property="id" column="id" jdbcType="VARCHAR"/>
-                <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
-                <result property="renewalSwitch" column="renewal_switch" jdbcType="INTEGER"/>
-                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
-                <result property="renewalPeriod" column="renewal_period" jdbcType="INTEGER"/>
-                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
-                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-                <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="resourcesId" column="resources_id" jdbcType="VARCHAR"/>
+        <result property="renewalSwitch" column="renewal_switch" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+        <result property="renewalPeriod" column="renewal_period" jdbcType="VARCHAR"/>
+        <result property="renewalTime" column="renewal_time" jdbcType="TIMESTAMP"/>
+        <result property="renewalPromo" column="renewal_promo" jdbcType="VARCHAR"/>
+        <result property="isAgreeOriginalPrice" column="is_agree_original_price" jdbcType="INTEGER"/>
+        <result property="acceptablePriceIncreasePct" column="acceptable_price_increase_pct" jdbcType="INTEGER"/>
+        <result property="currentPriceSnapshot" column="current_price_snapshot" jdbcType="NUMERIC"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
     </resultMap>
 
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesRenewalVOMap">
-        select
-id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status
+        select id,
+               resources_id,
+               renewal_switch,
+               user_id,
+               renewal_period,
+               renewal_time,
+               renewal_promo,
+               is_agree_original_price,
+               acceptable_price_increase_pct,
+               current_price_snapshot,
+               is_deleted,
+               create_user,
+               update_user,
+               create_time,
+               update_time,
+               status
         from server_resources_renewal
-        where id = #{id} and is_deleted = 0
+        where id = #{id}
+          and is_deleted = 0
     </select>
-    
+
     <!--��ѯָ��������-->
     <select id="queryList" resultMap="ServerResourcesRenewalVOMap">
         select
-id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status        
+        id, resources_id, renewal_switch, user_id, renewal_period, renewal_time, renewal_promo, is_agree_original_price,
+        acceptable_price_increase_pct, current_price_snapshot, is_deleted, create_user, update_user, create_time,
+        update_time, status
         from server_resources_renewal
         <where>
-        1 = 1 and is_deleted = 0
+            1 = 1 and is_deleted = 0
             <if test="id != null and id != ''">
                 and id = #{id}
             </if>
@@ -57,8 +84,23 @@ id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_us
             <if test="userId != null and userId != ''">
                 and user_id = #{userId}
             </if>
-            <if test="renewalPeriod != null">
+            <if test="renewalPeriod != null and renewalPeriod != ''">
                 and renewal_period = #{renewalPeriod}
+            </if>
+            <if test="renewalTime != null">
+                and renewal_time = #{renewalTime}
+            </if>
+            <if test="renewalPromo != null and renewalPromo != ''">
+                and renewal_promo = #{renewalPromo}
+            </if>
+            <if test="isAgreeOriginalPrice != null">
+                and is_agree_original_price = #{isAgreeOriginalPrice}
+            </if>
+            <if test="acceptablePriceIncreasePct != null">
+                and acceptable_price_increase_pct = #{acceptablePriceIncreasePct}
+            </if>
+            <if test="currentPriceSnapshot != null">
+                and current_price_snapshot = #{currentPriceSnapshot}
             </if>
             <if test="isDeleted != null">
                 and is_deleted = #{isDeleted}
@@ -80,14 +122,16 @@ id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_us
             </if>
         </where>
     </select>
-    
+
     <!--��ѯָ��������-->
     <select id="queryListLimit" resultMap="ServerResourcesRenewalVOMap">
         select
-id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status
+        id, resources_id, renewal_switch, user_id, renewal_period, renewal_time, renewal_promo, is_agree_original_price,
+        acceptable_price_increase_pct, current_price_snapshot, is_deleted, create_user, update_user, create_time,
+        update_time, status
         from server_resources_renewal
         <where>
-        1 = 1 and is_deleted = 0 
+            1 = 1 and is_deleted = 0
             <if test="dto.id != null and dto.id != ''">
                 and id = #{dto.id}
             </if>
@@ -100,8 +144,23 @@ id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_us
             <if test="dto.userId != null and dto.userId != ''">
                 and user_id = #{dto.userId}
             </if>
-            <if test="dto.renewalPeriod != null">
+            <if test="dto.renewalPeriod != null and dto.renewalPeriod != ''">
                 and renewal_period = #{dto.renewalPeriod}
+            </if>
+            <if test="dto.renewalTime != null">
+                and renewal_time = #{dto.renewalTime}
+            </if>
+            <if test="dto.renewalPromo != null and dto.renewalPromo != ''">
+                and renewal_promo = #{dto.renewalPromo}
+            </if>
+            <if test="dto.isAgreeOriginalPrice != null">
+                and is_agree_original_price = #{dto.isAgreeOriginalPrice}
+            </if>
+            <if test="dto.acceptablePriceIncreasePct != null">
+                and acceptable_price_increase_pct = #{dto.acceptablePriceIncreasePct}
+            </if>
+            <if test="dto.currentPriceSnapshot != null">
+                and current_price_snapshot = #{dto.currentPriceSnapshot}
             </if>
             <if test="dto.isDeleted != null">
                 and is_deleted = #{dto.isDeleted}
@@ -124,14 +183,32 @@ id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_us
         </where>
         limit #{limit}
     </select>
-    
+
+
+    <delete id="deleteByResourcesId">
+        delete from server_resources_renewal where resources_id = #{resourcesId}
+    </delete>
+
+    <select id="findByUserIdAndResourcesId" resultType="com.ruoyi.system.domain.entity.ServerResourcesRenewal">
+        select
+            id, resources_id, renewal_switch, user_id, renewal_period,
+            renewal_time, renewal_promo, is_agree_original_price,
+            acceptable_price_increase_pct, current_price_snapshot,
+            is_deleted, create_user, update_user, create_time,
+            update_time, status
+        from server_resources_renewal
+        where is_deleted = 0 and  user_id = #{userId} and resources_id = #{resourcesId}
+    </select>
+
     <!--��ѯ��ҳ����-->
     <select id="queryPage" resultMap="ServerResourcesRenewalVOMap">
         select
-id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status
+        id, resources_id, renewal_switch, user_id, renewal_period, renewal_time, renewal_promo, is_agree_original_price,
+        acceptable_price_increase_pct, current_price_snapshot, is_deleted, create_user, update_user, create_time,
+        update_time, status
         from server_resources_renewal
         <where>
-        1 = 1 and is_deleted = 0 
+            1 = 1 and is_deleted = 0
             <if test="dto.id != null and dto.id != ''">
                 and id = #{dto.id}
             </if>
@@ -144,8 +221,23 @@ id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_us
             <if test="dto.userId != null and dto.userId != ''">
                 and user_id = #{dto.userId}
             </if>
-            <if test="dto.renewalPeriod != null">
+            <if test="dto.renewalPeriod != null and dto.renewalPeriod != ''">
                 and renewal_period = #{dto.renewalPeriod}
+            </if>
+            <if test="dto.renewalTime != null">
+                and renewal_time = #{dto.renewalTime}
+            </if>
+            <if test="dto.renewalPromo != null and dto.renewalPromo != ''">
+                and renewal_promo = #{dto.renewalPromo}
+            </if>
+            <if test="dto.isAgreeOriginalPrice != null">
+                and is_agree_original_price = #{dto.isAgreeOriginalPrice}
+            </if>
+            <if test="dto.acceptablePriceIncreasePct != null">
+                and acceptable_price_increase_pct = #{dto.acceptablePriceIncreasePct}
+            </if>
+            <if test="dto.currentPriceSnapshot != null">
+                and current_price_snapshot = #{dto.currentPriceSnapshot}
             </if>
             <if test="dto.isDeleted != null">
                 and is_deleted = #{dto.isDeleted}
@@ -167,39 +259,60 @@ id, resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_us
             </if>
         </where>
     </select>
-    
-    
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources_renewal(id,resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status)
-        values (#{entity.id},#{resourcesId}, #{renewalSwitch}, #{userId}, #{renewalPeriod}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime}, #{status})
+        insert into server_resources_renewal(id, resources_id, renewal_switch, user_id, renewal_period, renewal_time,
+                                             renewal_promo, is_agree_original_price, acceptable_price_increase_pct,
+                                             current_price_snapshot, is_deleted, create_user, update_user, create_time,
+                                             update_time, status)
+        values (#{id}, #{resourcesId}, #{renewalSwitch}, #{userId}, #{renewalPeriod}, #{renewalTime},
+                #{renewalPromo}, #{isAgreeOriginalPrice}, #{acceptablePriceIncreasePct}, #{currentPriceSnapshot},
+                #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime}, #{status})
     </insert>
 
     <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources_renewal(id,resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status)
+        insert into server_resources_renewal(id,resources_id, renewal_switch, user_id, renewal_period, renewal_time,
+        renewal_promo, is_agree_original_price, acceptable_price_increase_pct, current_price_snapshot, is_deleted,
+        create_user, update_user, create_time, update_time, status)
         values
-             <foreach collection="entities" item="entity" separator=",">
-             (#{entity.id},#{entity.resourcesId}, #{entity.renewalSwitch}, #{entity.userId}, #{entity.renewalPeriod}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
-             </foreach>
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.resourcesId}, #{entity.renewalSwitch}, #{entity.userId}, #{entity.renewalPeriod},
+            #{entity.renewalTime}, #{entity.renewalPromo}, #{entity.isAgreeOriginalPrice},
+            #{entity.acceptablePriceIncreasePct}, #{entity.currentPriceSnapshot}, #{entity.isDeleted},
+            #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+        </foreach>
     </insert>
 
     <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources_renewal(id,resources_id, renewal_switch, user_id, renewal_period, is_deleted, create_user, update_user, create_time, update_time, status)
+        insert into server_resources_renewal(id,resources_id, renewal_switch, user_id, renewal_period, renewal_time,
+        renewal_promo, is_agree_original_price, acceptable_price_increase_pct, current_price_snapshot, is_deleted,
+        create_user, update_user, create_time, update_time, status)
         values
-            <foreach collection="entities" item="entity" separator=",">
-                (#{entity.id},#{entity.resourcesId}, #{entity.renewalSwitch}, #{entity.userId}, #{entity.renewalPeriod}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
-            </foreach>
-            on duplicate key update
-resources_id = values(resources_id),
-renewal_switch = values(renewal_switch),
-user_id = values(user_id),
-renewal_period = values(renewal_period),
-is_deleted = values(is_deleted),
-create_user = values(create_user),
-update_user = values(update_user),
-create_time = values(create_time),
-update_time = values(update_time),
-status = values(status)    </insert>
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.resourcesId}, #{entity.renewalSwitch}, #{entity.userId}, #{entity.renewalPeriod},
+            #{entity.renewalTime}, #{entity.renewalPromo}, #{entity.isAgreeOriginalPrice},
+            #{entity.acceptablePriceIncreasePct}, #{entity.currentPriceSnapshot}, #{entity.isDeleted},
+            #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+        </foreach>
+        on duplicate key update
+        resources_id = values(resources_id),
+        renewal_switch = values(renewal_switch),
+        user_id = values(user_id),
+        renewal_period = values(renewal_period),
+        renewal_time = values(renewal_time),
+        renewal_promo = values(renewal_promo),
+        is_agree_original_price = values(is_agree_original_price),
+        acceptable_price_increase_pct = values(acceptable_price_increase_pct),
+        current_price_snapshot = values(current_price_snapshot),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time),
+        status = values(status)
+    </insert>
 
 </mapper>
 

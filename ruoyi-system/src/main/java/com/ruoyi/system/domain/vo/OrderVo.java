@@ -52,4 +52,12 @@ public class OrderVo{
     private String paymentType;
 
     private Integer isDeleted;
+
+    public String getPayCycle(){
+        return paymentPeriod;
+    }
+
+    public String getPrice(){
+        return amount.toString();
+    }
 }

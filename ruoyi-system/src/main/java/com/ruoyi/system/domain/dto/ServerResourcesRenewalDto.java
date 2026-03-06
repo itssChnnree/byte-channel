@@ -2,57 +2,52 @@ package com.ruoyi.system.domain.dto;
 
 import java.util.Date;
 
-import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import io.swagger.annotations.ApiModelProperty;
 
 
 /**
- * 服务器资源表(ServerResourcesRenewal)
+ * 服务器资源自动续费表(ServerResourcesRenewal)
  *
  * @author chenxiangyue
  * @version v1.0.0
- * @date 2025-10-28 10:48:26
+ * @date 2026-03-05 23:13:58
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ServerResourcesRenewalDto{
+public class ServerResourcesRenewalDto {
 
     @ApiModelProperty("主键id")
-   private String id;
-    
+    private String id;
+
     @ApiModelProperty("资源id")
-   private String resourcesId;
-    
+    private String resourcesId;
+
     @ApiModelProperty("续费开关,0为关，1为开")
-   private Integer renewalSwitch;
-    
+    private Integer renewalSwitch;
+
     @ApiModelProperty("开启用户")
-   private String userId;
-    
-    @ApiModelProperty("续费周期（月）")
-   private Integer renewalPeriod;
-    
-    @ApiModelProperty("0为未删除，1为已删除")
-   private Integer isDeleted;
-    
-    @ApiModelProperty("创建人")
-   private String createUser;
-    
-    @ApiModelProperty("修改人")
-   private String updateUser;
-    
-    @ApiModelProperty("创建时间")
-   private Date createTime;
-    
-    @ApiModelProperty("修改时间")
-   private Date updateTime;
-    
-    @ApiModelProperty("状态（暂时弃用）")
-   private String status;
-    
+    private String userId;
+
+    @ApiModelProperty("续费周期")
+    private String renewalPeriod;
+
+    @ApiModelProperty("续费时间")
+    private Date renewalTime;
+
+    @ApiModelProperty("优惠卷")
+    private String renewalPromo;
+
+    @ApiModelProperty("是否支持优惠码失效后原价续费")
+    private Integer isAgreeOriginalPrice;
+
+    @ApiModelProperty("接受涨价的百分比")
+    private Integer acceptablePriceIncreasePct;
+
+    @ApiModelProperty("价格快照")
+    private Double currentPriceSnapshot;
 
 }

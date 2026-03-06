@@ -34,6 +34,9 @@ public class TicketMainTextDto {
     @ApiModelProperty("报价")
     private BigDecimal quote;
 
+    @ApiModelProperty("订单id")
+    private String orderId;
+
     @ApiModelProperty("提交用户id")
     private String userId;
 

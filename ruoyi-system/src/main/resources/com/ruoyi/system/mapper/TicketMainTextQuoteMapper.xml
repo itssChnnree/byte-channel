@@ -157,12 +157,19 @@
 
     <select id="findByTicketMainTextId" resultType="com.ruoyi.system.domain.vo.TicketMainTextQuoteVo">
         select
-        id, ticket_main_text_id, quote,status,quote_order_id
+        id, ticket_main_text_id, quote,status,quote_order_id,create_time
         from ticket_main_text_quote
         where is_deleted = 0 and ticket_main_text_id in
         <foreach collection="list" separator="," item="i" open="(" close=")">
             #{i}
         </foreach>
+    </select>
+
+    <select id="findByOrderId" resultType="com.ruoyi.system.domain.entity.TicketMainTextQuote">
+        select
+            id, ticket_main_text_id, quote,status,quote_order_id,create_time
+        from ticket_main_text_quote
+        where is_deleted = 0 and quote_order_id = {orderId}
     </select>
 
 

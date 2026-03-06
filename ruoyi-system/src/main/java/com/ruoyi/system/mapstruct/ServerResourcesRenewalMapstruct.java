@@ -15,7 +15,7 @@ import com.ruoyi.system.domain.entity.ServerResourcesRenewal;
  * @version v1.0.0
  * @date 2025-10-28 10:48:26
  */
-@Mapper
+@Mapper(componentModel = "spring")
 public interface ServerResourcesRenewalMapstruct {
     ServerResourcesRenewalMapstruct INSTANCE = Mappers.getMapper(ServerResourcesRenewalMapstruct.class);
     

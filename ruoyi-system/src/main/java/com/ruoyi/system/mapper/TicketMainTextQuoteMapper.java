@@ -4,6 +4,7 @@ package com.ruoyi.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.system.domain.vo.TicketMainTextQuoteVo;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.system.domain.entity.TicketMainTextQuote;
@@ -28,4 +29,12 @@ public interface TicketMainTextQuoteMapper extends BaseMapper<TicketMainTextQuot
      * @return java.util.List<com.ruoyi.system.domain.vo.TicketMainTextQuoteVo>
      **/
     List<TicketMainTextQuoteVo> findByTicketMainTextId(List<String> collect);
+
+    /**
+     * [根据订单id查询报价单]
+     * @author 陈湘岳 2026/3/1
+     * @param orderId 订单id
+     * @return com.ruoyi.system.domain.entity.TicketMainTextQuote
+     **/
+    TicketMainTextQuote findByOrderId(@Param("orderId") String orderId);
 }

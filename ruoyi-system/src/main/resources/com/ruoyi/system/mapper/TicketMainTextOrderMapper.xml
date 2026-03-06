@@ -20,10 +20,6 @@
         <result property="orderId" column="order_id" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="VARCHAR"/>
         <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
-        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <!--��ѯ����-->
@@ -155,11 +151,27 @@
     </select>
 
 
+    <select id="findByTicketMainTextId" resultType="com.ruoyi.system.domain.vo.TicketMainTextOrderVo">
+        select
+        tmto.id, ticket_main_text_id,
+        o.status as status,o.id as orderId,
+        o.user_id,o.amount,o.description,o.order_time,
+        o.order_type,o.payment_period,o.payment_type
+        from ticket_main_text_order tmto
+        left join `order` o on tmto.order_id = o.id
+        where tmto.is_deleted = 0 and o.is_deleted = 0
+          and ticket_main_text_id in
+        <foreach collection="collect" separator="," item="i" open="(" close=")">
+            #{i}
+        </foreach>
+    </select>
+
+
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into ticket_main_text_order(id, ticket_main_text_id, order_id, status, is_deleted, create_user,
                                            update_user, create_time, update_time)
-        values (#{entity.id}, #{ticketMainTextId}, #{orderId}, #{status}, #{isDeleted}, #{createUser}, #{updateUser},
+        values (#{id}, #{ticketMainTextId}, #{orderId}, #{status}, #{isDeleted}, #{createUser}, #{updateUser},
                 #{createTime}, #{updateTime})
     </insert>
 

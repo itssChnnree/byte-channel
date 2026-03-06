@@ -33,6 +33,15 @@ public interface TicketStatus {
     //报价未处理
      String QUOTE_NOT_PROCESSED = "报价待处理";
 
+     //报价已过期
+     String QUOTE_EXPIRED = "报价已过期";
+
+     //报价待付款
+     String QUOTE_WAITING_PAYMENT = "报价待付款";
+
+     //待分配资源
+     String WAITING_RESOURCE_ALLOCATION = "待分配资源";
+
     //报价已拒绝
      String QUOTE_REJECTED = "报价已拒绝";
 }

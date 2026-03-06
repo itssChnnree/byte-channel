@@ -8,6 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
 
 /**
  * 工单正文报价表(TicketMainTextQuote)
@@ -22,6 +25,7 @@ import lombok.NoArgsConstructor;
 public class TicketMainTextQuoteDto {
 
     @ApiModelProperty("主键id")
+    @NotBlank(message = "请选择报价单")
     private String id;
 
     @ApiModelProperty("工单正文表id")
@@ -36,17 +40,8 @@ public class TicketMainTextQuoteDto {
     @ApiModelProperty("0为未删除，1为已删除")
     private Integer isDeleted;
 
-    @ApiModelProperty("创建人")
-    private String createUser;
-
-    @ApiModelProperty("修改人")
-    private String updateUser;
-
-    @ApiModelProperty("创建时间")
-    private Date createTime;
-
-    @ApiModelProperty("修改时间")
-    private Date updateTime;
-
+    @ApiModelProperty("是否接受报价")
+    @NotNull(message = "请选择是否接受报价")
+    private Boolean isAccept;
 
 }

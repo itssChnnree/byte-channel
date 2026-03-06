@@ -45,4 +45,10 @@ public class TicketMainTextQuote extends ByteBaseEntity implements Serializable 
     @TableField(value = "quote")
     private BigDecimal quote;
 
+    /**
+     * 报价订单id
+     */
+    @TableField(value = "quote_order_id")
+    private String quoteOrderId;
+
 }

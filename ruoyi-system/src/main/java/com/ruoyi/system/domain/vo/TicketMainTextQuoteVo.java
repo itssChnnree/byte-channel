@@ -3,6 +3,7 @@ package com.ruoyi.system.domain.vo;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,4 +36,17 @@ public class TicketMainTextQuoteVo {
 
     @ApiModelProperty("报价订单id")
     private String quoteOrderId;
+
+    @JsonIgnore
+    private Date createTime;
+
+    public long getExpirationTimestamp() {
+        if (createTime == null) {
+            // 可能返回0或抛出异常？根据业务决定。这里假设createTime不为null。
+            return 0L;
+        }
+        long millis = createTime.getTime() + 7L * 24 * 60 * 60 * 1000;
+        return millis / 1000;
+    }
+
 }
