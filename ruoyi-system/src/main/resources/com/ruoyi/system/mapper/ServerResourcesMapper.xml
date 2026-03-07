@@ -514,6 +514,7 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         sr.sales_status,
         sr.available_status,
         srr.renewal_switch as renewalSwitch,
+        srr.renewal_period as renewalPeriod,
         sr.lease_expiration_time as leaseExpirationTime,
         c.bandwidth,
         c.description
@@ -538,6 +539,9 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         </if>
         <if test="dto.commodityCategoryId != null and dto.commodityCategoryId != ''">
             and c.category_id = #{dto.commodityCategoryId}
+        </if>
+        <if test="dto.isOpenRenewal != null">
+            and srr.renewal_switch = #{dto.isOpenRenewal}
         </if>
     </select>
 

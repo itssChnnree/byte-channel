@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 
@@ -37,13 +38,13 @@ public class PromoRecordsPageVo {
     private String promoCodeRecords;
     
     @ApiModelProperty("返现金额")
-   private Double cashbackAmount;
+   private BigDecimal cashbackAmount;
     
     @ApiModelProperty("状态")
    private String status;
     
     @ApiModelProperty("被推荐人购买金额")
-   private Double purchaseAmount;
+   private BigDecimal purchaseAmount;
     
     @ApiModelProperty("返现比例")
    private String cashbackPercentage;

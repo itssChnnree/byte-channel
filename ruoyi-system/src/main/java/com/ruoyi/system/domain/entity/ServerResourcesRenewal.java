@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.entity;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -77,6 +78,6 @@ public class ServerResourcesRenewal extends ByteBaseEntity implements Serializab
      * 价格快照
      */
     @TableField(value = "current_price_snapshot")
-    private Double currentPriceSnapshot;
+    private BigDecimal currentPriceSnapshot;
 
 }

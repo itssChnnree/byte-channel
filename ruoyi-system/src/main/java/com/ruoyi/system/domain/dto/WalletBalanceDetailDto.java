@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -28,7 +29,7 @@ public class WalletBalanceDetailDto{
    private String userId;
     
     @ApiModelProperty("变更金额")
-   private Double changeAmount;
+   private BigDecimal changeAmount;
     
     @ApiModelProperty("变更类型")
    private String type;

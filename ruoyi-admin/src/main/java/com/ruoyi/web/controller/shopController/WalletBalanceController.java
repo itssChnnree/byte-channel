@@ -1,12 +1,15 @@
 package com.ruoyi.web.controller.shopController;
 
+import cn.hutool.core.util.StrUtil;
+import com.ruoyi.system.domain.dto.RechargeDto;
+import com.ruoyi.system.group.InsertGroup;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IWalletBalanceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
@@ -32,5 +35,46 @@ public class WalletBalanceController{
     public Result getWalletBalance() {
         return walletBalanceService.getWalletBalance();
     }
+    
+
+
+    @GetMapping("/cancelRechargeOrder")
+    @ApiOperation("充值订单取消")
+    public Result cancelRechargeOrder(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return walletBalanceService.cancelRechargeOrder(orderId);
+    }
+
+
+    @ApiOperation("充值订单第三方支付或余额支付")
+    @PostMapping("/rechargeOrderIsPay")
+    public Result rechargeOrderIsPay(String orderId) {
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return walletBalanceService.rechargeOrderIsPay(orderId);
+    }
+
+    @GetMapping("/getRechargeOrderInfo")
+    @ApiOperation("支付页-充值订单查询")
+    public Result getRechargeOrderInfo(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return walletBalanceService.getRechargeOrderInfo(orderId);
+    }
+
+    @PostMapping("/createOrderRecharge")
+    @ApiOperation("创建充值订单")
+    public Result createOrderRecharge(@RequestBody @Validated(InsertGroup.class) RechargeDto rechargeDto
+            , BindingResult bindingResult){
+        if (bindingResult.hasErrors()) {
+            return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
+        }
+        return walletBalanceService.createOrderRecharge(rechargeDto);
+    }
+
 
 }

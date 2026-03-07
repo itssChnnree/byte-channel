@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.vo;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -27,13 +28,13 @@ public class WalletBalanceVo{
    private String userId;
     
     @ApiModelProperty("余额")
-   private Double balance;
+   private BigDecimal balance;
     
     @ApiModelProperty("邀请人数")
    private Integer inviteesNumber;
     
     @ApiModelProperty("邀请奖励金")
-   private Double referralBonusCredits;
+   private BigDecimal referralBonusCredits;
     
     @ApiModelProperty("0为未删除，1为已删除")
    private Integer isDeleted;

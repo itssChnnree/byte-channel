@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import lombok.AllArgsConstructor;
@@ -48,6 +49,6 @@ public class ServerResourcesRenewalDto {
     private Integer acceptablePriceIncreasePct;
 
     @ApiModelProperty("价格快照")
-    private Double currentPriceSnapshot;
+    private BigDecimal currentPriceSnapshot;
 
 }

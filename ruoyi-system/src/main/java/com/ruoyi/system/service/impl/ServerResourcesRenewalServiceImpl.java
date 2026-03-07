@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Optional;
 
@@ -101,6 +102,12 @@ public class ServerResourcesRenewalServiceImpl  implements IServerResourcesRenew
         }
         ServerResourcesRenewal byUserIdAndResourcesId = serverResourcesRenewalMapper.findByUserIdAndResourcesId(SecurityUtils.getStrUserId(), resourcesId);
         ServerResourcesRenewalVo serverResourcesRenewalVo = serverResourcesRenewalMapstruct.change2Vo(byUserIdAndResourcesId);
+        if (ObjectUtil.isEmpty(serverResourcesRenewalVo)){
+            ServerResourcesRenewalVo nullServerResourcesRenewalVo = new ServerResourcesRenewalVo();
+            nullServerResourcesRenewalVo.setResourcesId(resourcesId);
+            nullServerResourcesRenewalVo.setRenewalSwitch(0);
+            return Result.success(nullServerResourcesRenewalVo);
+        }
         if (!StrUtil.isEmpty(serverResourcesRenewalVo.getRenewalPromo())){
             PromoCodeRecords promoCodeRecords = promoCodeRecordsMapper.selectPromoCode(serverResourcesRenewalVo.getRenewalPromo());
             if (ObjectUtil.isNull(promoCodeRecords)){
@@ -135,7 +142,7 @@ public class ServerResourcesRenewalServiceImpl  implements IServerResourcesRenew
                 ifPresentOrElse(serverResourcesRenewal::setAcceptablePriceIncreasePct,
                         () -> serverResourcesRenewal.setAcceptablePriceIncreasePct(0));
         if (!ObjectUtil.isEmpty(serverResourcesRenewalDto.getCurrentPriceSnapshot()) &&
-                serverResourcesRenewalDto.getCurrentPriceSnapshot()<=0){
+                serverResourcesRenewalDto.getCurrentPriceSnapshot().compareTo(BigDecimal.ZERO) <= 0){
             LogEsUtil.warn("商品价格小于0："+ serverResourcesRenewalDto);
             throw new RuntimeException("商品价格小于0");
         }

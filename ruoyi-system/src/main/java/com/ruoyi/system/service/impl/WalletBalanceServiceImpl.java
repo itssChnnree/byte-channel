@@ -4,6 +4,7 @@ package com.ruoyi.system.service.impl;
 import cn.hutool.core.util.ObjectUtil;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.BalanceDetailStatus;
+import com.ruoyi.system.domain.dto.RechargeDto;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.entity.WalletBalance;
 import com.ruoyi.system.domain.entity.WalletBalanceDetail;
@@ -82,9 +83,58 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
     private WalletBalanceDetail buildWalletBalanceDetail(WalletBalance walletBalance, Order order) {
         WalletBalanceDetail walletBalanceDetail = new WalletBalanceDetail();
         walletBalanceDetail.setUserId(walletBalance.getUserId());
-        walletBalanceDetail.setChangeAmount(order.getAmount().doubleValue());
+        walletBalanceDetail.setChangeAmount(order.getAmount());
         walletBalanceDetail.setType(BalanceDetailStatus.BUY);
-        walletBalanceDetail.setNowAmount(walletBalance.getBalance().doubleValue());
+        walletBalanceDetail.setNowAmount(walletBalance.getBalance());
         return walletBalanceDetail;
+    }
+
+
+    /**
+     * [余额充值订单已支付]
+     *
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/3/7
+     **/
+    @Override
+    public Result rechargeOrderIsPay(String orderId) {
+        return null;
+    }
+
+    /**
+     * [支付页-充值订单查询]
+     *
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/3/7
+     **/
+    @Override
+    public Result getRechargeOrderInfo(String orderId) {
+        return null;
+    }
+
+    /**
+     * [取消充值订单]
+     *
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/3/7
+     **/
+    @Override
+    public Result cancelRechargeOrder(String orderId) {
+        return null;
+    }
+
+    /**
+     * [创建充值订单]
+     *
+     * @param rechargeDto 床参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/3/7
+     **/
+    @Override
+    public Result createOrderRecharge(RechargeDto rechargeDto) {
+        return null;
     }
 }

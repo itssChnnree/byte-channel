@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -30,7 +31,7 @@ public class OrderDto extends PageBase {
     private String userId;
     
     @ApiModelProperty("订单金额")
-    private Double amount;
+    private BigDecimal amount;
 
     @ApiModelProperty(value = "交易描述")
     private String description;

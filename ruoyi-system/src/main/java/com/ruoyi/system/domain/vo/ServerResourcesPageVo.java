@@ -54,6 +54,9 @@ public class ServerResourcesPageVo {
     @ApiModelProperty("自动续费开关")
     private Integer renewalSwitch;
 
+    @ApiModelProperty("自动续费周期")
+    private String renewalPeriod;
+
     @ApiModelProperty("到期时间")
     private String leaseExpirationTime;
 

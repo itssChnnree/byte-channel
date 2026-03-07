@@ -58,4 +58,8 @@ public class ServerResourcesPageDto extends PageBase {
     @ApiModelProperty("到期时间类型")
     //到期时间类型,1为7天内到期，2为15天，3为一月
     private Integer expireTimeType;
+
+    @ApiModelProperty("是否开启续费")
+    //0为未开启，1为已开启
+    private Integer isOpenRenewal;
 }

@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 
 /**
@@ -25,27 +26,27 @@ import java.io.Serializable;
 public class WalletBalanceDetail extends ByteBaseEntity implements Serializable {
 private static final long serialVersionUID = 1L;
 
-/**
-    * 用户id
-    */
-@TableField(value = "user_id")
-private String userId;
-/**
-    * 变更金额
-    */
-@TableField(value = "change_amount")
-private Double changeAmount;
-/**
-    * 变更类型
-    */
-@TableField(value = "type")
-private String type;
+    /**
+        * 用户id
+        */
+    @TableField(value = "user_id")
+    private String userId;
+    /**
+        * 变更金额
+        */
+    @TableField(value = "change_amount")
+    private BigDecimal changeAmount;
+    /**
+        * 变更类型
+        */
+    @TableField(value = "type")
+    private String type;
 
     /**
      * 当前金额
      */
     @TableField(value = "now_amount")
-    private Double nowAmount;
+    private BigDecimal nowAmount;
 
 
 }

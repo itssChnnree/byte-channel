@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.vo;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -33,13 +34,13 @@ public class PromoRecordsVo{
    private String promoCodeRecordsId;
     
     @ApiModelProperty("返现金额")
-   private Double cashbackAmount;
+   private BigDecimal cashbackAmount;
     
     @ApiModelProperty("状态")
    private String status;
     
     @ApiModelProperty("被推荐人购买金额")
-   private Double purchaseAmount;
+   private BigDecimal purchaseAmount;
     
     @ApiModelProperty("返现比例")
    private String cashbackPercentage;

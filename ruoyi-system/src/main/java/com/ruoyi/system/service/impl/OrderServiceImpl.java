@@ -12,6 +12,7 @@ import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.*;
 import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.service.IOrderStatusTimelineService;
+import com.ruoyi.system.service.IServerResourcesRenewalService;
 import com.ruoyi.system.service.IWalletBalanceService;
 import com.ruoyi.system.util.DefaultValueUtil;
 import com.ruoyi.system.domain.entity.*;
@@ -58,7 +59,7 @@ public class OrderServiceImpl implements IOrderService {
     private OrderMapper orderMapper;
 
     @Resource
-    private RedissonClient redissonClient;
+    private IServerResourcesRenewalService serverResourcesRenewalService;
 
     @Resource
     private RedisTemplate<String,String> redisTemplate;
@@ -1087,10 +1088,19 @@ public class OrderServiceImpl implements IOrderService {
             orderMapper.updateById(order);
             orderStatusTimelineService.setCompletedTime(orderId);
             orderInformationSnapshotMapper.updateIpByOrderId(orderId,resources.getResourcesIp());
+            serverResourcesRenewalInsert(resources.getId(),order.getAmount());
             LogEsUtil.info("订单分配资源成功,订单id："+orderId+",资源id："+resourcesId);
         }
         return Result.success("支付成功",true);
     }
+
+    private void serverResourcesRenewalInsert(String resourcesId,BigDecimal price){
+        ServerResourcesRenewalDto serverResourcesRenewalDto = new ServerResourcesRenewalDto();
+        serverResourcesRenewalDto.setResourcesId(resourcesId);
+        serverResourcesRenewalDto.setRenewalSwitch(0);
+        serverResourcesRenewalService.insertOrUpdate(serverResourcesRenewalDto);
+    }
+
 
 
     //续费订单处理资源

@@ -26,26 +26,26 @@ import java.math.BigDecimal;
 public class WalletBalance extends ByteBaseEntity implements Serializable {
 private static final long serialVersionUID = 1L;
 
-/**
+    /**
     * 用户id
     */
-@TableField(value = "user_id")
-private String userId;
-/**
+    @TableField(value = "user_id")
+    private String userId;
+    /**
     * 余额
     */
-@TableField(value = "balance")
-private BigDecimal balance;
-/**
+    @TableField(value = "balance")
+    private BigDecimal balance;
+    /**
     * 邀请人数
     */
-@TableField(value = "invitees_number")
-private Integer inviteesNumber;
-/**
+    @TableField(value = "invitees_number")
+    private Integer inviteesNumber;
+    /**
     * 邀请奖励金
     */
-@TableField(value = "referral_bonus_credits")
-private BigDecimal referralBonusCredits;
+    @TableField(value = "referral_bonus_credits")
+    private BigDecimal referralBonusCredits;
 
 
 }

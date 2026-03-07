@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 
+import com.ruoyi.system.domain.dto.RechargeDto;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.http.Result;
 
@@ -29,4 +30,36 @@ public interface IWalletBalanceService{
      * @return java.lang.Boolean
      **/
     Boolean reduceBalance(Order order);
+
+    /**
+     * [余额充值订单已支付]
+     * @author 陈湘岳 2026/3/7
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result rechargeOrderIsPay(String orderId);
+
+    /**
+     * [支付页-充值订单查询]
+     * @author 陈湘岳 2026/3/7
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getRechargeOrderInfo(String orderId);
+
+    /**
+     * [取消充值订单]
+     * @author 陈湘岳 2026/3/7
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result cancelRechargeOrder(String orderId);
+
+    /**
+     * [创建充值订单]
+     * @author 陈湘岳 2026/3/7
+     * @param rechargeDto 床参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result createOrderRecharge(RechargeDto rechargeDto);
 }

@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain.vo;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import lombok.AllArgsConstructor;
@@ -51,6 +52,6 @@ public class ServerResourcesRenewalVo {
     private Integer acceptablePriceIncreasePct;
 
     @ApiModelProperty("价格快照")
-    private Double currentPriceSnapshot;
+    private BigDecimal currentPriceSnapshot;
 
 }

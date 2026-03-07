@@ -1,7 +1,6 @@
 package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
-import com.ruoyi.system.constant.OrderStatus;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.dto.OrderByRenewalDto;
 import com.ruoyi.system.domain.dto.OrderDto;
@@ -10,18 +9,12 @@ import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IOrderService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import lombok.Cleanup;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 
 /**
