@@ -144,7 +144,7 @@ id, user_id, change_amount, type, is_deleted, create_user, update_user, create_t
 
     <select id="pageQuery" resultType="com.ruoyi.system.domain.vo.WalletBalanceDetailVo">
         select
-        id, user_id, change_amount, type,create_time
+        id, user_id, change_amount, type,create_time,now_amount
         from wallet_balance_detail
         where 1 = 1 and is_deleted = 0 and user_id = #{userId}
         order by create_time desc

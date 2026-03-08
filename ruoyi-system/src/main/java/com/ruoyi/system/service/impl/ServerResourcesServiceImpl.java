@@ -26,6 +26,8 @@ import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.ServerResourcesMapstruct;
 import com.ruoyi.system.service.IServerResourcesService;
+import com.ruoyi.system.util.LogEsUtil;
+import com.ruoyi.system.util.LogEsUtil;
 import com.ruoyi.system.util.NetworkUtil;
 import com.ruoyi.system.util.XrayManager;
 import lombok.Cleanup;
@@ -203,6 +205,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
 
 
+
     private void newResourcesValid(String userId,ServerResources serverResources,String strUserId){
 
         String cacheObject = redisCache.getCacheObject("sys_config:sys:validServer:ip");
@@ -218,20 +221,20 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
                 minUseIp = entry.getKey();
             }
         }
-        log.info("[新增资源校验]开始");
-        log.info("[新增资源校验]使用最少的ip为："+minUseIp);
+        LogEsUtil.info("[新增资源校验]开始");
+        LogEsUtil.info("[新增资源校验]使用最少的ip为："+minUseIp);
         //新增资源校验
         OutboundConfig outboundConfig = OutboundConfig.buildOutboundConfig(userId, serverResources.getResourcesIp(),
                 Integer.parseInt(serverResources.getNodePort()), serverResources.getId(), serverResources.getSni(),
                 serverResources.getPublicBrokerKey(), serverResources.getShortId());
         String newValidXrayResult = XrayManager.newValidXray(outboundConfig, minUseIp);
         if (StrUtil.isBlank(newValidXrayResult)){
-            log.error("调用go[newValidXray]接口失败");
+            LogEsUtil.warn("调用go[newValidXray]接口失败");
             return;
         }
         Result result = JSON.parseObject(newValidXrayResult, Result.class);
         if (result.getCode()!=200){
-            log.error("调用go[newValidXray]接口失败，错误原因为"+result.getMessage());
+            LogEsUtil.warn("调用go[newValidXray]接口失败，错误原因为"+result.getMessage());
             return;
         }
         ServerResourcesXrayValid serverResourcesXrayValid = new ServerResourcesXrayValid();
@@ -242,6 +245,8 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResourcesXrayValid.setUpdateUser(strUserId);
         serverResourcesXrayValidMapper.deleteByResourcesIdInt(serverResources.getId());
         int insert = serverResourcesXrayValidMapper.insert(serverResourcesXrayValid);
+        ServerResourcesServiceImpl bean = SpringUtil.getBean(ServerResourcesServiceImpl.class);
+        bean.getResourcesStatus(serverResources.getId());
     }
 
 
@@ -399,16 +404,22 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             return Result.fail("所选商品不存在");
         }
 
+        return resetServerResources(commodity, serverResources);
+
+    }
+
+    private Result<ServerResources> resetServerResources(Commodity commodity, ServerResources serverResources) {
         String userId = UUID.randomUUID().toString();
 
         String post = XrayManager.restartXray(commodity.getDest(), commodity.getServerNames(),
                 Integer.parseInt(serverResources.getNodePort()), userId, serverResources.getResourcesIp(),getBlockDomainJson());
 
-
         if ("JsonError".contains( post)|| "RequestFieldError".contains(post)){
+            LogEsUtil.warn("重置失败，返回参数错误："+post);
             return Result.fail("参数错误，请联系管理员");
         }
         if ("XrayStartError".contains(post)){
+            LogEsUtil.warn("重置失败，节点启动失败："+post);
             return Result.fail("节点启动失败");
         }
         XrayRestartVo xrayRestartVo =null;
@@ -416,6 +427,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         try{
             xrayRestartVo = JSON.parseObject(post, XrayRestartVo.class);
         }catch (Exception e){
+            LogEsUtil.error("重置失败，反序列化失败："+post,e);
             return Result.fail("节点启动失败");
         }
 
@@ -435,13 +447,38 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             });
             return Result.success("重置资源成功");
         }else{
-
+            LogEsUtil.info("更新资源数据失败");
             return Result.fail("新增失败");
         }
-
     }
 
+    /**
+     * [用户重置节点]
+     *
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
+     * @author 陈湘岳 2026/3/7
+     **/
+    @Override
+    public Result<ServerResources> userResourceReset(String id) {
+        ServerResources serverResources = serverResourcesMapper.selectById(id);
+        if (ObjectUtils.isEmpty(serverResources)){
+            LogEsUtil.warn("资源不存在，id为："+id);
+            return Result.fail("资源不存在");
+        }
+        if (!StrUtil.equals(SecurityUtils.getStrUserId(),serverResources.getResourceTenant())){
+            LogEsUtil.warn("用户没有权限重置此资源，id为："+id);
+            return Result.fail("没有权限重置该资源");
+        }
 
+        Commodity commodity = commodityMapper.selectById(serverResources.getCommodityId());
+        if (commodity == null||commodity.getIsDeleted()==1){
+            LogEsUtil.warn("资源所属商品不存在，id为："+serverResources.getCommodityId());
+            return Result.fail("资源所属商品不存在");
+        }
+
+        return resetServerResources(commodity, serverResources);
+    }
 
     private List<String> getBlockDomainJson(){
         List<ResourceBlockDomain> allNormal = resourceBlockDomainMapper.findAllNormal(EntityStatus.NORMAL_LIST);
@@ -727,12 +764,12 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         try {
             xrayStatus = XrayManager.checkXrayStatus(byResourcesId.getWebIpPort(), byResourcesId.getXrayPort());
         }catch (Exception e){
-            log.error("调用go[newValidXray]接口失败，错误原因为" + e.getMessage());
+            LogEsUtil.error("调用go[CheckXrayStatus]接口失败，错误原因为" + e.getMessage(),e);
             return Result.fail("检测节点状态失败");
         }
 
         Result result = JSON.parseObject(xrayStatus, Result.class);
-        log.info("调用go[newValidXray]接口成功，返回结果为" + result.getData());
+        LogEsUtil.info("调用go[CheckXrayStatus]接口成功，返回结果为" + result.getData());
 
         if (!ObjectUtils.isEmpty(result.getData())&&"200".equals(result.getData().toString().trim())) {
             serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.NORMAL);

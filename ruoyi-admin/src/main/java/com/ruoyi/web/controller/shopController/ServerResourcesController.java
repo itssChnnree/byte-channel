@@ -84,6 +84,15 @@ public class ServerResourcesController{
         return serverResourcesService.resourceReset(idDto.getId());
     }
 
+    @PostMapping("/userResourceReset")
+    @ApiOperation("用户重置节点")
+    public Result<ServerResources> userResourceReset(@RequestBody IdDto idDto) {
+        if (StrUtil.isBlank(idDto.getId())){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.userResourceReset(idDto.getId());
+    }
+
 
     @PostMapping("/ipReplacement")
     @ApiOperation("ip置换")

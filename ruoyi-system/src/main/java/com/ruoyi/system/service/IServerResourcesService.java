@@ -168,4 +168,12 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     Result getOrderRenewal(String orderId);
+
+    /**
+     * [用户重置节点]
+     * @author 陈湘岳 2026/3/7
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    Result<ServerResources> userResourceReset(String id);
 }

@@ -56,11 +56,11 @@ public class NetworkUtil {
                 while ((line = errorReader.readLine()) != null) {
                     errorMessage.append(line).append("\n");
                 }
-                log.error("命令执行错误: " + errorMessage);
+                LogEsUtil.warn("命令执行错误: " + errorMessage);
             }
 
         } catch (IOException | InterruptedException e) {
-            log.error("执行命令异常"+e.getMessage());
+            LogEsUtil.error("执行命令异常"+e.getMessage(),e);
             return false;
         }
 
