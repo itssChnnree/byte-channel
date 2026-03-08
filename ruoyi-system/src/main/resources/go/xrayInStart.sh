@@ -161,6 +161,8 @@ configure_firewall() {
     fi
 }
 
+
+
 # 清理现有进程和文件
 cleanup_existing() {
     print_info "清理现有进程和文件..."
@@ -482,6 +484,8 @@ start_service() {
         print_error "端口号必须是1-65535之间的数字"
         exit 1
     fi
+
+    configure_firewall "9080"
 
     # 配置防火墙
     configure_firewall "$PORT"

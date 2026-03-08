@@ -42,9 +42,9 @@ public class XrayManager {
         String post;
         try {
             String requestBody = JSON.toJSONString(restartXrayDto);
-            post = HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", requestBody, 5000);
+            post = HttpUtil.post("http://" + resourcesIp + ":9080/xrayRestart", requestBody, 10000);
         } catch (Exception e) {
-            log.error("重置失败，节点服务异常"+e.getMessage());
+            LogEsUtil.error("重置失败，节点服务异常"+e.getMessage(),e);
             throw new BaseException("重置失败，节点服务异常");
         }
 
