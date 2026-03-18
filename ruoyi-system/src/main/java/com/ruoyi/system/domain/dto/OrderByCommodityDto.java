@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 
 /**
  * [直接购买商品]
@@ -34,6 +35,10 @@ public class OrderByCommodityDto {
 
     @ApiModelProperty("推广码")
     private String promoCode;
+
+    @ApiModelProperty("原始价格")
+    @NotNull(message = "原始价格为空")
+    private BigDecimal originalPrice;
 
     //付款周期
     @ApiModelProperty("付款周期")

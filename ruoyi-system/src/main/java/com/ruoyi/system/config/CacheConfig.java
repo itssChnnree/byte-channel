@@ -2,10 +2,12 @@ package com.ruoyi.system.config;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.ruoyi.system.domain.dto.SshTemporaryDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -51,6 +53,16 @@ public class CacheConfig {
                 .maximumSize(3000)
                 //距离上次推送一个小时以后过期
                 .expireAfterWrite(10, TimeUnit.MINUTES)
+                .build();
+    }
+
+    @Bean(name = "sshTemporaryDtoCache")
+    public Cache<String, List<SshTemporaryDto>> sshTemporaryDtoCache() {
+        return Caffeine.newBuilder()
+                .initialCapacity(100)
+                .maximumSize(3000)
+                //距离上次推送一个小时以后过期
+                .expireAfterWrite(3, TimeUnit.HOURS)
                 .build();
     }
 }

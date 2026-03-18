@@ -18,6 +18,9 @@ public interface BalanceDetailStatus {
     //余额购买
     String BUY = "BUY";
 
+    //充值退款
+    String RECHARGE_REFUND = "RECHARGE_REFUND";
+
     //充值
     String RECHARGE = "RECHARGE";
 

@@ -224,9 +224,10 @@
         select
         id, notice_title, notice_type
         from shop_notice sn
-        where
-        1 = 1 and is_deleted = 0
+        where 1 = 1
+          and is_deleted = 0
             and sn.`status` = '0'
+        and notice_type in ('2', '1')
         order by sort, create_time desc
         limit 5
     </select>

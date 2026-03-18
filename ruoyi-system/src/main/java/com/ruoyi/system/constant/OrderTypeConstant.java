@@ -14,4 +14,8 @@ public interface OrderTypeConstant {
 
     //报价
     String QUOTE = "quote";
+
+    //手动新增
+    String MANUAL = "manual";
 }
+

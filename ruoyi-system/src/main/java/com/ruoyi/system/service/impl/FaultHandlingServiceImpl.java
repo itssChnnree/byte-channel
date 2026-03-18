@@ -56,7 +56,7 @@ public class FaultHandlingServiceImpl implements IFaultHandlingService {
         }
         FaultHandling faultHandling = faultHandlingMapstruct.changeDto2(faultHandlingDto);
         faultHandling.setUserId(serverResources.getUserId());
-        faultHandling.setStatus(FaultHandingStatus.WAIT_HANDLE);
+        faultHandling.setStatus(FaultHandingStatus.PENDING);
         int insert = faultHandlingMapper.insert(faultHandling);
         return insert > 0 ? Result.success(faultHandling) : Result.fail("添加失败");
     }

@@ -5,10 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.system.constant.OrderStatus;
-import com.ruoyi.system.constant.OrderTypeConstant;
-import com.ruoyi.system.constant.PaymentPeriodConstant;
-import com.ruoyi.system.constant.TicketStatus;
+import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.dto.OrderQuoteDto;
 import com.ruoyi.system.domain.dto.TicketMainTextQuoteDto;
@@ -19,6 +16,7 @@ import com.ruoyi.system.domain.vo.YiPayResponse;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.OrderMapstruct;
+import com.ruoyi.system.service.IOrderBaseService;
 import com.ruoyi.system.service.IOrderQuoteService;
 import com.ruoyi.system.domain.vo.OrderQuoteVo;
 import com.ruoyi.system.service.IOrderStatusTimelineService;
@@ -49,6 +47,9 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
 
     @Resource
     private OrderQuoteMapper orderQuoteMapper;
+
+    @Resource
+    private IOrderBaseService orderBaseService;
 
     @Resource
     private IWalletBalanceService iWalletBalanceService;
@@ -130,10 +131,10 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
         String result = null;
         if (OrderStatus.WAIT_PAY.equals(order.getStatus())){
             status = OrderStatus.USER_CANCELED;
-            result = "订单取消成功";
+            result = ResultMessage.CANCEL_ORDER_SUCCESS;
         }else {
             status = OrderStatus.WAIT_REFUND;
-            result = "订单退款成功";
+            result = ResultMessage.REFUND_ORDER_SUCCESS;
         }
         orderMapper.updateStatusById(orderId, status);
         LogEsUtil.info("订单取消成功,订单id为：{}",orderId);
@@ -154,14 +155,15 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
         //获取订单状态
         //一锁
         Order order = orderMapper.queryByIdForUpdate(orderId);
-        Result<?> validStatus = validStatus(orderId, order);
+        Result<?> validStatus = orderBaseService.validStatus(orderId, order);
         if (validStatus != null){
             return validStatus;
         }
         //如果第三方已支付，则走第三方支付,未支付则判断是否余额支付，是走余额支付，否则支付失败
-        YiPayResponse yiPayResponse = getOrderInfo(order);
+        YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
             order.setPaymentType(yiPayResponse.getPayType());
+            orderBaseService.addProfit(order,"报价商品");
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
             return allocationResources(orderId, order);
         }else {
@@ -197,55 +199,6 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
             return allocationResources(orderId, order);
         }else {
             return Result.success("未检测到支付信息，请稍后再试", false);
-        }
-    }
-
-    //调用订单平台获取订单信息
-    private YiPayResponse getOrderInfo(Order order){
-        boolean b = Math.random() > 0.3;
-        return b?new YiPayResponse():null;
-    }
-
-    private Result<?> validStatus(String orderId, Order order) {
-        //判断订单是否存在
-        if (order == null|| order.getIsDeleted()!=0){
-            LogEsUtil.info("订单不存在："+orderId);
-            return Result.fail("订单不存在");
-        }
-        String strUserId = SecurityUtils.getStrUserId();
-        if (!strUserId.equals(order.getCreateUser())){
-            LogEsUtil.info("用户无权访问此订单："+orderId);
-            return Result.fail("您没有权限对此订单进行操作");
-        }
-        //如果订单不是待支付状态，代表不用确认付款
-        if (!OrderStatus.WAIT_PAY.equals(order.getStatus())){
-            LogEsUtil.info("订单状态不是待支付："+orderId);
-            return Result.success(orderStatusConvert(order.getStatus()), false);
-        }
-        return null;
-    }
-
-    //订单状态转化
-    private String orderStatusConvert(String status) {
-        switch (status) {
-            case "WAIT_PAY":
-                return "待支付";
-            case "WAIT_ALLOCATION_RESOURCES":
-                return "订单已支付，待分配资源";
-            case "ALLOCATION_RESOURCES":
-                return "资源分配中";
-            case "COMPLETED":
-                return "已完成";
-            case "USER_CANCELED":
-                return "用户主动取消";
-            case "CANCELED_TIMEOUT":
-                return "订单超时自动取消";
-            case "WAIT_REFUND":
-                return "订单待退款中";
-            case "REFUND_SUCCESS":
-                return "订单已退款";
-            default:
-                return "订单状态异常";
         }
     }
 

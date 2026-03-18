@@ -260,4 +260,34 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
         long days = java.time.Duration.between(target, now).toDays();
         return days;
     }
+
+    /**
+     * 获取本月第一天开始的时间
+     */
+    public static Date beginOfMonth() {
+        //获取本月第一天的时间
+        LocalDate firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
+        return Date.from(firstDayOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    //获取今天开始的时间
+    public static Date beginOfDay() {
+        //获取今天的时间
+        LocalDate today = LocalDate.now();
+        return Date.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    //获取今年第一天开始的时间
+    public static Date beginOfYear() {
+        //获取今年第一天的时间
+        LocalDate firstDayOfYear = LocalDate.now().withDayOfYear(1);
+        return Date.from(firstDayOfYear.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    //获取指定天数之前的时间
+    public static Date getDateBefore(int days) {
+        //获取指定天数之前的时间
+        LocalDate dateBefore = LocalDate.now().minusDays(days);
+        return Date.from(dateBefore.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
 }

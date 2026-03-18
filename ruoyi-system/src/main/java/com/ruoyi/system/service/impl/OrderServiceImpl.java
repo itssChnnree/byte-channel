@@ -11,17 +11,15 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.*;
 import com.ruoyi.system.domain.vo.*;
-import com.ruoyi.system.service.IOrderStatusTimelineService;
-import com.ruoyi.system.service.IServerResourcesRenewalService;
-import com.ruoyi.system.service.IWalletBalanceService;
+import com.ruoyi.system.service.*;
 import com.ruoyi.system.util.DefaultValueUtil;
 import com.ruoyi.system.domain.entity.*;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
-import com.ruoyi.system.service.IOrderService;
 import com.ruoyi.system.strategy.OrderCreate.OrderCreateContext;
 import com.ruoyi.system.util.LogEsUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.weaver.ast.Or;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -85,7 +83,8 @@ public class OrderServiceImpl implements IOrderService {
     @Resource
     private IWalletBalanceService iWalletBalanceService;
 
-
+    @Resource
+    private IOrderBaseService orderBaseService;
 
     @Resource
     private OrderRenewalResourcesMapper orderRenewalResourcesMapper;
@@ -127,6 +126,10 @@ public class OrderServiceImpl implements IOrderService {
         //创建订单
         OrderCreateContext orderCreateContext = new OrderCreateContext(orderByCommodityDto.getPayCycle());
         Order order = orderCreateContext.createOrder(orderByCommodityDto, normalCommodity, promoCodeRecords);
+        if (order.getAmount().compareTo(orderByCommodityDto.getOriginalPrice()) != 0){
+            LogEsUtil.warn("订单金额计算错误，订单金额：" + order.getAmount() + "，商品金额：" + orderByCommodityDto.getOriginalPrice());
+            throw new RuntimeException("订单价格发生变更，请重试");
+        }
         //进行订单商品数据创建，30分钟取消订单准备
         int insert = orderMapper.insert(order);
         if (insert<1){
@@ -211,6 +214,10 @@ public class OrderServiceImpl implements IOrderService {
         //创建订单计算上下文
         OrderCreateContext orderCreateContext = new OrderCreateContext(orderByRenewalDto.getPayCycle());
         Order renewalOrder = orderCreateContext.createRenewalOrder(byResourcesId, promoCodeRecords);
+        if (renewalOrder.getAmount().compareTo(orderByRenewalDto.getOriginalPrice()) != 0){
+            LogEsUtil.warn("订单金额计算错误，订单金额：" + renewalOrder.getAmount() + "，商品金额：" + orderByRenewalDto.getOriginalPrice());
+            throw new RuntimeException("订单价格发生变更，请重试");
+        }
         int insert = orderMapper.insert(renewalOrder);
         if (insert<1){
             LogEsUtil.warn("生成订单失败");
@@ -421,10 +428,10 @@ public class OrderServiceImpl implements IOrderService {
         String result = null;
         if (OrderStatus.WAIT_PAY.equals(order.getStatus())){
             status = OrderStatus.USER_CANCELED;
-            result = "订单取消成功";
+            result = ResultMessage.CANCEL_ORDER_SUCCESS;
         }else {
             status = OrderStatus.WAIT_REFUND;
-            result = "订单退款成功";
+            result = ResultMessage.REFUND_ORDER_SUCCESS;
         }
         orderMapper.updateStatusById(orderId, status);
         LogEsUtil.info("订单取消成功,订单id为：{}",orderId);
@@ -514,12 +521,10 @@ public class OrderServiceImpl implements IOrderService {
         String result = null;
         if (OrderStatus.WAIT_PAY.equals(order.getStatus())){
             status = OrderStatus.USER_CANCELED;
-            result = "订单取消成功";
-            LogEsUtil.info("订单取消成功,订单id为："+orderId);
+            result = ResultMessage.CANCEL_ORDER_SUCCESS;
         }else {
             status = OrderStatus.WAIT_REFUND;
-            result = "订单退款成功";
-            LogEsUtil.info("订单退款成功,订单id为："+orderId);
+            result = ResultMessage.REFUND_ORDER_SUCCESS;
         }
         orderMapper.updateStatusById(orderId, status);
         return Result.success(result);
@@ -562,11 +567,11 @@ public class OrderServiceImpl implements IOrderService {
     public Result getQrCode(String orderId, String payaType) {
         //获取订单状态
         Order order = orderMapper.queryById(orderId);
-        Result<?> validStatus = validStatus(orderId, order);
+        Result<?> validStatus = orderBaseService.validStatus(orderId, order);
         if (validStatus != null){
             return validStatus;
         }
-        YiPayResponse yiPayResponse = getOrderInfo(order);
+        YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
             LogEsUtil.info("订单已扫码支付，订单id："+orderId);
             return Result.success("订单已支付",true);
@@ -932,9 +937,9 @@ public class OrderServiceImpl implements IOrderService {
             return Result.fail("您没有权限对此订单进行操作");
         }
         if (!OrderStatus.WAIT_PAY.equals(order.getStatus())){
-            return Result.success(orderStatusConvert(order.getStatus()),false);
+            return Result.success(orderBaseService.orderStatusConvert(order.getStatus()),false);
         }
-        YiPayResponse yiPayResponse = getOrderInfo(order);
+        YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
             LogEsUtil.info("订单已扫码支付，订单id："+orderId);
             return Result.success("订单已支付",false);
@@ -942,41 +947,9 @@ public class OrderServiceImpl implements IOrderService {
         return Result.success(true);
     }
 
-    //获取订单支付状态,已支付为true、未支付为false
-    private Boolean getOrderPayStatus(String orderId) {
-        return Math.random()>0.8;
-    }
-
-    //调用订单平台获取订单信息
-    private YiPayResponse getOrderInfo(Order order){
-        boolean b = Math.random() > 0.3;
-        return b?new YiPayResponse():null;
-    }
 
 
-    //订单状态转化
-    private String orderStatusConvert(String status) {
-        switch (status) {
-            case "WAIT_PAY":
-                return "待支付";
-            case "WAIT_ALLOCATION_RESOURCES":
-                return "订单已支付，待分配资源";
-            case "ALLOCATION_RESOURCES":
-                return "资源分配中";
-            case "COMPLETED":
-                return "已完成";
-            case "USER_CANCELED":
-                return "用户主动取消";
-            case "CANCELED_TIMEOUT":
-                return "订单超时自动取消";
-            case "WAIT_REFUND":
-                return "订单待退款中";
-            case "REFUND_SUCCESS":
-                return "订单已退款";
-            default:
-                return "订单状态异常";
-        }
-    }
+
 
 
     /**
@@ -992,14 +965,15 @@ public class OrderServiceImpl implements IOrderService {
         //获取订单状态
         //一锁
         Order order = orderMapper.queryByIdForUpdate(orderId);
-        Result<?> validStatus = validStatus(orderId, order);
+        Result<?> validStatus = orderBaseService.validStatus(orderId, order);
         if (validStatus != null){
             return validStatus;
         }
         //如果第三方已支付，则走第三方支付,未支付则判断是否余额支付，是走余额支付，否则支付失败
-        YiPayResponse yiPayResponse = getOrderInfo(order);
+        YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
             order.setPaymentType(yiPayResponse.getPayType());
+            orderBaseService.addProfit(order,"新购商品");
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
             return allocationResources(orderId, order);
         }else {
@@ -1021,14 +995,16 @@ public class OrderServiceImpl implements IOrderService {
         //获取订单状态
         //一锁【订单】
         Order order = orderMapper.queryByIdForUpdate(orderId);
-        Result<?> validStatus = validStatus(orderId, order);
+        Result<?> validStatus = orderBaseService.validStatus(orderId, order);
         if (validStatus != null){
             return validStatus;
         }
         OrderServiceImpl bean = SpringUtil.getBean(OrderServiceImpl.class);
         //如果第三方已支付，则走第三方支付,未支付则判断是否余额支付，是走余额支付，否则支付失败
-        YiPayResponse yiPayResponse = getOrderInfo(order);
+        YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
+            orderBaseService.addProfit(order,"续费商品");
+            LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
             order.setPaymentType(yiPayResponse.getPayType());
             return bean.renewalResources(orderId, order);
         }else {
@@ -1201,24 +1177,7 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
-    private Result<?> validStatus(String orderId, Order order) {
-        //判断订单是否存在
-        if (order == null|| order.getIsDeleted()!=0){
-            LogEsUtil.info("订单不存在："+orderId);
-            return Result.fail("订单不存在");
-        }
-        String strUserId = SecurityUtils.getStrUserId();
-        if (!strUserId.equals(order.getCreateUser())){
-            LogEsUtil.info("用户无权访问此订单："+orderId);
-            return Result.fail("您没有权限对此订单进行操作");
-        }
-        //如果订单不是待支付状态，代表不用确认付款
-        if (!OrderStatus.WAIT_PAY.equals(order.getStatus())){
-            LogEsUtil.info("订单状态不是待支付："+orderId);
-            return Result.success(orderStatusConvert(order.getStatus()), false);
-        }
-        return null;
-    }
+
 
 
 }

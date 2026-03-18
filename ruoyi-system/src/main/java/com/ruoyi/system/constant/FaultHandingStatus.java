@@ -10,11 +10,13 @@ package com.ruoyi.system.constant;
 public interface FaultHandingStatus {
 
     //待处理
-     String WAIT_HANDLE = "WAIT_HANDLE";
+     String PENDING = "PENDING";
 
     //处理中
-    String HANDLING = "HANDLING";
+    String PROCESSING = "PROCESSING";
 
     //处理完成
-    String HANDLE_COMPLETE = "HANDLE_COMPLETE";
+    String RESOLVED = "RESOLVED";
+    //待忽略
+    String IGNORED = "IGNORED";
 }

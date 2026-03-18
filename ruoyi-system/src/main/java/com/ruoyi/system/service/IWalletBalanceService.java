@@ -5,6 +5,8 @@ import com.ruoyi.system.domain.dto.RechargeDto;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.http.Result;
 
+import java.math.BigDecimal;
+
 /**
  * 钱包余额表(WalletBalance)�����ӿ�
  *
@@ -30,6 +32,23 @@ public interface IWalletBalanceService{
      * @return java.lang.Boolean
      **/
     Boolean reduceBalance(Order order);
+
+    /**
+     * [增加余额-从订单]
+     * @author 陈湘岳 2026/3/11
+     * @param order 订单
+     * @return java.lang.Boolean
+     **/
+    Boolean addBalance(Order order);
+
+    /**
+     * [增加余额-通用]
+     * @author 陈湘岳 2026/3/11
+     * @param amount 金额
+     * @param type 类型
+     * @return java.lang.Boolean
+     **/
+    Boolean addBalance(BigDecimal amount, String type);
 
     /**
      * [余额充值订单已支付]
