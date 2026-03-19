@@ -22,15 +22,18 @@
         <result property="resourceId" column="resource_id" jdbcType="VARCHAR"/>
         <result property="alarmType" column="alarm_type" jdbcType="VARCHAR"/>
         <result property="alarmStatus" column="alarm_status" jdbcType="VARCHAR"/>
-        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
         <result property="beginTime" column="begin_time" jdbcType="TIMESTAMP"/>
         <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
-        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-        <result property="status" column="status" jdbcType="VARCHAR"/>
+
     </resultMap>
+
+
+    <update id="repairResourceAlarm">
+        update server_resource_alarm set alarm_status = #{alarmStatus},end_time = now(),update_time = now() where id in
+         <foreach item="id" collection="alarmIds" separator="," open="(" close=")">
+             #{id}
+         </foreach>
+    </update>
 
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourceAlarmVOMap">
@@ -191,6 +194,24 @@
                 and status = #{dto.status}
             </if>
         </where>
+    </select>
+
+
+    <select id="selectNotEndAlarmVoList" resultType="com.ruoyi.system.domain.vo.ServerResourceAlarmVo">
+        select id, resource_id, alarm_type, alarm_status, begin_time, end_time
+        from server_resource_alarm
+        where is_deleted = 0 and end_time is null
+    </select>
+
+
+    <select id="selectNotEndAlarmList" resultType="com.ruoyi.system.domain.entity.ServerResourceAlarm">
+        select id, resource_id, alarm_type, alarm_status, is_deleted, begin_time, end_time, create_user, update_user,
+               create_time, update_time, status
+        from server_resource_alarm
+        where is_deleted = 0 and end_time is null
+        <if test="resourcesId != null and resourcesId != ''">
+            and resource_id = #{resourcesId}
+        </if>
     </select>
 
 

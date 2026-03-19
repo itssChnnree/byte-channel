@@ -17,6 +17,10 @@ public interface FaultHandingStatus {
 
     //处理完成
     String RESOLVED = "RESOLVED";
-    //待忽略
+
+    //已忽略
     String IGNORED = "IGNORED";
+
+    //已自愈
+    String SELF_HEALING = "SELF_HEALING";
 }

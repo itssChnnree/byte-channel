@@ -27,29 +27,26 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class ServerResourcesXrayValid extends ByteBaseEntity implements Serializable {
 private static final long serialVersionUID = 1L;
-/**
-    * 主键id
-    */
-@TableId@TableField(value = "id")
-private String id;
-/**
-    * 资源id
-    */
-@TableField(value = "resources_id")
-private String resourcesId;
-/**
-    * 校验服务器ip
-    */
-@TableField(value = "web_ip")
-private String webIpPort;
+    /**
+        * 主键id
+        */
+    @TableId@TableField(value = "id")
+    private String id;
+    /**
+        * 资源id
+        */
+    @TableField(value = "resources_id")
+    private String resourcesId;
+    /**
+        * 校验服务器ip
+        */
+    @TableField(value = "web_ip")
+    private String webIpPort;
 
-/**
-    * 校验服务器-xray代理端口
-    */
-@TableField(value = "xray_port")
-private String xrayPort;
-
-
-    
+    /**
+        * 校验服务器-xray代理端口
+        */
+    @TableField(value = "xray_port")
+    private String xrayPort;
 
 }
