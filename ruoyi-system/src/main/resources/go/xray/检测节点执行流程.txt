@@ -1,0 +1,6 @@
+将xray-core-out、Xray-linux-64.zip、xrayOutStart.sh放到/xray文件夹下
+将xray-out-config.json重命名为 config.json 放到 /usr/local/etc/xray/config.json
+执行xrayOutStart.sh脚本
+运行xray-core-out,命令为：nohup ./xray-core-out > xray-core-out.log 2>&1 &
+然后所属服务器端口放开安全组
+在系统配置节点
