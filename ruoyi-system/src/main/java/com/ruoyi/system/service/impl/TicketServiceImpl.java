@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.ruoyi.common.core.domain.entity.SysUser;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.PageUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.TicketStatus;
@@ -424,5 +425,24 @@ public class TicketServiceImpl  implements ITicketService {
                 ticketMainTextDetailVo.setTicketMainTextOrderVo(map.get(ticketMainTextDetailVo.getId()));
             }
         });
+    }
+
+    /**
+     * [自动关闭超时工单]
+     * 将所有状态不等于关闭，且updateTime在5天之前的工单状态设置为关闭
+     * @author 陈湘岳 2026/3/18
+     * @return int 关闭的工单数量
+     **/
+    @Override
+    @Transactional
+    public int autoCloseTimeoutTickets() {
+        LogEsUtil.info("开始执行自动关闭超时工单任务");
+        
+        // 获取5天之前的日期
+        Date fiveDaysAgo = DateUtils.getDateBefore(5);
+        int closedCount = ticketMapper.closeTimeoutTickets(TicketStatus.CLOSED, fiveDaysAgo);
+        
+        LogEsUtil.info("自动关闭超时工单任务完成，共关闭 " + closedCount + " 个工单");
+        return closedCount;
     }
 }

@@ -291,5 +291,14 @@
         update_time = values(update_time)
     </insert>
 
+    <update id="closeTimeoutTickets">
+        UPDATE ticket
+        SET status = #{closedStatus},
+            update_time = NOW()
+        WHERE status != #{closedStatus}
+          AND is_deleted = 0
+          AND update_time &lt;= #{beforeDate}
+    </update>
+
 </mapper>
 

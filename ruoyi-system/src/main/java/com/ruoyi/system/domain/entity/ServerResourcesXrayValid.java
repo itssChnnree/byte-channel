@@ -49,4 +49,10 @@ private static final long serialVersionUID = 1L;
     @TableField(value = "xray_port")
     private String xrayPort;
 
+    /**
+     * 校验服务器-tag
+     */
+    @TableField(value = "tag")
+    private String tag;
+
 }

@@ -1,9 +1,15 @@
 package com.ruoyi.system.job;
 
+import com.ruoyi.system.domain.entity.Ticket;
+import com.ruoyi.system.service.ITicketService;
+import com.ruoyi.system.service.impl.TicketServiceImpl;
+import com.ruoyi.system.util.LogEsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
 
 /**
  * 定时关闭工单任务
@@ -14,6 +20,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class WorkOrderCloseJob {
 
+    @Resource
+    private ITicketService ticketService;
+
     /**
      * 定时关闭工单任务
      * 在XXL-JOB调度中心配置：
@@ -22,18 +31,13 @@ public class WorkOrderCloseJob {
      */
     @XxlJob("workOrderCloseJob")
     public void execute() {
-        XxlJobHelper.log("开始执行工单关闭任务");
+        LogEsUtil.info("开始执行工单关闭任务");
         try {
-            // TODO: 实现工单关闭逻辑
-            // 1. 查询需要自动关闭的工单（如长期未处理的、已解决的等）
-            // 2. 执行关闭操作
-            // 3. 发送关闭通知
-
-            XxlJobHelper.log("工单关闭任务执行完成");
+            ticketService.autoCloseTimeoutTickets();
+            LogEsUtil.info("工单关闭任务执行完成");
             XxlJobHelper.handleSuccess("工单关闭成功");
         } catch (Exception e) {
-            log.error("工单关闭任务执行失败", e);
-            XxlJobHelper.log("工单关闭任务执行失败: " + e.getMessage());
+            LogEsUtil.error("工单关闭任务执行失败", e);
             XxlJobHelper.handleFail("工单关闭失败: " + e.getMessage());
         }
     }

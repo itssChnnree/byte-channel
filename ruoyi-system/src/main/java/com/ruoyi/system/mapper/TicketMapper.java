@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.system.domain.entity.Ticket;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -64,5 +65,15 @@ public interface TicketMapper extends BaseMapper<Ticket> {
      * @return com.ruoyi.system.domain.entity.Ticket
      **/
     Ticket selectByQuoteId(@Param("quoteId")String quoteId);
+
+    /**
+     * [批量关闭超时工单]
+     * 将状态不等于关闭，且updateTime在指定日期之前的工单状态设置为关闭
+     * @author 陈湘岳 2026/3/18
+     * @param closedStatus 关闭状态
+     * @param beforeDate 截止日期
+     * @return int 关闭的工单数量
+     **/
+    int closeTimeoutTickets(@Param("closedStatus")String closedStatus, @Param("beforeDate")Date beforeDate);
 
 }

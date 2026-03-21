@@ -33,14 +33,19 @@ import com.ruoyi.system.util.XrayManager;
 import lombok.Cleanup;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
@@ -51,6 +56,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -88,11 +94,20 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     @Resource
     private VendorAccountInformationMapper vendorAccountInformationMapper;
 
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
     @Resource
     private ServerResourcesXrayValidMapper serverResourcesXrayValidMapper;
 
     @Resource
     private ResourceAllocationTemporaryStorageMapper resourceAllocationTemporaryStorageMapper;
+
+    @Resource
+    private ServerResourceAlarmMapper serverResourceAlarmMapper;
+
+    @Resource(name = "resourceDetectionExecutor")
+    private Executor resourceDetectionExecutor;
 
     @Value("${resources.clashUrl}")
     private String clashDownloadUrl;
@@ -195,6 +210,8 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             String strUserId = SecurityUtils.getStrUserId();
             CompletableFuture.runAsync(() -> {
                 newResourcesValid(userId, serverResources,strUserId);
+                ServerResourcesServiceImpl serverResourcesService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
+                serverResourcesService.getResourcesStatus(serverResources.getId());
             });
             return Result.success(serverResources);
         }else{
@@ -206,12 +223,12 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
 
 
-    private void newResourcesValid(String userId,ServerResources serverResources,String strUserId){
+    private ServerResourcesXrayValid newResourcesValid(String userId,ServerResources serverResources,String strUserId){
 
         String cacheObject = redisCache.getCacheObject("sys_config:sys:validServer:ip");
         if (StrUtil.isBlank(serverResources.getId())||StrUtil.isBlank(cacheObject)){
             //如果id为空或者校验服务器ip为空则不新增资源校验
-            return;
+            return null;
         }
         List<String> ipAndPortList = StrUtil.split(cacheObject, ",");
         Map<String, IpUseNum> useLeastIp = serverResourcesXrayValidMapper.findUseLeastIp(ipAndPortList);
@@ -230,12 +247,12 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         String newValidXrayResult = XrayManager.newValidXray(outboundConfig, minUseIp);
         if (StrUtil.isBlank(newValidXrayResult)){
             LogEsUtil.warn("调用go[newValidXray]接口失败");
-            return;
+            return null;
         }
         Result result = JSON.parseObject(newValidXrayResult, Result.class);
         if (result.getCode()!=200){
             LogEsUtil.warn("调用go[newValidXray]接口失败，错误原因为"+result.getMessage());
-            return;
+            return null;
         }
         ServerResourcesXrayValid serverResourcesXrayValid = new ServerResourcesXrayValid();
         serverResourcesXrayValid.setWebIpPort(minUseIp);
@@ -244,9 +261,8 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResourcesXrayValid.setCreateUser(strUserId);
         serverResourcesXrayValid.setUpdateUser(strUserId);
         serverResourcesXrayValidMapper.deleteByResourcesIdInt(serverResources.getId());
-        int insert = serverResourcesXrayValidMapper.insert(serverResourcesXrayValid);
-        ServerResourcesServiceImpl bean = SpringUtil.getBean(ServerResourcesServiceImpl.class);
-        bean.getResourcesStatus(serverResources.getId());
+        serverResourcesXrayValidMapper.insert(serverResourcesXrayValid);
+        return serverResourcesXrayValid;
     }
 
 
@@ -393,8 +409,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      * @author 陈湘岳 2025/9/24
      **/
     @Override
+    @Transactional
     public Result<ServerResources> resourceReset(String id) {
-        ServerResources serverResources = serverResourcesMapper.selectById(id);
+        ServerResources serverResources = serverResourcesMapper.selectByIdForUpdate(id);
         if (ObjectUtils.isEmpty(serverResources)){
             throw new BaseException("资源不存在");
         }
@@ -444,6 +461,8 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             String strUserId = SecurityUtils.getStrUserId();
             CompletableFuture.runAsync(() -> {
                 newResourcesValid(userId, serverResources, strUserId);
+                ServerResourcesServiceImpl serverResourcesService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
+                serverResourcesService.getResourcesStatus(serverResources.getId());
             });
             return Result.success("重置资源成功");
         }else{
@@ -460,8 +479,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      * @author 陈湘岳 2026/3/7
      **/
     @Override
+    @Transactional
     public Result<ServerResources> userResourceReset(String id) {
-        ServerResources serverResources = serverResourcesMapper.selectById(id);
+        ServerResources serverResources = serverResourcesMapper.selectByIdForUpdate(id);
         if (ObjectUtils.isEmpty(serverResources)){
             LogEsUtil.warn("资源不存在，id为："+id);
             return Result.fail("资源不存在");
@@ -604,8 +624,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      * @author 陈湘岳 2025/9/28
      **/
     @Override
+    @Transactional
     public Result<ServerResources> ipReplacement(ServerUpdateDto serverUpdateDto) {
-        ServerResources serverResources = serverResourcesMapper.selectById(serverUpdateDto.getId());
+        ServerResources serverResources = serverResourcesMapper.selectByIdForUpdate(serverUpdateDto.getId());
         if (ObjectUtils.isEmpty(serverResources)){
             return Result.fail("资源不存在");
         }
@@ -702,14 +723,17 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      * @author 陈湘岳 2025/12/15
      **/
     @Override
+    @Transactional
     public Result deleteById(String id) {
-        ServerResources serverResources = serverResourcesMapper.selectById(id);
+        ServerResources serverResources = serverResourcesMapper.selectByIdForUpdate(id);
         if (ObjectUtils.isEmpty(serverResources)){
             return Result.fail("资源不存在");
         }
         if (SalesStatus.ON_SALE.equals(serverResources.getSalesStatus())){
             return Result.fail("资源正在出售中，请勿删除");
         }
+        ServerResourcesXrayValid byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(id);
+        String deletedResult = XrayManager.deleteValidXray(byResourcesId);
         int delete = serverResourcesMapper.deleteById(id);
         return delete > 0 ? Result.success("删除成功") : Result.fail("删除失败");
     }
@@ -756,8 +780,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             if (ObjectUtils.isEmpty(serverResources)) {
                 return Result.fail("资源不存在");
             }
-            newResourcesValid(serverResources.getUserId(), serverResources, SecurityUtils.getStrUserId());
-            byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(resourcesId);
+            byResourcesId = newResourcesValid(serverResources.getUserId(), serverResources, SecurityUtils.getStrUserId());
         }
 
         String xrayStatus = "";
@@ -846,5 +869,212 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         // 使用模板引擎处理
         Template tpl = engine.getTemplate(template);
         return tpl.render(params);
+    }
+
+    /**
+     * [资源检测定时任务]
+     * 查询所有资源，通过多线程对每个资源进行连通性检测
+     * @author 陈湘岳 2026/3/18
+     * @return void
+     **/
+    @Override
+    public void resourceDetectionTask() {
+        LogEsUtil.info("开始执行资源检测定时任务");
+        
+        // 查询所有正常和待检测资源
+        List<ServerResources> allResources = serverResourcesMapper.findNormalAll();
+        if (CollectionUtils.isEmpty(allResources)) {
+            LogEsUtil.info("资源检测定时任务没有查询到需要检测的资源");
+            return;
+        }
+        
+        LogEsUtil.info("共发现 " + allResources.size() + " 个资源需要检测");
+        Authentication authentication = SecurityUtils.getAuthentication();
+        // 为每个资源创建异步检测任务，不等待全部完成
+        allResources.forEach(resource -> {
+            CompletableFuture.runAsync(() -> {
+                transactionTemplate.execute(status -> {
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    detectSingleResource(resource);
+                    return null;
+                });
+            }, resourceDetectionExecutor);
+        });
+        
+        LogEsUtil.info("资源检测定时任务已启动，共 " + allResources.size() + " 个资源");
+    }
+    
+    /**
+     * 检测单个资源
+     * @param resource 资源实体
+     */
+
+    private void detectSingleResource(ServerResources resource) {
+        String resourcesId = resource.getId();
+        String resourcesIp = resource.getResourcesIp();
+        resource = serverResourcesMapper.selectByIdForUpdate(resourcesId);
+        try {
+            LogEsUtil.info("开始检测资源：" + resourcesId + "，IP：" + resourcesIp);
+            
+            // 第一步：参考 getResourcesStatus 进行整体检测
+            ServerResourcesXrayValid xrayValid = serverResourcesXrayValidMapper.findByResourcesId(resourcesId);
+            if (xrayValid == null) {
+                // 资源校验不存在  新增资源校验
+                ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
+                if (ObjectUtils.isEmpty(serverResources)) {
+                    LogEsUtil.info("资源不存在");
+                    return;
+                }
+                xrayValid = newResourcesValid(serverResources.getUserId(), serverResources, SecurityUtils.getStrUserId());
+            }
+            
+            String xrayStatus = "";
+            try {
+                xrayStatus = XrayManager.checkXrayStatus(xrayValid.getWebIpPort(), xrayValid.getXrayPort());
+            } catch (Exception e) {
+                LogEsUtil.error("调用go[CheckXrayStatus]接口失败，资源ID：" + resourcesId + "，错误：" + e.getMessage(), e);
+            }
+            
+            Result result = JSON.parseObject(xrayStatus, Result.class);
+            
+            // 如果整体检测成功，资源正常，无需进一步检测
+            if (!ObjectUtils.isEmpty(result) && !ObjectUtils.isEmpty(result.getData()) 
+                    && "200".equals(result.getData().toString().trim())) {
+                LogEsUtil.info("资源 " + resourcesId + " 整体检测正常");
+                return;
+            }
+            serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.ERROR);
+            // 第二步：整体检测失败，进行详细检测
+            LogEsUtil.info("资源 " + resourcesId + " 整体检测失败，开始详细检测");
+
+            List<String> failedItems = getErrorReason(resource);
+
+            String alarmType = "未知异常";
+            // 如果有失败的检测项，保存告警
+            if (!failedItems.isEmpty()) {
+                alarmType = String.join(",", failedItems);
+
+                LogEsUtil.warn("资源 " + resourcesId + " 检测失败，失败项：" + alarmType);
+            }
+            saveResourceAlarm(resourcesId, alarmType);
+            
+        } catch (Exception e) {
+            LogEsUtil.error("检测资源 " + resourcesId + " 时发生异常：" + e.getMessage(), e);
+            throw new RuntimeException("资源检测异常,message"+e.getMessage());
+        }
+    }
+
+    private List<String> getErrorReason(ServerResources resource){
+        List<String> failedItems = new ArrayList<>();
+        // 1. 网络连通性检测
+        boolean networkOk = checkNetworkConnectivity(resource);
+        if (!networkOk) {
+            failedItems.add("NETWORK");
+        }
+
+        // 2. Xray Ping 检测
+        boolean pingOk = checkXrayPing(resource);
+        if (!pingOk) {
+            failedItems.add("PING");
+        }
+
+        // 3. 防火墙检测
+        boolean firewallOk = checkXrayFirewalld(resource);
+        if (!firewallOk) {
+            failedItems.add("FIREWALLD");
+        }
+
+        // 4. Xray 进程检测
+        boolean processOk = checkXrayProcess(resource);
+        if (!processOk) {
+            failedItems.add("PROCESS");
+        }
+        return failedItems;
+    }
+
+    /**
+     * 检测网络连通性
+     */
+    private boolean checkNetworkConnectivity(ServerResources resource) {
+        try {
+            return NetworkUtil.checkConnectivity(resource.getResourcesIp());
+        } catch (Exception e) {
+            LogEsUtil.error("网络连通性检测失败，资源ID：" + resource.getId() + "，错误：" + e.getMessage(),e);
+            return false;
+        }
+    }
+    
+    /**
+     * 检测 Xray Ping
+     */
+    private boolean checkXrayPing(ServerResources resource) {
+        try {
+            String xrayPing = XrayManager.getXrayPing(resource.getResourcesIp());
+            if (StrUtil.isBlank(xrayPing)) {
+                return false;
+            }
+            Result result = JSON.parseObject(xrayPing, Result.class);
+            return !ObjectUtils.isEmpty(result) && "success".equals(result.getData());
+        } catch (Exception e) {
+            LogEsUtil.error("Xray Ping检测失败，资源ID：" + resource.getId() + "，错误：" + e.getMessage(),e);
+            return false;
+        }
+    }
+    
+    /**
+     * 检测防火墙状态
+     */
+    private boolean checkXrayFirewalld(ServerResources resource) {
+        try {
+            String status = XrayManager.getXrayFirewalldStatus(resource.getResourcesIp(), resource.getNodePort());
+            if (StrUtil.isBlank(status)) {
+                return false;
+            }
+            Result result = JSON.parseObject(status, Result.class);
+            return !ObjectUtils.isEmpty(result) && Boolean.TRUE.equals(result.getData());
+        } catch (Exception e) {
+            LogEsUtil.error("防火墙检测失败，资源ID：" + resource.getId() + "，错误：" + e.getMessage(),e);
+            return false;
+        }
+    }
+    
+    /**
+     * 检测 Xray 进程状态
+     */
+    private boolean checkXrayProcess(ServerResources resource) {
+        try {
+            String status = XrayManager.getXrayProcessStatus(resource.getResourcesIp(), resource.getNodePort());
+            if (StrUtil.isBlank(status)) {
+                return false;
+            }
+            Result result = JSON.parseObject(status, Result.class);
+            return !ObjectUtils.isEmpty(result) && "success".equals(result.getData());
+        } catch (Exception e) {
+            LogEsUtil.error("Xray进程检测失败，资源ID：" + resource.getId() + "，错误：" + e.getMessage(),e);
+            return false;
+        }
+    }
+    
+    /**
+     * 保存资源告警（独立事务）
+     */
+    public void saveResourceAlarm(String resourcesId, String alarmType) {
+        try {
+            ServerResourceAlarm alarm = new ServerResourceAlarm();
+            alarm.setResourceId(resourcesId);
+            alarm.setAlarmType(alarmType);
+            alarm.setAlarmStatus(FaultHandingStatus.PENDING);
+            alarm.setBeginTime(new Date());
+            List<ServerResourceAlarm> serverResourceAlarms = serverResourceAlarmMapper.selectNotEndAlarmList(resourcesId);
+            if (CollectionUtils.isEmpty(serverResourceAlarms)) {
+                serverResourceAlarmMapper.insert(alarm);
+                LogEsUtil.info("保存资源告警成功，资源ID：" + resourcesId + "，告警类型：" + alarmType);
+            }else {
+                LogEsUtil.info("资源告警已经存在数据，资源ID：" + resourcesId);
+            }
+
+        } catch (Exception e) {
+            LogEsUtil.error("保存资源告警失败，资源ID：" + resourcesId + "，错误：" + e.getMessage(), e);
+        }
     }
 }

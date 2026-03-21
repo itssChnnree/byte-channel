@@ -609,6 +609,15 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         where o.id= #{orderId}
     </select>
 
+    <select id="findNormalAll" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select * from server_resources where is_deleted = 0
+        and resources_status in ('NORMAL','WAIT_CHECK')
+    </select>
+
+    <select id="selectByIdForUpdate" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select * from server_resources where is_deleted = 0 and id = #{resourcesId}
+    </select>
+
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">

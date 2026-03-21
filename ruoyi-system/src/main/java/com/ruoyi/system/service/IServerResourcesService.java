@@ -176,4 +176,13 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result<com.ruoyi.system.domain.entity.ServerResources>
      **/
     Result<ServerResources> userResourceReset(String id);
+
+
+    /**
+     * [资源检测定时任务]
+     * 查询所有资源，通过多线程对每个资源进行连通性检测
+     * @author 陈湘岳 2026/3/18
+     * @return void
+     **/
+    void resourceDetectionTask();
 }

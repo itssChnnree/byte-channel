@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.shopController;
 
 
 import com.ruoyi.system.service.IServerResourceAlarmService;
+import com.ruoyi.system.service.IServerResourcesService;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.annotations.Api;
 
@@ -22,5 +23,13 @@ public class ServerResourceAlarmController {
     @Resource(name = "serverResourceAlarmService")
     IServerResourceAlarmService serverResourceAlarmService;
 
+    @Resource
+    IServerResourcesService iServerResourcesService;
+
+    @GetMapping("/test")
+    public String test(){
+        iServerResourcesService.resourceDetectionTask();
+        return "success";
+    }
 
 }

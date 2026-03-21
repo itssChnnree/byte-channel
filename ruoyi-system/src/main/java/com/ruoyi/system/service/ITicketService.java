@@ -91,4 +91,13 @@ public interface ITicketService {
      * @return com.ruoyi.system.http.Result
      **/
     Result getTicketDetails(String id,Boolean hasPermi,int pageNum,int pageSize);
+
+    /**
+     * [自动关闭超时工单]
+     * 将所有状态不等于关闭，且updateTime在5天之前的工单状态设置为关闭
+     * @author 陈湘岳 2026/3/18
+     * @return int 关闭的工单数量
+     **/
+    int autoCloseTimeoutTickets();
+
 }

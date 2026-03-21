@@ -219,7 +219,7 @@
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into server_resource_alarm(id, resource_id, alarm_type, alarm_status, is_deleted, begin_time, end_time,
                                           create_user, update_user, create_time, update_time, status)
-        values (#{entity.id}, #{resourceId}, #{alarmType}, #{alarmStatus}, #{isDeleted}, #{beginTime}, #{endTime},
+        values (#{id}, #{resourceId}, #{alarmType}, #{alarmStatus}, #{isDeleted}, #{beginTime}, #{endTime},
                 #{createUser}, #{updateUser}, #{createTime}, #{updateTime}, #{status})
     </insert>
 

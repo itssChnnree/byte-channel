@@ -3,11 +3,14 @@ package com.ruoyi.system.util;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.system.domain.dto.RestartXrayDto;
+import com.ruoyi.system.domain.entity.ServerResourcesXrayValid;
 import com.ruoyi.system.domain.entity.XrayOutbound.OutboundConfig;
+import com.ruoyi.system.mapper.ServerResourcesXrayValidMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestTemplate;
 
@@ -65,6 +68,30 @@ public class XrayManager {
             throw new BaseException("新增校验节点资源校验数据异常");
         }
         return post;
+    }
+
+    //删除出站校验
+    public static String deleteValidXray(ServerResourcesXrayValid serverResourcesXrayValid) {
+        // 构建 URL：http://ip:9080/delete?tag=xxx
+        String api = "http://" + serverResourcesXrayValid.getWebIpPort() + ":9080/delete?tag=" + serverResourcesXrayValid.getResourcesId();
+
+        LogEsUtil.info("删除xray资源校验[" + api + "]");
+
+        try {
+            // 执行 DELETE 请求并获取响应体
+            String result = HttpRequest.delete(api)
+                    // 5秒超时
+                    .timeout(5000)
+                    .execute()
+                    .body();
+
+            LogEsUtil.info("删除xray资源校验成功，响应：" + result);
+            return result;
+
+        } catch (Exception e) {
+            LogEsUtil.error("删除xray资源校验异常：" + e.getMessage(), e);
+            return null;
+        }
     }
 
 

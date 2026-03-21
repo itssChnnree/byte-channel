@@ -202,4 +202,20 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
      **/
     List<ServerResources> findAll();
+
+    /**
+     * [查询所有正常资源]
+     * @author 陈湘岳 2025/11/21
+     * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    List<ServerResources> findNormalAll();
+
+
+    /**
+     * [查询商品，上锁]
+     * @author 陈湘岳 2026/3/21
+     * @param resourcesId 资源id
+     * @return com.ruoyi.system.domain.entity.ServerResources
+     **/
+    ServerResources selectByIdForUpdate(@Param("resourcesId") String resourcesId);
 }
