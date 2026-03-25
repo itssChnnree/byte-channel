@@ -257,5 +257,35 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
         update_time = values(update_time)    
         </insert>
 
+
+    <!-- 查询超时未支付订单：status=WAIT_PAY 且 order_time 超过指定分钟 -->
+    <select id="findTimeoutWaitPayOrders" resultMap="OrderMap">
+        select
+            id, user_id, amount, payment_period, payment_id, payment_type,
+            order_type, status, description, order_time,
+            is_deleted, create_user, update_user, create_time, update_time
+        from `order`
+        where is_deleted = 0
+          and status = 'WAIT_PAY'
+          and order_time &lt; DATE_SUB(NOW(), INTERVAL #{minutes} MINUTE)
+    </select>
+
+    <!-- 查询已完成且需要差错退款的订单 -->
+    <select id="findCompletedOrdersForErrorRefund" resultMap="OrderMap">
+        select
+            o.id, o.user_id, o.amount, o.payment_period, o.payment_id, o.payment_type,
+            o.order_type, o.status, o.description, o.order_time,
+            o.is_deleted, o.create_user, o.update_user, o.create_time, o.update_time
+        from `order` o
+        inner join order_pay_type opt on o.id = opt.order_id
+        where o.is_deleted = 0
+          and opt.retry_count &lt; 9
+          and (o.status = 'COMPLETED' or o.status = 'WAIT_ALLOCATION_RESOURCES')
+          and opt.is_check = 0
+          and (opt.wx_order_id is not null and opt.wx_order_id != '' or
+           opt.alipay_order_id is not null and opt.alipay_order_id != '')
+        limit #{limit}
+    </select>
+
 </mapper>
 

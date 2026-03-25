@@ -163,6 +163,7 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
         YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
             order.setPaymentType(yiPayResponse.getPayType());
+            order.setPaymentId(yiPayResponse.getPayId());
             orderBaseService.addProfit(order,"报价商品");
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
             return allocationResources(orderId, order);

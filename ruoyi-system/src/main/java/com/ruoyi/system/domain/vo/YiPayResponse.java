@@ -22,6 +22,9 @@ public class YiPayResponse {
     @ApiModelProperty("支付类型")
     private String payType;
 
+    @ApiModelProperty("支付平台id")
+    private String payId;
+
 
     public String getPayType() {
         //todo 返回真实支付方式

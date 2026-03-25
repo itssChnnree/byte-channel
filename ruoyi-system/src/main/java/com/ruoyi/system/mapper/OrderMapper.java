@@ -75,6 +75,15 @@ public interface OrderMapper extends BaseMapper<Order> {
      **/
     OrderInfoVo getOrderInfoById(@Param("id") String id, @Param("userId") String userId);
 
+    /**
+     * [查询已完成且需要差错退款的订单]
+     * 查询状态为 COMPLETED 且存在微信或支付宝渠道的订单
+     * @author 陈湘岳
+     * @param limit 查询数量限制
+     * @return java.util.List<com.ruoyi.system.domain.entity.Order>
+     **/
+    List<Order> findCompletedOrdersForErrorRefund(@Param("limit") int limit);
+
 
     /**
      * 查询续费订单信息
@@ -92,4 +101,13 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return com.ruoyi.system.domain.vo.OrderDetailVo
      **/
     OrderDetailVo getOrderDetailById(String orderId);
+
+    /**
+     * [查询超时未支付订单]
+     * 查询状态为 WAIT_PAY 且 order_time 距今超过指定分钟数的订单
+     * @author 陈湘岳
+     * @param minutes 超时分钟数
+     * @return java.util.List<com.ruoyi.system.domain.entity.Order>
+     **/
+    List<Order> findTimeoutWaitPayOrders(@Param("minutes") int minutes);
 }

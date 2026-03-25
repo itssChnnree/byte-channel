@@ -189,6 +189,7 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
         YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
             order.setPaymentType(yiPayResponse.getPayType());
+            order.setPaymentId(yiPayResponse.getPayId());
             orderBaseService.addProfit(order,"余额充值");
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
             addBalance( order.getAmount(), BalanceDetailStatus.RECHARGE);

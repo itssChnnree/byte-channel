@@ -11,6 +11,8 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.*;
 import com.ruoyi.system.domain.vo.*;
+import com.ruoyi.system.pay.application.service.PayOrderApplicationService;
+import com.ruoyi.system.pay.application.vo.CreatePayOrderVo;
 import com.ruoyi.system.service.*;
 import com.ruoyi.system.util.DefaultValueUtil;
 import com.ruoyi.system.domain.entity.*;
@@ -22,12 +24,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.weaver.ast.Or;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import javax.swing.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
@@ -35,8 +40,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 订单表(Order)�����ʵ����
@@ -95,6 +103,20 @@ public class OrderServiceImpl implements IOrderService {
     @Resource
     private OrderInformationSnapshotMapper orderInformationSnapshotMapper;
 
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
+    @Resource(name = "resourceDetectionExecutor")
+    private Executor resourceDetectionExecutor;
+
+    @Resource
+    private PayOrderApplicationService payOrderApplicationService;
+
+    @Resource
+    private IOrderQuoteService iOrderQuoteService;
+
+    @Resource
+    private IOrderPayTypeService orderPayTypeService;
 
     /**
      * [直接从商品创建订单]
@@ -564,6 +586,7 @@ public class OrderServiceImpl implements IOrderService {
      * @author 陈湘岳 2025/10/24
      **/
     @Override
+    @Transactional
     public Result getQrCode(String orderId, String payaType) {
         //获取订单状态
         Order order = orderMapper.queryById(orderId);
@@ -573,11 +596,12 @@ public class OrderServiceImpl implements IOrderService {
         }
         YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
+            orderPayFromQrCode(order);
             LogEsUtil.info("订单已扫码支付，订单id："+orderId);
             return Result.success("订单已支付",true);
         }else {
             OrderPayUrlVo orderPayUrlVo = new OrderPayUrlVo();
-            orderPayUrlVo.setPayUrl(getPayUrl(orderId, payaType));
+            orderPayUrlVo.setPayUrl(getPayUrl(order, payaType));
             orderPayUrlVo.setOrderId(orderId);
             orderPayUrlVo.setPayType(payaType);
             orderPayUrlVo.setPayMoney(order.getAmount());
@@ -585,20 +609,74 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
+    private void orderPayFromQrCode(Order order){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CompletableFuture.runAsync(()->{
+            transactionTemplate.execute(status -> {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                if(OrderTypeConstant.ADD.equals(order.getOrderType())){
+                    orderIsPay(order.getId(),false);
+                }else if (OrderTypeConstant.RENEW.equals(order.getOrderType())){
+                    renewalOrderIsPay(order.getId(),false);
+                }else if (OrderTypeConstant.RECHARGE.equals(order.getOrderType())){
+                    iWalletBalanceService.rechargeOrderIsPay(order.getId());
+                }else if (OrderTypeConstant.QUOTE.equals(order.getOrderType())){
+                    iOrderQuoteService.quoteOrderIsPay(order.getId(),false);
+                }else {
+                    LogEsUtil.warn("订单状态无法识别，订单id："+order.getId());
+                }
+                return null;
+            });
+        });
+    }
 
-    private String getPayUrl(String orderId, String payaType){
+
+    private String getPayUrl(Order order, String payaType){
+        // 转换支付方式为支付平台格式
+        String payType;
         if (OrderStatus.ALIPAY_PAY.equals(payaType)){
-
+            payType = "alipay";
         } else if (OrderStatus.WECHAT_PAY.equals(payaType)) {
-
-        }else {
+            payType = "wxpay";
+        } else {
             throw new RuntimeException("支付方式错误");
         }
-        RequestThreePayVo forObject = restTemplate.getForObject("https://mock.apipost.net/mock/335560/getCode?apipost_id=391baed8798152", RequestThreePayVo.class);
-        if (ObjectUtil.isNull(forObject)){
-            throw new RuntimeException("获取支付二维码失败");
+
+        // 生成随机虚拟订单号
+        String virtualOrderId = generateVirtualOrderId(order.getId(), payType);
+
+        // 调用支付服务创建支付订单并获取支付链接（使用虚拟订单号）
+        CreatePayOrderVo result = payOrderApplicationService.createPayForOrderWithVirtualId(order, payType, virtualOrderId);
+        if (ObjectUtil.isNull(result)) {
+            LogEsUtil.warn("创建支付失败，订单id："+order.getId());
+            throw new RuntimeException("获取支付信息失败");
         }
-        return forObject.getUrl();
+
+        // 保存虚拟订单号映射关系
+        orderPayTypeService.saveVirtualOrderId(order.getId(), payType, virtualOrderId);
+
+        // 优先返回二维码链接，其次是支付跳转URL
+        if (result.getPayUrl() != null && !result.getPayUrl().isEmpty()) {
+            return result.getPayUrl();
+        } else {
+            throw new RuntimeException("获取支付信息失败");
+        }
+    }
+
+    /**
+     * 生成随机虚拟订单号
+     * 格式：原订单ID前8位 + 时间戳 + 随机数 + 支付方式标识
+     *
+     * @param orderId 原订单ID
+     * @param payType 支付方式：alipay/wxpay
+     * @return 虚拟订单号
+     */
+    private String generateVirtualOrderId(String orderId, String payType) {
+        String prefix = orderId.length() > 8 ? orderId.substring(0, 8) : orderId;
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String random = String.valueOf((int) (Math.random() * 9000) + 1000);
+        String suffix = "alipay".equals(payType) ? "ALI" : "WX";
+        return prefix + timestamp + random + suffix;
     }
 
 
@@ -973,6 +1051,7 @@ public class OrderServiceImpl implements IOrderService {
         YiPayResponse yiPayResponse = orderBaseService.getOrderInfo(order);
         if (ObjectUtil.isNotNull(yiPayResponse)){
             order.setPaymentType(yiPayResponse.getPayType());
+            order.setPaymentId(yiPayResponse.getPayId());
             orderBaseService.addProfit(order,"新购商品");
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
             return allocationResources(orderId, order);
@@ -1006,6 +1085,7 @@ public class OrderServiceImpl implements IOrderService {
             orderBaseService.addProfit(order,"续费商品");
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
             order.setPaymentType(yiPayResponse.getPayType());
+            order.setPaymentId(yiPayResponse.getPayId());
             return bean.renewalResources(orderId, order);
         }else {
             return bean.renewalNoThreePay(orderId, isBalance, order, bean);
@@ -1177,7 +1257,65 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
+    /**
+     * [定时关闭超时未支付订单]
+     * 查询所有 WAIT_PAY 且下单时间超过30分钟的订单，异步并行关单
+     * @author 陈湘岳
+     * @return int 本次关闭的订单数量
+     **/
+    @Override
+    public int autoCloseTimeoutOrders() {
+        LogEsUtil.info("开始执行订单超时关单定时任务");
+        List<Order> timeoutOrders = orderMapper.findTimeoutWaitPayOrders(30);
+        if (CollectionUtils.isEmpty(timeoutOrders)) {
+            LogEsUtil.info("超时关单定时任务：未查询到需要关闭的订单");
+            return 0;
+        }
+        LogEsUtil.info("超时关单定时任务：共发现 " + timeoutOrders.size() + " 个超时订单需要关闭");
+        // 为每个订单创建异步关单任务，不等待全部完成
+        timeoutOrders.forEach(order -> {
+            CompletableFuture.runAsync(() -> {
+                transactionTemplate.execute(status -> {
+                    closeSingleTimeoutOrder(order);
+                    return null;
+                });
+            }, resourceDetectionExecutor);
+        });
+        LogEsUtil.info("超时关单定时任务已启动，共 " + timeoutOrders.size() + " 个订单");
+        return timeoutOrders.size();
+    }
 
+    /**
+     * 关闭单个超时订单
+     * @param order 待关闭订单
+     */
+    private void closeSingleTimeoutOrder(Order order) {
+        String orderId = order.getId();
+        try {
+            // 加锁查询，确保并发安全
+            Order lockedOrder = orderMapper.queryByIdForUpdate(orderId);
+            if (lockedOrder == null) {
+                LogEsUtil.warn("超时关单：订单不存在，orderId=" + orderId);
+                return;
+            }
+            // 幂等判断：仅处理仍为 WAIT_PAY 的订单
+            if (!OrderStatus.WAIT_PAY.equals(lockedOrder.getStatus())) {
+                LogEsUtil.info("超时关单：订单状态已变更，跳过，orderId=" + orderId + "，当前状态=" + lockedOrder.getStatus());
+                return;
+            }
+            int rows = orderMapper.updateStatusById(orderId, OrderStatus.CANCELED_TIMEOUT);
+            orderStatusTimelineService.setTimeoutCanceledTime(orderId);
+            if (rows > 0) {
+                LogEsUtil.info("超时关单成功，orderId=" + orderId);
+            } else {
+                LogEsUtil.warn("超时关单失败，更新行数为0，orderId=" + orderId);
+            }
+        } catch (Exception e) {
+            LogEsUtil.warn("超时关单异常，orderId=" + orderId + "，原因=" + e.getMessage());
+            throw e;
+        }
+    }
 
 
 }
+

@@ -139,4 +139,12 @@ public interface IOrderService{
      * @return com.ruoyi.system.http.Result
      **/
     Result pageQueryService(OrderDto orderDto);
+
+    /**
+     * [定时关闭超时未支付订单]
+     * 查询所有 WAIT_PAY 且下单时间超过30分钟的订单，异步并行关单
+     * @author 陈湘岳
+     * @return int 本次关闭的订单数量
+     **/
+    int autoCloseTimeoutOrders();
 }

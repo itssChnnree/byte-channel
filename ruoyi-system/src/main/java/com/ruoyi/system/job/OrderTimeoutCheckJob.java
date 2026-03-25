@@ -1,9 +1,13 @@
 package com.ruoyi.system.job;
 
+import com.ruoyi.system.service.IOrderService;
+import com.ruoyi.system.util.LogEsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
 
 /**
  * 订单超时检测定时任务
@@ -14,6 +18,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderTimeoutCheckJob {
 
+    @Resource
+    private IOrderService orderService;
+
     /**
      * 订单超时检测任务
      * 在XXL-JOB调度中心配置：
@@ -22,18 +29,14 @@ public class OrderTimeoutCheckJob {
      */
     @XxlJob("orderTimeoutCheckJob")
     public void execute() {
-        XxlJobHelper.log("开始执行订单超时检测任务");
+        LogEsUtil.info("订单超时关闭执行完成");
         try {
-            // TODO: 实现订单超时检测逻辑
-            // 1. 查询待支付且即将超时的订单
-            // 2. 处理已超时的订单（关闭订单、释放库存等）
-            // 3. 发送超时提醒通知
+            orderService.autoCloseTimeoutOrders();
 
-            XxlJobHelper.log("订单超时检测任务执行完成");
+            LogEsUtil.info("订单超时关闭执行完成");
             XxlJobHelper.handleSuccess("订单超时检测成功");
         } catch (Exception e) {
-            log.error("订单超时检测任务执行失败", e);
-            XxlJobHelper.log("订单超时检测任务执行失败: " + e.getMessage());
+            LogEsUtil.error("订单超时检测任务执行失败", e);
             XxlJobHelper.handleFail("订单超时检测失败: " + e.getMessage());
         }
     }
