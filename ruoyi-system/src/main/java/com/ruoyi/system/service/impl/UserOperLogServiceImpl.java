@@ -367,17 +367,18 @@ public class UserOperLogServiceImpl implements IUserOperLogService {
     }
 
     private String buildTimeRange(String time){
-        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-        inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        try {
-            Date date = inputFormat.parse(time);
-            return outputFormat.format(date);
-        } catch (Exception e) {
-            return null;
-        }
+        return time;
+//        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+//        inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//        outputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+//
+//        try {
+//            Date date = inputFormat.parse(time);
+//            return outputFormat.format(date);
+//        } catch (Exception e) {
+//            return null;
+//        }
     }
 
 

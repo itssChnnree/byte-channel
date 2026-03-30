@@ -82,7 +82,7 @@
             ELSE DATE_SUB(lease_expiration_time, INTERVAL 1 YEAR)
             END
         where  id in
-        <foreach item="item" index="index" collection="serverResourcesIds" separator="," close=")" open="(">
+        <foreach item="item" index="index" collection="resourcesId" separator="," close=")" open="(">
             #{item}
         </foreach>
     </update>
@@ -107,7 +107,7 @@
         ELSE DATE_SUB(lease_expiration_time, INTERVAL 1 MONTH)
         END
         where  id in
-        <foreach item="item" index="index" collection="serverResourcesIds" separator="," close=")" open="(">
+        <foreach item="item" index="index" collection="resourcesId" separator="," close=")" open="(">
             #{item}
         </foreach>
     </update>
@@ -132,7 +132,7 @@
         ELSE DATE_SUB(lease_expiration_time, INTERVAL 3 MONTH)
         END
         where  id in
-        <foreach item="item" index="index" collection="serverResourcesIds" separator="," close=")" open="(">
+        <foreach item="item" index="index" collection="resourcesId" separator="," close=")" open="(">
             #{item}
         </foreach>
     </update>
@@ -151,238 +151,6 @@
         from server_resources
         where id = #{id} and is_deleted = 0
     </select>
-    
-    <!--��ѯָ��������-->
-    <select id="queryList" resultMap="ServerResourcesVOMap">
-        select
-        id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status,  vendor_account_id, resources_user_name, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
-        from server_resources
-        <where>
-        1 = 1 and is_deleted = 0
-            <if test="id != null and id != ''">
-                and id = #{id}
-            </if>
-            <if test="resourcesIp != null and resourcesIp != ''">
-                and resources_ip = #{resourcesIp}
-            </if>
-            <if test="resourcesPort != null and resourcesPort != ''">
-                and resources_port = #{resourcesPort}
-            </if>
-            <if test="resourcesPassword != null and resourcesPassword != ''">
-                and resources_password = #{resourcesPassword}
-            </if>
-            <if test="resourcesStatus != null and resourcesStatus != ''">
-                and resources_status = #{resourcesStatus}
-            </if>
-            <if test="resourceTenant != null and resourceTenant != ''">
-                and resource_tenant = #{resourceTenant}
-            </if>
-            <if test="leaseExpirationTime != null">
-                and lease_expiration_time = #{leaseExpirationTime}
-            </if>
-            <if test="salesStatus != null and salesStatus != ''">
-                and sales_status = #{salesStatus}
-            </if>
-            <if test="availableStatus != null">
-                and available_status = #{availableStatus}
-            </if>
-
-            <if test="vendorAccountId != null and vendorAccountId != ''">
-                and vendor_account_id = #{vendorAccountId}
-            </if>
-            <if test="resourcesUserName != null and resourcesUserName != ''">
-                and resources_user_name = #{resourcesUserName}
-            </if>
-            <if test="nodePort != null and nodePort != ''">
-                and node_port = #{nodePort}
-            </if>
-            <if test="publicBrokerKey != null and publicBrokerKey != ''">
-                and public_broker_key = #{publicBrokerKey}
-            </if>
-            <if test="sni != null and sni != ''">
-                and sni = #{sni}
-            </if>
-            <if test="shortId != null and shortId != ''">
-                and short_id = #{shortId}
-            </if>
-            <if test="userId != null and userId != ''">
-                and user_id = #{userId}
-            </if>
-            <if test="commodityId != null and commodityId != ''">
-                and commodity_id = #{commodityId}
-            </if>
-            <if test="isDeleted != null">
-                and is_deleted = #{isDeleted}
-            </if>
-            <if test="createUser != null and createUser != ''">
-                and create_user = #{createUser}
-            </if>
-            <if test="updateUser != null and updateUser != ''">
-                and update_user = #{updateUser}
-            </if>
-            <if test="createTime != null">
-                and create_time = #{createTime}
-            </if>
-            <if test="updateTime != null">
-                and update_time = #{updateTime}
-            </if>
-        </where>
-    </select>
-    
-    <!--��ѯָ��������-->
-    <select id="queryListLimit" resultMap="ServerResourcesVOMap">
-        select
-id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, resources_user_name, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
-        from server_resources
-        <where>
-        1 = 1 and is_deleted = 0 
-            <if test="dto.id != null and dto.id != ''">
-                and id = #{dto.id}
-            </if>
-            <if test="dto.resourcesIp != null and dto.resourcesIp != ''">
-                and resources_ip = #{dto.resourcesIp}
-            </if>
-            <if test="dto.resourcesPort != null and dto.resourcesPort != ''">
-                and resources_port = #{dto.resourcesPort}
-            </if>
-            <if test="dto.resourcesPassword != null and dto.resourcesPassword != ''">
-                and resources_password = #{dto.resourcesPassword}
-            </if>
-            <if test="dto.resourcesStatus != null and dto.resourcesStatus != ''">
-                and resources_status = #{dto.resourcesStatus}
-            </if>
-            <if test="dto.resourceTenant != null and dto.resourceTenant != ''">
-                and resource_tenant = #{dto.resourceTenant}
-            </if>
-            <if test="dto.leaseExpirationTime != null">
-                and lease_expiration_time = #{dto.leaseExpirationTime}
-            </if>
-            <if test="dto.salesStatus != null and dto.salesStatus != ''">
-                and sales_status = #{dto.salesStatus}
-            </if>
-            <if test="dto.availableStatus != null">
-                and available_status = #{dto.availableStatus}
-            </if>
-            <if test="dto.vendorAccountId != null and dto.vendorAccountId != ''">
-                and vendor_account_id = #{dto.vendorAccountId}
-            </if>
-            <if test="dto.resourcesUserName != null and dto.resourcesUserName != ''">
-                and resources_user_name = #{dto.resourcesUserName}
-            </if>
-            <if test="dto.nodePort != null and dto.nodePort != ''">
-                and node_port = #{dto.nodePort}
-            </if>
-            <if test="dto.publicBrokerKey != null and dto.publicBrokerKey != ''">
-                and public_broker_key = #{dto.publicBrokerKey}
-            </if>
-            <if test="dto.sni != null and dto.sni != ''">
-                and sni = #{dto.sni}
-            </if>
-            <if test="dto.shortId != null and dto.shortId != ''">
-                and short_id = #{dto.shortId}
-            </if>
-            <if test="dto.userId != null and dto.userId != ''">
-                and user_id = #{dto.userId}
-            </if>
-            <if test="dto.commodityId != null and dto.commodityId != ''">
-                and commodity_id = #{dto.commodityId}
-            </if>
-            <if test="dto.isDeleted != null">
-                and is_deleted = #{dto.isDeleted}
-            </if>
-            <if test="dto.createUser != null and dto.createUser != ''">
-                and create_user = #{dto.createUser}
-            </if>
-            <if test="dto.updateUser != null and dto.updateUser != ''">
-                and update_user = #{dto.updateUser}
-            </if>
-            <if test="dto.createTime != null">
-                and create_time = #{dto.createTime}
-            </if>
-            <if test="dto.updateTime != null">
-                and update_time = #{dto.updateTime}
-            </if>
-        </where>
-        limit #{limit}
-    </select>
-    
-    <!--��ѯ��ҳ����-->
-    <select id="queryPage" resultMap="ServerResourcesVOMap">
-        select
-id, resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, resources_user_name, node_port, public_broker_key, sni, short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time
-        from server_resources
-        <where>
-        1 = 1 and is_deleted = 0 
-            <if test="dto.id != null and dto.id != ''">
-                and id = #{dto.id}
-            </if>
-            <if test="dto.resourcesIp != null and dto.resourcesIp != ''">
-                and resources_ip = #{dto.resourcesIp}
-            </if>
-            <if test="dto.resourcesPort != null and dto.resourcesPort != ''">
-                and resources_port = #{dto.resourcesPort}
-            </if>
-            <if test="dto.resourcesPassword != null and dto.resourcesPassword != ''">
-                and resources_password = #{dto.resourcesPassword}
-            </if>
-            <if test="dto.resourcesStatus != null and dto.resourcesStatus != ''">
-                and resources_status = #{dto.resourcesStatus}
-            </if>
-            <if test="dto.resourceTenant != null and dto.resourceTenant != ''">
-                and resource_tenant = #{dto.resourceTenant}
-            </if>
-            <if test="dto.leaseExpirationTime != null">
-                and lease_expiration_time = #{dto.leaseExpirationTime}
-            </if>
-            <if test="dto.salesStatus != null and dto.salesStatus != ''">
-                and sales_status = #{dto.salesStatus}
-            </if>
-            <if test="dto.availableStatus != null">
-                and available_status = #{dto.availableStatus}
-            </if>
-
-            <if test="dto.vendorAccountId != null and dto.vendorAccountId != ''">
-                and vendor_account_id = #{dto.vendorAccountId}
-            </if>
-            <if test="dto.resourcesUserName != null and dto.resourcesUserName != ''">
-                and resources_user_name = #{dto.resourcesUserName}
-            </if>
-            <if test="dto.nodePort != null and dto.nodePort != ''">
-                and node_port = #{dto.nodePort}
-            </if>
-            <if test="dto.publicBrokerKey != null and dto.publicBrokerKey != ''">
-                and public_broker_key = #{dto.publicBrokerKey}
-            </if>
-            <if test="dto.sni != null and dto.sni != ''">
-                and sni = #{dto.sni}
-            </if>
-            <if test="dto.shortId != null and dto.shortId != ''">
-                and short_id = #{dto.shortId}
-            </if>
-            <if test="dto.userId != null and dto.userId != ''">
-                and user_id = #{dto.userId}
-            </if>
-            <if test="dto.commodityId != null and dto.commodityId != ''">
-                and commodity_id = #{dto.commodityId}
-            </if>
-            <if test="dto.isDeleted != null">
-                and is_deleted = #{dto.isDeleted}
-            </if>
-            <if test="dto.createUser != null and dto.createUser != ''">
-                and create_user = #{dto.createUser}
-            </if>
-            <if test="dto.updateUser != null and dto.updateUser != ''">
-                and update_user = #{dto.updateUser}
-            </if>
-            <if test="dto.createTime != null">
-                and create_time = #{dto.createTime}
-            </if>
-            <if test="dto.updateTime != null">
-                and update_time = #{dto.updateTime}
-            </if>
-        </where>
-    </select>
-
 
 
     <select id="haveServerResources" resultType="java.lang.String">
@@ -615,7 +383,54 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
     </select>
 
     <select id="selectByIdForUpdate" resultType="com.ruoyi.system.domain.entity.ServerResources">
-        select * from server_resources where is_deleted = 0 and id = #{resourcesId}
+        select * from server_resources where is_deleted = 0 and id = #{resourcesId} for update
+    </select>
+
+    <!-- 查询到期资源（lease_expiration_time < now() - 30分钟） -->
+    <select id="selectExpiredResources" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select
+            id, resources_ip, resources_port, resources_user_name, resources_password,
+            resources_status, resource_tenant, lease_expiration_time, sales_status,
+            available_status, vendor_account_id, node_port, public_broker_key, sni,
+            short_id, user_id, commodity_id, password, is_deleted, create_user,
+            update_user, create_time, update_time
+        from server_resources
+        where is_deleted = 0
+          and sales_status = 'SALE'
+          and lease_expiration_time is not null
+          and lease_expiration_time &lt; date_sub(now(), interval 30 minute)
+    </select>
+
+    <select id="findByCommodityIdList" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select * from server_resources
+        where commodity_id = #{commodityId}
+          and is_deleted = 0
+          and sales_status = 'NOT_SALE'
+          and available_status = 1
+          and (lease_expiration_time is null or lease_expiration_time &lt; date_sub(now(), interval 30 minute) )
+        order by update_time
+        limit 5
+    </select>
+
+    <select id="findByServerResourcesIdForUpdate" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select * from server_resources
+        where id = #{id}
+          and is_deleted = 0
+          and sales_status = 'NOT_SALE'
+          and available_status = 1
+          and (lease_expiration_time is null or lease_expiration_time &lt; date_sub(now(), interval 30 minute) )
+        for update skip locked
+    </select>
+
+    <select id="getFaultTimeByResourcesId" resultType="java.lang.String">
+        SELECT
+             SEC_TO_TIME(SUM(TIMESTAMPDIFF(SECOND, begin_time, end_time))) AS faultTime
+         FROM ry_vue.server_resource_alarm
+         WHERE resource_id = #{resourcesId}
+           AND is_deleted = 0
+           AND begin_time IS NOT NULL
+           AND end_time IS NOT NULL
+           AND begin_time >= DATE_SUB(NOW(), INTERVAL 30 DAY);
     </select>
 
 
@@ -624,62 +439,5 @@ id, resources_ip, resources_port, resources_password, resources_status, resource
         insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, resources_user_name, node_port, public_broker_key, sni, short_id, user_id, commodity_id,password, is_deleted, create_user, update_user, create_time, update_time)
         values (#{id},#{resourcesIp}, #{resourcesPort}, #{resourcesPassword}, #{resourcesStatus}, #{resourceTenant}, #{leaseExpirationTime}, #{salesStatus}, #{availableStatus},  #{vendorAccountId}, #{resourcesUserName}, #{nodePort}, #{publicBrokerKey}, #{sni}, #{shortId}, #{userId}, #{commodityId},#{password}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
-
-    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources(id,resources_ip, resources_port, resources_password,
-                                     resources_status, resource_tenant, lease_expiration_time,
-                                     sales_status, available_status, vendor_account_id, resources_user_name,
-                                     node_port, public_broker_key, sni, short_id, user_id,
-                                     commodity_id, is_deleted, create_user, update_user, create_time, update_time)
-        values
-             <foreach collection="entities" item="entity" separator=",">
-             (#{entity.id},#{entity.resourcesIp}, #{entity.resourcesPort}, #{entity.resourcesPassword},
-              #{entity.resourcesStatus}, #{entity.resourceTenant}, #{entity.leaseExpirationTime},
-              #{entity.salesStatus}, #{entity.availableStatus},  #{entity.vendorAccountId},
-              #{entity.resourcesUserName}, #{entity.nodePort}, #{entity.publicBrokerKey},
-              #{entity.sni}, #{entity.shortId}, #{entity.userId}, #{entity.commodityId},
-              #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser},
-              #{entity.createTime}, #{entity.updateTime})
-             </foreach>
-    </insert>
-
-    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
-        insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status,
-                                     resource_tenant, lease_expiration_time, sales_status, available_status,
-                                     vendor_account_id, resources_user_name, node_port, public_broker_key, sni,
-                                     short_id, user_id, commodity_id, is_deleted, create_user, update_user, create_time, update_time)
-        values
-            <foreach collection="entities" item="entity" separator=",">
-                (#{entity.id},#{entity.resourcesIp}, #{entity.resourcesPort}, #{entity.resourcesPassword},
-                 #{entity.resourcesStatus}, #{entity.resourceTenant}, #{entity.leaseExpirationTime},
-                 #{entity.salesStatus}, #{entity.availableStatus},  #{entity.vendorAccountId},
-                 #{entity.resourcesUserName}, #{entity.nodePort}, #{entity.publicBrokerKey},
-                 #{entity.sni}, #{entity.shortId}, #{entity.userId}, #{entity.commodityId},
-                 #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser},
-                 #{entity.createTime}, #{entity.updateTime})
-            </foreach>
-            on duplicate key update
-        resources_ip = values(resources_ip),
-        resources_port = values(resources_port),
-        resources_password = values(resources_password),
-        resources_status = values(resources_status),
-        resource_tenant = values(resource_tenant),
-        lease_expiration_time = values(lease_expiration_time),
-        sales_status = values(sales_status),
-        available_status = values(available_status),
-        vendor_account_id = values(vendor_account_id),
-        resources_user_name = values(resources_user_name),
-        node_port = values(node_port),
-        public_broker_key = values(public_broker_key),
-        sni = values(sni),
-        short_id = values(short_id),
-        user_id = values(user_id),
-        commodity_id = values(commodity_id),
-        is_deleted = values(is_deleted),
-        create_user = values(create_user),
-        update_user = values(update_user),
-        create_time = values(create_time),
-        update_time = values(update_time)    </insert>
-
 </mapper>
 

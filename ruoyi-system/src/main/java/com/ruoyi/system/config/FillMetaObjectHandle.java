@@ -62,7 +62,11 @@ public class FillMetaObjectHandle implements MetaObjectHandler {
     }
 
     private String getLoginUser() {
-        return SecurityUtils.getUserId().toString();
+        try{
+            return SecurityUtils.getUserId().toString();
+        }catch (Exception e){
+            return "";
+        }
     }
 
 }

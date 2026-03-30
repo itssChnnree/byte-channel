@@ -5,6 +5,7 @@ import java.util.Date;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableField;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -54,6 +55,12 @@ public class ShopNotice extends ByteBaseEntity implements Serializable {
      */
     @TableField(value = "sort")
     private Integer sort;
+
+    @TableField(value = "tag")
+    private String tag;
+
+    @ApiModelProperty("document_description")
+    private String documentDescription;
 
     /**
      * 状态,0为发布，1为草稿

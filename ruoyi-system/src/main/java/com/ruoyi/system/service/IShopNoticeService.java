@@ -92,4 +92,13 @@ public interface IShopNoticeService {
      * @return com.ruoyi.system.http.Result
      **/
     Result changeStatus(String id);
+
+    /**
+     * [查询教程列表-用户维度去重]
+     * 使用Redis游标记录用户查询进度，每轮查询不重复，支持sort重复场景
+     * @author 陈湘岳 2026/3/23
+     * @param userId 用户ID
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result tutorialList(String userId,Boolean isNew);
 }

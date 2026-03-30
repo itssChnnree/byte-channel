@@ -188,7 +188,7 @@
         where
             1 = 1 and is_deleted = 0
             <if test="dto.noticeTitle != null and dto.noticeTitle != ''">
-                and notice_title like concat('%','公告','%')
+                and notice_title like concat('%',#{dto.noticeTitle},'%')
             </if>
             <if test="dto.noticeType != null and dto.noticeType != ''">
                 and notice_type = #{dto.noticeType}
@@ -209,11 +209,9 @@
         where
         1 = 1 and is_deleted = 0
         <if test="dto.noticeTitle != null and dto.noticeTitle != ''">
-            and notice_title like concat('%','公告','%')
+            and notice_title like concat('%',#{dto.noticeTitle},'%')
         </if>
-        <if test="dto.noticeType != null and dto.noticeType != ''">
-            and notice_type = #{dto.noticeType}
-        </if>
+            and notice_type in ('1','2')
         <if test="dto.status != null and dto.status != ''">
             and sn.`status` = #{dto.status}
         </if>
@@ -240,6 +238,8 @@
                notice_content,
                sort,
                is_deleted,
+               tag,
+               document_description,
                sn.status,
                su.nick_name as create_user,
                su2.nick_name as update_user,
@@ -255,9 +255,9 @@
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
-        insert into shop_notice(id, notice_title, notice_type, notice_content, sort, is_deleted, status, create_user,
+        insert into shop_notice(id, notice_title, notice_type, notice_content, sort, document_description, tag,is_deleted, status, create_user,
                                 update_user, create_time, update_time)
-        values (#{id}, #{noticeTitle}, #{noticeType}, #{noticeContent}, #{sort}, #{isDeleted}, #{status},
+        values (#{id}, #{noticeTitle}, #{noticeType}, #{noticeContent}, #{sort},#{documentDescription}, #{tag},#{isDeleted}, #{status},
                 #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
 
@@ -293,6 +293,24 @@
         create_time = values(create_time),
         update_time = values(update_time)
     </insert>
+
+    <!-- 查询教程列表-复合游标分页 -->
+    <select id="selectTutorialListByCursor" resultType="com.ruoyi.system.domain.vo.ShopNoticeVo">
+        select
+            id, notice_title, notice_type, sort, status, create_time, tag, document_description
+        from shop_notice
+        where is_deleted = 0
+          and status = '0'
+          and notice_type = '3'
+          <if test="lastSort != null and lastId != null">
+              and (sort > #{lastSort} or (sort = #{lastSort} and id > #{lastId}))
+          </if>
+          <if test="lastSort == null or lastId == null">
+              and 1 = 1
+          </if>
+        order by sort asc, id asc
+        limit #{limit}
+    </select>
 
 </mapper>
 

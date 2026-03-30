@@ -118,6 +118,9 @@ public class OrderServiceImpl implements IOrderService {
     @Resource
     private IOrderPayTypeService orderPayTypeService;
 
+    @Resource
+    private ServerResourcesServiceImpl serverResourcesService;
+
     /**
      * [直接从商品创建订单]
      *
@@ -1191,8 +1194,9 @@ public class OrderServiceImpl implements IOrderService {
             LogEsUtil.warn("未查询到订单购买商品,订单id:"+order.getId());
             throw new BaseException("未查询到订单购买商品，请重新购买或提交工单");
         }
-        ServerResources byCommodityId = serverResourcesMapper.findByCommodityId(orderCommodity.getCommodityId());
+        ServerResources byCommodityId = serverResourcesService.findByCommodityId(orderCommodity.getCommodityId());
         if (ObjectUtil.isNull(byCommodityId)){
+            LogEsUtil.warn("分配资源失败，资源不足,订单id:"+order.getId());
             return null;
         }
         Date timeByPaymentPeriod = getTimeByPaymentPeriod(order.getPaymentPeriod(),new Date());

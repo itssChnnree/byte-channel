@@ -1,7 +1,9 @@
 package com.ruoyi.web.controller.shopController;
 
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.dto.ShopNoticeDto;
 import com.ruoyi.system.domain.vo.ShopNoticeVo;
 import com.ruoyi.system.http.Result;
@@ -97,6 +99,17 @@ public class ShopNoticeController {
             return Result.fail("请选择查询的公告");
         }
         return shopNoticeService.getByIdSystem(id);
+    }
+
+    @GetMapping("/tutorialList")
+    @ApiOperation("查询教程列表-用户维度去重")
+    public Result tutorialList(Boolean isNew) {
+        // 从SecurityUtils获取当前用户ID
+        String userId = SecurityUtils.getStrUserId();
+        if (ObjectUtil.isNull(isNew)){
+            isNew = false;
+        }
+        return shopNoticeService.tutorialList(userId,isNew);
     }
 
 

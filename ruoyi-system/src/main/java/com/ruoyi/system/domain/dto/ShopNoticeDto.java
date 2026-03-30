@@ -30,7 +30,7 @@ public class ShopNoticeDto extends PageBase {
     @ApiModelProperty("公告标题")
     private String noticeTitle;
 
-    @ApiModelProperty("公告类型（1通知 2公告）")
+    @ApiModelProperty("公告类型（1通知 2公告 3教程）")
     private String noticeType;
 
     @ApiModelProperty("公告内容")
@@ -39,6 +39,11 @@ public class ShopNoticeDto extends PageBase {
     @ApiModelProperty("通知公告排序，由低到高排序，0展示最前面，相同按创建时间排序")
     private Integer sort;
 
+    @ApiModelProperty("标签")
+    private String tag;
+
+    @ApiModelProperty("文档描述")
+    private String documentDescription;
 
     @ApiModelProperty("状态,0为发布，1为草稿")
     private String status;

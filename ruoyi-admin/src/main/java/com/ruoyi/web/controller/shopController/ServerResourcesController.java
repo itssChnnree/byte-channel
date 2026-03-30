@@ -139,6 +139,15 @@ public class ServerResourcesController{
         return serverResourcesService.getResourcesStatus(resourcesId);
     }
 
+    @GetMapping("/getResourcesStatusByUser")
+    @ApiOperation("用户获取资源状态")
+    public Result getResourcesStatusByUser(String resourcesId) {
+        if (StrUtil.isBlank(resourcesId)){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.getResourcesStatusByUser(resourcesId);
+    }
+
 
 
     @GetMapping("/networkConnectivityTesting")
@@ -228,6 +237,16 @@ public class ServerResourcesController{
     @ApiOperation("获取续费资源商品快照")
     public Result getOrderRenewal(String orderId){
         return serverResourcesService.getOrderRenewal(orderId);
+    }
+
+    @PostMapping("/toggleAvailableStatus")
+    @ApiOperation("切换资源上下架状态")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result toggleAvailableStatus(@RequestBody IdDto idDto) {
+        if (StrUtil.isBlank(idDto.getId())){
+            return Result.fail("请选择变更资源");
+        }
+        return serverResourcesService.toggleAvailableStatus(idDto.getId());
     }
 
 

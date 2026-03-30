@@ -38,7 +38,23 @@ public class ServerResourceAlarmVo {
     @ApiModelProperty("结束时间")
     private Date endTime;
 
+    // 关联资源信息
+    @ApiModelProperty("IP地址")
+    private String resourcesIp;
 
+    @ApiModelProperty("商品名称")
+    private String commodityName;
 
+    @ApiModelProperty("厂商名称")
+    private String vendorName;
+
+    @ApiModelProperty("节点状态")
+    private String resourcesStatus;
+
+    @ApiModelProperty("销售状态")
+    private String salesStatus;
+
+    @ApiModelProperty("上下架状态：1-上架，0-下架")
+    private Integer availableStatus;
 
 }

@@ -27,15 +27,19 @@ import com.ruoyi.system.service.IResourceBlockDomainService;
 import com.ruoyi.system.domain.entity.ResourceBlockDomain;
 import com.ruoyi.system.domain.vo.ResourceBlockDomainVo;
 import com.ruoyi.system.util.XrayManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import javax.swing.text.html.parser.Entity;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +58,12 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
 
     @Resource
     private ResourceBlockDomainMapstruct resourceBlockDomainMapstruct;
+
+    @Resource
+    private TransactionTemplate transactionTemplate;
+
+    @Resource(name = "resourceBlockDomainExecutor")
+    private Executor resourceBlockDomainExecutor;
 
     @Resource
     private ServerResourcesMapper serverResourcesMapper;
@@ -227,31 +237,47 @@ public class ResourceBlockDomainServiceImpl implements IResourceBlockDomainServi
         String domainList = JSON.toJSONString(blackDomainArr);
         List<ServerResources> allServerResourcesList = serverResourcesMapper.findAll();
         Authentication authentication = SecurityUtils.getAuthentication();
-        allServerResourcesList.parallelStream().forEach(serverResources -> {
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String resourcesIp = serverResources.getResourcesIp();
-            //调用节点方法
-            String post = XrayManager.updateBlockDomains(resourcesIp, domainList);
-            FailedDomainBlockingLog failedDomainBlockingLog = null;
-            if (StrUtil.isBlank(post)){
-                failedDomainBlockingLog = getFailedDomainBlockingLog(serverResources.getId(), "调用接口失败");
-                failedDomainBlockingLogMapper.insert(failedDomainBlockingLog);
-            }else {
-                Result result = JSON.parseObject(post, Result.class);
-                if (result.getCode() != 200){
-                    failedDomainBlockingLog = getFailedDomainBlockingLog(serverResources.getId(), result.getMessage());
-                }
-                if (ObjectUtil.isNotNull(failedDomainBlockingLog)){
-                    failedDomainBlockingLogMapper.insert(failedDomainBlockingLog);
-                }
-            }
-
-        });
+        for (ServerResources serverResources : allServerResourcesList){
+            CompletableFuture.runAsync(() -> {
+                transactionTemplate.execute(status->{
+                    try{
+                        excuteBlockDomain(authentication, serverResources, domainList);
+                    }finally {
+                        //清理认证信息
+                        SecurityContextHolder.clearContext();
+                    }
+                    return null;
+                });
+            },resourceBlockDomainExecutor);
+        }
         //将待生效状态变为正常
         resourceBlockDomainMapper.updateStatusToNormal(EntityStatus.TO_BE_EFFECTIVE, EntityStatus.NORMAL);
         //待失效状态变为禁用
         resourceBlockDomainMapper.updateStatusToNormal(EntityStatus.TO_BE_INVALID, EntityStatus.DISABLED);
         //删除待删除数据
         resourceBlockDomainMapper.deleteByStatus(EntityStatus.TO_BE_DELETED);
+    }
+
+
+    private void excuteBlockDomain(Authentication authentication,
+                                   ServerResources serverResources,
+                                   String domainList){
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String resourcesIp = serverResources.getResourcesIp();
+        //调用节点方法
+        String post = XrayManager.updateBlockDomains(resourcesIp, domainList);
+        FailedDomainBlockingLog failedDomainBlockingLog = null;
+        if (StrUtil.isBlank(post)){
+            failedDomainBlockingLog = getFailedDomainBlockingLog(serverResources.getId(), "调用接口失败");
+        }else {
+            Result result = JSON.parseObject(post, Result.class);
+            if (result.getCode() != 200){
+                failedDomainBlockingLog = getFailedDomainBlockingLog(serverResources.getId(), result.getMessage());
+            }
+        }
+        if (ObjectUtil.isNotNull(failedDomainBlockingLog)){
+            failedDomainBlockingLogMapper.insert(failedDomainBlockingLog);
+        }
+
     }
 }

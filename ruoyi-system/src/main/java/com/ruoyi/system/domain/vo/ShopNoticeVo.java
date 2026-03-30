@@ -42,6 +42,12 @@ public class ShopNoticeVo {
     @ApiModelProperty("创建时间")
     private Date createTime;
 
+    @ApiModelProperty("标签")
+    private String tag;
+
+    @ApiModelProperty("文档描述")
+    private String documentDescription;
+
     @ApiModelProperty("更新时间")
     private Date updateTime;
 

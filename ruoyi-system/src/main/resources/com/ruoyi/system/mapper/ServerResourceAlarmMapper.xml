@@ -198,9 +198,45 @@
 
 
     <select id="selectNotEndAlarmVoList" resultType="com.ruoyi.system.domain.vo.ServerResourceAlarmVo">
-        select id, resource_id, alarm_type, alarm_status, begin_time, end_time
-        from server_resource_alarm
-        where is_deleted = 0 and end_time is null
+        SELECT
+            a.id,
+            a.resource_id,
+            a.alarm_type,
+            a.alarm_status,
+            a.begin_time,
+            a.end_time,
+            r.resources_ip,
+            c.commodity_name,
+            c.category_id,
+            vi.vendor_name,
+            r.resources_status,
+            r.sales_status,
+            r.available_status
+        FROM server_resource_alarm a
+        LEFT JOIN server_resources r ON a.resource_id = r.id AND r.is_deleted = 0
+        LEFT JOIN commodity c ON r.commodity_id = c.id AND c.is_deleted = 0
+        LEFT JOIN vendor_account_information vai ON r.vendor_account_id = vai.id AND vai.is_deleted = 0
+        LEFT JOIN vendor_information vi ON vai.vendor_id = vi.id AND vi.is_deleted = 0
+        WHERE a.is_deleted = 0
+        <if test="alarmStatus != null and alarmStatus != ''">
+            AND a.alarm_status = #{alarmStatus}
+        </if>
+        <if test="alarmStatusList != null and alarmStatusList.size() >0">
+            AND a.alarm_status in
+            <foreach collection="alarmStatusList" item="i" separator="," close=")" open="(">
+                #{i}
+            </foreach>
+        </if>
+        <if test="categoryId != null and categoryId != ''">
+            AND c.category_id = #{categoryId}
+        </if>
+        <if test="commodityId != null and commodityId != ''">
+            AND c.id = #{commodityId}
+        </if>
+        <if test="resourcesIp != null and resourcesIp != ''">
+            AND r.resources_ip LIKE CONCAT('%', #{resourcesIp}, '%')
+        </if>
+        ORDER BY a.begin_time asc
     </select>
 
 

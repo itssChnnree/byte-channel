@@ -287,5 +287,17 @@ id, user_id, amount, status, description,order_time, is_deleted, create_user, up
         limit #{limit}
     </select>
 
+    <!-- 查询待分配资源的新购订单 -->
+    <select id="selectWaitAllocationOrders" resultMap="OrderMap">
+        select
+            id, user_id, amount, payment_period, payment_id, payment_type,
+            order_type, status, description, order_time,
+            is_deleted, create_user, update_user, create_time, update_time
+        from `order`
+        where is_deleted = 0
+          and status = 'WAIT_ALLOCATION_RESOURCES'
+          and order_type = 'add'
+    </select>
+
 </mapper>
 

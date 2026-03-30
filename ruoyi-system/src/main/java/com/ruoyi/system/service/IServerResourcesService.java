@@ -6,6 +6,7 @@ import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
 import com.ruoyi.system.domain.dto.ServerUpdateDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
+import com.ruoyi.system.domain.entity.ServerResourcesXrayValid;
 import com.ruoyi.system.domain.vo.ServerResourcesDetailVo;
 import com.ruoyi.system.domain.vo.ServerResourcesVo;
 import com.ruoyi.system.http.Result;
@@ -86,6 +87,14 @@ public interface IServerResourcesService{
      **/
     Result getResourcesStatus(String resourcesId);
 
+    /**
+     * [校验xray资源状态]
+     * @author 陈湘岳 2025/9/25
+     * @param resourcesId
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getResourcesStatusByUser(String resourcesId);
+
 
     /**
      * [网络连通性检测，检测与资源节点之间的网络联通性]
@@ -94,6 +103,15 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     Result networkConnectivityTesting(String resourcesId);
+
+    /**
+     * [新增资源检测]
+     * @author 陈湘岳 2026/3/30
+     * @param userId 节点的userId
+     * @param serverResources 资源
+     * @return com.ruoyi.system.domain.entity.ServerResourcesXrayValid
+     **/
+    ServerResourcesXrayValid newResourcesValid(String userId, ServerResources serverResources);
 
 
     /**
@@ -185,4 +203,30 @@ public interface IServerResourcesService{
      * @return void
      **/
     void resourceDetectionTask();
+
+    /**
+     * [切换资源上下架状态]
+     * 上架变为下架，下架变为上架
+     * @author 陈湘岳 2026/3/23
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result toggleAvailableStatus(String id);
+
+    /**
+     * [更新到期资源]
+     * 查询租赁到期时间小于当前时间减去30分钟的资源，
+     * 将salesStatus设置为未售出，并将租赁到期时间和资源当前租户设置为null
+     * @author 陈湘岳 2026/3/23
+     * @return int 清理的资源数量
+     **/
+    int cleanExpiredResources();
+
+    /**
+     * [查询可售商品]
+     * 上架变为下架，下架变为上架
+     * @author 陈湘岳 2026/3/28
+     * @return com.ruoyi.system.http.Result
+     **/
+    ServerResources findByCommodityId(String commodityId);
 }

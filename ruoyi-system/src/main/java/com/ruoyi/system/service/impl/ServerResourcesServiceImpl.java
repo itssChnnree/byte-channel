@@ -25,6 +25,7 @@ import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.ServerResourcesMapstruct;
+import com.ruoyi.system.service.IServerResourceAlarmService;
 import com.ruoyi.system.service.IServerResourcesService;
 import com.ruoyi.system.util.LogEsUtil;
 import com.ruoyi.system.util.LogEsUtil;
@@ -57,6 +58,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -99,6 +101,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
     @Resource
     private ServerResourcesXrayValidMapper serverResourcesXrayValidMapper;
+
+    @Resource
+    private IServerResourceAlarmService serverResourceAlarmService;
 
     @Resource
     private ResourceAllocationTemporaryStorageMapper resourceAllocationTemporaryStorageMapper;
@@ -207,9 +212,10 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
         if (insert > 0){
             //新增资源校验数据
-            String strUserId = SecurityUtils.getStrUserId();
+            Authentication authentication = SecurityUtils.getAuthentication();
             CompletableFuture.runAsync(() -> {
-                newResourcesValid(userId, serverResources,strUserId);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                newResourcesValid(userId, serverResources);
                 ServerResourcesServiceImpl serverResourcesService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
                 serverResourcesService.getResourcesStatus(serverResources.getId());
             });
@@ -223,8 +229,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
 
 
-    private ServerResourcesXrayValid newResourcesValid(String userId,ServerResources serverResources,String strUserId){
-
+    public ServerResourcesXrayValid newResourcesValid(String userId,ServerResources serverResources){
         String cacheObject = redisCache.getCacheObject("sys_config:sys:validServer:ip");
         if (StrUtil.isBlank(serverResources.getId())||StrUtil.isBlank(cacheObject)){
             //如果id为空或者校验服务器ip为空则不新增资源校验
@@ -258,8 +263,6 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResourcesXrayValid.setWebIpPort(minUseIp);
         serverResourcesXrayValid.setXrayPort(result.getData().toString());
         serverResourcesXrayValid.setResourcesId(serverResources.getId());
-        serverResourcesXrayValid.setCreateUser(strUserId);
-        serverResourcesXrayValid.setUpdateUser(strUserId);
         serverResourcesXrayValidMapper.deleteByResourcesIdInt(serverResources.getId());
         serverResourcesXrayValidMapper.insert(serverResourcesXrayValid);
         return serverResourcesXrayValid;
@@ -458,9 +461,10 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
         if (update > 0){
             //新增资源校验数据
-            String strUserId = SecurityUtils.getStrUserId();
+            Authentication authentication = SecurityUtils.getAuthentication();
             CompletableFuture.runAsync(() -> {
-                newResourcesValid(userId, serverResources, strUserId);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                newResourcesValid(userId, serverResources);
                 ServerResourcesServiceImpl serverResourcesService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
                 serverResourcesService.getResourcesStatus(serverResources.getId());
             });
@@ -613,6 +617,10 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     @Override
     public Result<ServerResourcesDetailVo> getById(String id) {
         ServerResourcesDetailVo serverResourcesDetailVo = serverResourcesMapper.getById(id);
+        if (!ObjectUtils.isEmpty(serverResourcesDetailVo)){
+            String faultTimeByResourcesId = serverResourcesMapper.getFaultTimeByResourcesId(id);
+            serverResourcesDetailVo.setFaultTime(faultTimeByResourcesId);
+        }
         return ObjectUtils.isEmpty(serverResourcesDetailVo)? Result.fail("资源不存在"):Result.success(serverResourcesDetailVo);
     }
 
@@ -780,7 +788,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             if (ObjectUtils.isEmpty(serverResources)) {
                 return Result.fail("资源不存在");
             }
-            byResourcesId = newResourcesValid(serverResources.getUserId(), serverResources, SecurityUtils.getStrUserId());
+            byResourcesId = newResourcesValid(serverResources.getUserId(), serverResources);
         }
 
         String xrayStatus = "";
@@ -788,17 +796,68 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             xrayStatus = XrayManager.checkXrayStatus(byResourcesId.getWebIpPort(), byResourcesId.getXrayPort());
         }catch (Exception e){
             LogEsUtil.error("调用go[CheckXrayStatus]接口失败，错误原因为" + e.getMessage(),e);
-            return Result.fail("检测节点状态失败");
         }
-
         Result result = JSON.parseObject(xrayStatus, Result.class);
-        LogEsUtil.info("调用go[CheckXrayStatus]接口成功，返回结果为" + result.getData());
 
-        if (!ObjectUtils.isEmpty(result.getData())&&"200".equals(result.getData().toString().trim())) {
+        if (!ObjectUtils.isEmpty(result)
+                &&!ObjectUtils.isEmpty(result.getData())
+                    &&"200".equals(result.getData().toString().trim())) {
             serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.NORMAL);
+            serverResourceAlarmService.repairResourceAlarm(resourcesId,FaultHandingStatus.SELF_HEALING);
             return Result.success("节点状态正常",true);
         } else {
             serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.ERROR);
+            // 第二步：整体检测失败，进行详细检测
+            String alarmType = "未知异常";
+            saveResourceAlarm(resourcesId, alarmType);
+            return Result.success("节点状态异常",false);
+        }
+    }
+
+    /**
+     * [校验xray资源状态]
+     *
+     * @param resourcesId
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2025/9/25
+     **/
+    @Override
+    @Transactional
+    public Result getResourcesStatusByUser(String resourcesId) {
+        // 资源校验不存在  新增资源校验
+        ServerResources serverResources = serverResourcesMapper.selectById(resourcesId);
+        if (ObjectUtils.isEmpty(serverResources)) {
+            return Result.fail("资源不存在");
+        }
+        if (SalesStatus.ON_SALE.equals(serverResources.getSalesStatus())
+               && !SecurityUtils.getStrUserId().equals(serverResources.getUserId())
+                    && serverResources.getLeaseExpirationTime().before(new Date())){
+            return Result.fail("您没有权限查看此资源");
+        }
+        ServerResourcesXrayValid byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(resourcesId);
+        if (byResourcesId == null) {
+            byResourcesId = newResourcesValid(serverResources.getUserId(), serverResources);
+        }
+
+        String xrayStatus = "";
+        try {
+            xrayStatus = XrayManager.checkXrayStatus(byResourcesId.getWebIpPort(), byResourcesId.getXrayPort());
+        }catch (Exception e){
+            LogEsUtil.error("调用go[CheckXrayStatus]接口失败，错误原因为" + e.getMessage(),e);
+        }
+        Result result = JSON.parseObject(xrayStatus, Result.class);
+
+        if (!ObjectUtils.isEmpty(result)
+                &&!ObjectUtils.isEmpty(result.getData())
+                &&"200".equals(result.getData().toString().trim())) {
+            serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.NORMAL);
+            serverResourceAlarmService.repairResourceAlarm(resourcesId,FaultHandingStatus.SELF_HEALING);
+            return Result.success("节点状态正常",true);
+        } else {
+            serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.ERROR);
+            // 第二步：整体检测失败，进行详细检测
+            String alarmType = "未知异常";
+            saveResourceAlarm(resourcesId, alarmType);
             return Result.success("节点状态异常",false);
         }
     }
@@ -925,7 +984,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
                     LogEsUtil.info("资源不存在");
                     return;
                 }
-                xrayValid = newResourcesValid(serverResources.getUserId(), serverResources, SecurityUtils.getStrUserId());
+                xrayValid = newResourcesValid(serverResources.getUserId(), serverResources);
             }
             
             String xrayStatus = "";
@@ -945,19 +1004,8 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             }
             serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.ERROR);
             // 第二步：整体检测失败，进行详细检测
-            LogEsUtil.info("资源 " + resourcesId + " 整体检测失败，开始详细检测");
-
-            List<String> failedItems = getErrorReason(resource);
-
             String alarmType = "未知异常";
-            // 如果有失败的检测项，保存告警
-            if (!failedItems.isEmpty()) {
-                alarmType = String.join(",", failedItems);
-
-                LogEsUtil.warn("资源 " + resourcesId + " 检测失败，失败项：" + alarmType);
-            }
             saveResourceAlarm(resourcesId, alarmType);
-            
         } catch (Exception e) {
             LogEsUtil.error("检测资源 " + resourcesId + " 时发生异常：" + e.getMessage(), e);
             throw new RuntimeException("资源检测异常,message"+e.getMessage());
@@ -1077,4 +1125,175 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             LogEsUtil.error("保存资源告警失败，资源ID：" + resourcesId + "，错误：" + e.getMessage(), e);
         }
     }
+
+    /**
+     * [切换资源上下架状态]
+     * 上架变为下架，下架变为上架
+     * @author 陈湘岳 2026/3/23
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result toggleAvailableStatus(String id) {
+        // 查询资源
+        ServerResources resource = serverResourcesMapper.selectByIdForUpdate(id);
+        if (resource == null || resource.getIsDeleted() == 1) {
+            return Result.fail("资源不存在");
+        }
+
+        // 获取当前状态并切换
+        Integer currentStatus = resource.getAvailableStatus();
+        Integer newStatus;
+        String message;
+
+        if (currentStatus == null || currentStatus.equals(AvailableStatus.AVAILABLE_STATUS_DOWN)) {
+            // 当前为下架，切换为上架
+            newStatus = AvailableStatus.AVAILABLE_STATUS_UP;
+            message = "上架成功";
+        } else {
+            // 当前为上架，切换为下架
+            newStatus = AvailableStatus.AVAILABLE_STATUS_DOWN;
+            message = "下架成功";
+        }
+
+        // 更新状态
+        resource.setAvailableStatus(newStatus);
+        int updated = serverResourcesMapper.updateById(resource);
+
+        if (updated > 0) {
+            LogEsUtil.info("资源" + message + "，资源ID：" + id + "，新状态：" + newStatus);
+            return Result.success(message);
+        } else {
+            LogEsUtil.error("资源上下架状态切换失败，资源ID：" + id, new RuntimeException("Toggle status failed"));
+            return Result.fail("操作失败，请重试");
+        }
+    }
+
+
+    /**
+     * [查询可售商品]
+     *
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/3/28
+     **/
+    @Override
+    public ServerResources findByCommodityId(String commodityId) {
+        List<ServerResources> byCommodityIdList = serverResourcesMapper.findByCommodityIdList(commodityId);
+        if (CollectionUtils.isEmpty(byCommodityIdList)) {
+            //代表没有可用资源
+            return null;
+        }
+        for (ServerResources serverResources : byCommodityIdList) {
+            ServerResources byIdForUpdate = serverResourcesMapper.findByServerResourcesIdForUpdate(serverResources.getId());
+            if (!ObjectUtils.isEmpty(byIdForUpdate)) {
+                return byIdForUpdate;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * [更新到期资源]
+     * 查询租赁到期时间小于当前时间减去30分钟的资源，
+     * 先重置资源节点，再更新数据库状态
+     * @author 陈湘岳 2026/3/23
+     * @return int 清理的资源数量
+     **/
+    @Override
+    public int cleanExpiredResources() {
+        LogEsUtil.info("Start cleaning expired resources");
+
+        List<ServerResources> expiredResources = serverResourcesMapper.selectExpiredResources();
+        if (CollectionUtils.isEmpty(expiredResources)) {
+            LogEsUtil.info("No expired resources found");
+            return 0;
+        }
+
+        LogEsUtil.info("Found " + expiredResources.size() + " expired resources to clean");
+
+        List<CompletableFuture<Integer>> futures = new ArrayList<>();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        for (ServerResources resource : expiredResources) {
+            CompletableFuture<Integer> future = CompletableFuture.supplyAsync(() -> {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                return cleanSingleResource(resource);
+            }, resourceDetectionExecutor);
+            futures.add(future);
+        }
+
+        int successCount = futures.stream()
+                .mapToInt(future -> {
+                    try {
+                        return future.get(15, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        LogEsUtil.error("Resource clean task timeout or failed", e);
+                        return 0;
+                    }
+                })
+                .sum();
+
+        LogEsUtil.info("Expired resource cleaning completed, success: " + successCount + " / " + expiredResources.size());
+        return successCount;
+    }
+
+    /**
+     * [清理单个到期资源]
+     * 先执行资源过期更新，再执行资源重置
+     * @param resource 资源实体
+     * @return int 1表示成功，0表示失败
+     **/
+    private int cleanSingleResource(ServerResources resource) {
+        String resourceId = resource.getId();
+
+        try {
+            // 1. 先执行资源重置（通过SpringUtil获取代理对象，避免AOP失效）
+            ServerResourcesServiceImpl proxyService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
+            Result<ServerResources> resetResult = proxyService.resourceReset(resourceId);
+
+            if (ObjectUtils.isEmpty(resetResult) || resetResult.getCode() != 200) {
+                LogEsUtil.warn("Resource reset failed, resourceId: " + resourceId + ", msg: " + resetResult.getMessage());
+                return 0;
+            }
+
+            // 2. 再使用编程式事务更新资源过期状态
+            Integer expireUpdateResult = transactionTemplate.execute(status -> {
+                try {
+                    ServerResources serverResources = serverResourcesMapper.selectByIdForUpdate(resourceId);
+                    serverResources.setId(resourceId);
+                    serverResources.setSalesStatus(SalesStatus.NOT_SALE);
+                    serverResources.setLeaseExpirationTime(null);
+                    serverResources.setResourceTenant(null);
+
+                    int updated = serverResourcesMapper.updateById(serverResources);
+                    if (updated > 0) {
+                        LogEsUtil.info("Resource expire status updated, resourceId: " + resourceId);
+                        return 1;
+                    } else {
+                        LogEsUtil.warn("Resource expire update failed, resourceId: " + resourceId);
+                        status.setRollbackOnly();
+                        return 0;
+                    }
+                } catch (Exception e) {
+                    LogEsUtil.error("Resource expire update error, resourceId: " + resourceId, e);
+                    status.setRollbackOnly();
+                    return 0;
+                }
+            });
+
+            if (expireUpdateResult == null || expireUpdateResult == 0) {
+                return 0;
+            }
+            return 1;
+
+
+        } catch (Exception e) {
+            LogEsUtil.error("Clean resource failed, resourceId: " + resourceId, e);
+            return 0;
+        }
+    }
+
+
+
+
 }

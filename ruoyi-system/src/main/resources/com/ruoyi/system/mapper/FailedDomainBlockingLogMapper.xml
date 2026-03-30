@@ -164,7 +164,8 @@
         fail_reason,
         resources_ip as ip,
         c.commodity_name as commodityName,
-        cc.category_name as categoryName
+        cc.category_name as categoryName,
+        fdbl.create_time
         from failed_domain_blocking_log fdbl
         left join server_resources sr on fdbl.server_resources_id = sr.id
         left join commodity c on sr.commodity_id = c.id

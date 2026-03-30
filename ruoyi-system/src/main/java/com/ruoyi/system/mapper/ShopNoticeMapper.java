@@ -67,4 +67,17 @@ public interface ShopNoticeMapper extends BaseMapper<ShopNotice> {
      * @return com.ruoyi.system.domain.vo.ShopNoticeVo
      **/
     ShopNoticeVo getByIdSystem(String id);
+
+    /**
+     * [查询教程列表-复合游标分页]
+     * 用于用户教程查询，支持sort+id复合游标避免重复数据问题
+     * @author 陈湘岳 2026/3/23
+     * @param lastSort 上次查询的sort值
+     * @param lastId 上次查询的id
+     * @param limit 查询数量
+     * @return java.util.List<com.ruoyi.system.domain.vo.ShopNoticeVo>
+     **/
+    List<ShopNoticeVo> selectTutorialListByCursor(@Param("lastSort") Integer lastSort,
+                                                   @Param("lastId") String lastId,
+                                                   @Param("limit") int limit);
 }

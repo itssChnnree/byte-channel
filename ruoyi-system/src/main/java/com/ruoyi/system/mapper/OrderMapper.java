@@ -110,4 +110,12 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return java.util.List<com.ruoyi.system.domain.entity.Order>
      **/
     List<Order> findTimeoutWaitPayOrders(@Param("minutes") int minutes);
+
+    /**
+     * [查询待分配资源的新购订单]
+     * 查询状态为 WAIT_ALLOCATION_RESOURCES 且订单类型为新购的订单
+     * @author 陈湘岳 2026/3/23
+     * @return java.util.List<com.ruoyi.system.domain.entity.Order>
+     **/
+    List<Order> selectWaitAllocationOrders();
 }

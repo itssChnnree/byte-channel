@@ -60,4 +60,7 @@ public class ServerResourcesDetailVo {
 
     @ApiModelProperty("服务器用户名")
     private String resourcesUsername;
+
+    @ApiModelProperty("故障时间")
+    private String faultTime;
 }

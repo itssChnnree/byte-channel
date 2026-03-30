@@ -2,6 +2,7 @@ package com.ruoyi.system.domain.vo;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -37,5 +38,9 @@ public class FailedDomainBlockingLogVo {
 
     @ApiModelProperty("商品分类名称")
     private String categoryName;
+
+    @ApiModelProperty("创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTime;
 
 }

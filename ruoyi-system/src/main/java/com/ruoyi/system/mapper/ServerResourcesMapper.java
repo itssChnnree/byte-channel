@@ -163,12 +163,36 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
     ServerResourcesDetailVo getById(@Param("id") String id);
 
     /**
+     * [通过资源id查询资源故障时间]
+     * @author 陈湘岳 2025/10/10
+     * @param resourcesId 资源id
+     * @return java.lang.String
+     **/
+    String getFaultTimeByResourcesId(@Param("resourcesId") String resourcesId);
+
+    /**
      * [通过商品id查询未被分配且未被锁定的资源]
      * @author 陈湘岳 2025/9/28
      * @param commodityId 商品id
      * @return com.ruoyi.system.domain.entity.ServerResources
      **/
     ServerResources findByCommodityId(@Param("commodityId") String commodityId);
+
+    /**
+     * [通过商品id查询未被分配资源集合]
+     * @author 陈湘岳 2025/9/28
+     * @param commodityId 商品id
+     * @return com.ruoyi.system.domain.entity.ServerResources
+     **/
+    List<ServerResources> findByCommodityIdList(@Param("commodityId") String commodityId);
+
+    /**
+     * [通过资源id查询未被分配资源集合]
+     * @author 陈湘岳 2025/9/28
+     * @param id 商品id
+     * @return com.ruoyi.system.domain.entity.ServerResources
+     **/
+    ServerResources findByServerResourcesIdForUpdate(@Param("id") String id);
 
     /**
      * [续费时，通过订单资源表查询对应的资源]
@@ -218,4 +242,12 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return com.ruoyi.system.domain.entity.ServerResources
      **/
     ServerResources selectByIdForUpdate(@Param("resourcesId") String resourcesId);
+
+    /**
+     * [查询到期资源]
+     * 查询租赁到期时间小于当前时间减去30分钟的资源
+     * @author 陈湘岳 2026/3/23
+     * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    List<ServerResources> selectExpiredResources();
 }

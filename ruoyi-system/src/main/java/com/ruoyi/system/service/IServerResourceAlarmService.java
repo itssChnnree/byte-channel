@@ -1,11 +1,12 @@
 package com.ruoyi.system.service;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.pagehelper.PageInfo;
+import com.ruoyi.system.domain.dto.IdDto;
 import com.ruoyi.system.domain.dto.ServerResourceAlarmDto;
 import com.ruoyi.system.domain.entity.ServerResourceAlarm;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.vo.ServerResourceAlarmVo;
+import com.ruoyi.system.http.Result;
 
 import java.util.List;
 
@@ -39,10 +40,10 @@ public interface IServerResourceAlarmService {
     /**
      * [修复资源告警]
      * @author 陈湘岳 2026/3/19
-     * @param serverResources 资源id
+      * @param resourcesId 资源id
      * @return void
      **/
-    void repairResourceAlarm(ServerResources serverResources);
+    void repairResourceAlarm(String resourcesId, String alarmStatus);
 
     /**
      * [故障检测定时任务执行]
@@ -51,4 +52,12 @@ public interface IServerResourceAlarmService {
      * @return void
      **/
     void faultTaskCheckJob();
+
+    /**
+     * [修复资源告警]
+     * @author 陈湘岳 2026/3/30
+     * @param idDto
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result resolve(IdDto idDto);
 }
