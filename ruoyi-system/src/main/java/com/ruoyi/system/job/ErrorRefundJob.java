@@ -1,5 +1,7 @@
 package com.ruoyi.system.job;
 
+import com.ruoyi.system.config.TraceIdContext;
+import com.ruoyi.system.constant.OrderStatus;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.mapper.OrderMapper;
 import com.ruoyi.system.mapper.OrderPayTypeMapper;
@@ -7,6 +9,8 @@ import com.ruoyi.system.pay.application.dto.request.OrderRefundRequest;
 import com.ruoyi.system.pay.application.service.PayOrderApplicationService;
 import com.ruoyi.system.pay.application.vo.RefundResultVo;
 import com.ruoyi.system.pay.domain.valueobject.RefundMode;
+import com.ruoyi.system.service.IOrderStatusTimelineService;
+import com.ruoyi.system.service.impl.OrderStatusTimelineServiceImpl;
 import com.ruoyi.system.util.LogEsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -49,6 +53,11 @@ public class ErrorRefundJob {
     @Resource
     private ThreadPoolTaskExecutor errorRefundExecutor;
 
+    @Resource
+    private IOrderStatusTimelineService orderStatusTimelineService;
+
+
+
     /**
      * 每批处理的订单数量
      */
@@ -73,6 +82,8 @@ public class ErrorRefundJob {
     public void execute() {
         String jobParam = XxlJobHelper.getJobParam();
         int limit = BATCH_SIZE;
+        String traceId = TraceIdContext.generateTraceId();
+        TraceIdContext.initContext(traceId);
         if (jobParam != null && !jobParam.trim().isEmpty()) {
             try {
                 limit = Integer.parseInt(jobParam.trim());
@@ -169,6 +180,11 @@ public class ErrorRefundJob {
                 orderPayTypeMapper.updateIsCheckInt(orderId);
                 LogEsUtil.info("订单差错退款成功，订单id: " + orderId +
                         ", 退款金额: " + result.getTotalRefundAmount());
+                if (OrderStatus.USER_CANCELED.equals(order.getStatus())
+                        || OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
+                    orderMapper.updateStatusById(orderId, OrderStatus.REFUND_SUCCESS);
+                    orderStatusTimelineService.setRefundedSuccessTime(orderId);
+                }
             } else {
                 LogEsUtil.warn("订单差错退款失败，订单id: " + orderId +
                         ", 原因: " + result.getMessage());
@@ -177,7 +193,8 @@ public class ErrorRefundJob {
 
         } catch (Exception e) {
             LogEsUtil.error("处理订单差错退款异常，订单id: " + orderId, e);
-            throw e;  // 抛出异常触发事务回滚
+            // 抛出异常触发事务回滚
+            throw e;
         }
     }
 }

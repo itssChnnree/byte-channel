@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.base.BaseException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
@@ -60,6 +61,9 @@ public class OrderServiceImpl implements IOrderService {
 
     @Resource
     private CommodityMapper commodityMapper;
+
+    @Resource
+    private RedisCache redisCache;
 
     @Resource
     private OrderMapper orderMapper;
@@ -396,7 +400,7 @@ public class OrderServiceImpl implements IOrderService {
      **/
     @Override
     @Transactional
-    public Result cancelOrderNew(String orderId) {
+    public Result cancelOrderNew(String orderId,Boolean refoundToBalance) {
         //一锁
         Order order = orderMapper.queryByIdForUpdate(orderId);
         //二判
@@ -408,8 +412,7 @@ public class OrderServiceImpl implements IOrderService {
             LogEsUtil.warn("订单类型不为新购，订单id为：" + orderId);
             return Result.fail("该订单不是新购订单");
         }
-        String strUserId = SecurityUtils.getStrUserId();
-        if (!strUserId.equals(order.getCreateUser())){
+        if (!SecurityUtils.hasPre(order.getCreateUser())){
             LogEsUtil.warn("用户对订单没有操作权限，订单id为：" + orderId);
             return Result.fail("对该订单暂无操作权限");
         }
@@ -458,9 +461,19 @@ public class OrderServiceImpl implements IOrderService {
             status = OrderStatus.WAIT_REFUND;
             result = ResultMessage.REFUND_ORDER_SUCCESS;
         }
-        orderMapper.updateStatusById(orderId, status);
+        orderMapper.refoundById(orderId, status, refoundToBalance(refoundToBalance));
         LogEsUtil.info("订单取消成功,订单id为：{}",orderId);
         return Result.success(result);
+    }
+
+
+    private Integer refoundToBalance(Boolean refoundToBalance) {
+        String onlyRefundFlow = redisCache.getCacheObject("sys_config:sys:onlyRefound:flow");
+        boolean onlyRefundToBalance = "true".equalsIgnoreCase(onlyRefundFlow);
+        if (onlyRefundToBalance){
+            return 1;
+        }
+        return ObjectUtil.equals(refoundToBalance,Boolean.TRUE) ? 1 : 0;
     }
 
 
@@ -486,7 +499,7 @@ public class OrderServiceImpl implements IOrderService {
      * @author 陈湘岳 2026/1/19
      **/
     @Override
-    public Result cancelOrderRenewal(String orderId) {
+    public Result cancelOrderRenewal(String orderId,Boolean refoundToBalance) {
         //一锁
         Order order = orderMapper.queryByIdForUpdate(orderId);
         //二判
@@ -498,8 +511,7 @@ public class OrderServiceImpl implements IOrderService {
             LogEsUtil.warn("订单类型不为续费，订单id为：" + orderId);
             return Result.fail("该订单不是续费订单");
         }
-        String strUserId = SecurityUtils.getStrUserId();
-        if (!strUserId.equals(order.getCreateUser())){
+        if (!SecurityUtils.hasPre(order.getCreateUser())){
             LogEsUtil.warn("用户对订单没有操作权限，订单id为：" + orderId);
             return Result.fail("对该订单暂无操作权限");
         }
@@ -551,7 +563,7 @@ public class OrderServiceImpl implements IOrderService {
             status = OrderStatus.WAIT_REFUND;
             result = ResultMessage.REFUND_ORDER_SUCCESS;
         }
-        orderMapper.updateStatusById(orderId, status);
+        orderMapper.refoundById(orderId, status, refoundToBalance(refoundToBalance));
         return Result.success(result);
     }
 
@@ -565,6 +577,9 @@ public class OrderServiceImpl implements IOrderService {
      * @return true: 目标时间在距当前hours小时之前
      */
     public static boolean isTimeBeforeHours(Date targetDate, int hours) {
+        if (SecurityUtils.hasPermi("shop:background:admin")){
+            return true;
+        }
         if (targetDate == null) {
             //订单未推进到已完成状态或极限情况，不存在时间线，直接退款
             return true;

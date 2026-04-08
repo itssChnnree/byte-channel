@@ -35,11 +35,11 @@ public class OrderQuoteController {
 
     @GetMapping("/cancelQuoteOrder")
     @ApiOperation("报价订单取消")
-    public Result cancelQuoteOrder(String orderId){
+    public Result cancelQuoteOrder(String orderId,Boolean refoundToBalance){
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");
         }
-        return orderQuoteService.cancelQuoteOrder(orderId);
+        return orderQuoteService.cancelQuoteOrder(orderId,refoundToBalance);
     }
 
 

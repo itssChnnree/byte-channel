@@ -194,6 +194,17 @@ public class ServerResourcesController{
         return serverResourcesService.getXrayProcess(resourcesId);
     }
 
+    @ApiOperation("资源替换")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    @PostMapping("/resourceReplacement")
+    public Result resourceReplacement(@RequestBody @Valid IdDto idDto) {
+        if (StrUtil.isBlank(idDto.getId())){
+            return Result.fail("资源编号不能为空");
+        }
+        return serverResourcesService.resourceReplacement(idDto.getId());
+    }
+
+
 
 
     @PostMapping("/getResourcesPage")

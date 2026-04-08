@@ -3,6 +3,7 @@ package com.ruoyi.system.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.RechargeDto;
@@ -26,6 +27,8 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 钱包余额表(WalletBalance)�����ʵ����
@@ -55,6 +58,9 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
 
     @Resource
     OrderMapstruct orderMapstruct;
+
+    @Resource
+    private RedisCache redisCache;
 
     /**
      * [查询余额]
@@ -108,13 +114,12 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
     //余额增加 - 从订单
     @Override
     public Boolean addBalance(Order order){
-        return addBalance(order.getAmount(), BalanceDetailStatus.RECHARGE);
+        return addBalance(order.getAmount(), BalanceDetailStatus.RECHARGE,order.getUserId());
     }
 
     //余额增加 - 通用
     @Override
-    public Boolean addBalance(BigDecimal amount, String type){
-        String userId = SecurityUtils.getStrUserId();
+    public Boolean addBalance(BigDecimal amount, String type, String userId){
         //一锁 余额
         WalletBalance walletBalanceByUserId = walletBalanceMapper.findWalletBalanceByUserId(userId);
         //二判 金额有效性
@@ -192,7 +197,7 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
             order.setPaymentId(yiPayResponse.getPayId());
             orderBaseService.addProfit(order,"余额充值");
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
-            addBalance( order.getAmount(), BalanceDetailStatus.RECHARGE);
+            addBalance( order.getAmount(), BalanceDetailStatus.RECHARGE,SecurityUtils.getStrUserId());
             return Result.success(order);
         }else {
             return Result.fail("未检测到支付信息，请稍后再试");
@@ -243,8 +248,7 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
             LogEsUtil.warn("订单类型不为充值，订单id为：" + orderId);
             return Result.fail("该订单不是充值订单");
         }
-        String strUserId = SecurityUtils.getStrUserId();
-        if (!strUserId.equals(order.getCreateUser())){
+        if (!SecurityUtils.hasPre(order.getCreateUser())){
             LogEsUtil.warn("用户对订单没有操作权限，订单id为：" + orderId);
             return Result.fail("对该订单暂无操作权限");
         }
@@ -294,7 +298,7 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
             status = OrderStatus.WAIT_REFUND;
             result = ResultMessage.REFUND_ORDER_SUCCESS;
         }
-        orderMapper.updateStatusById(orderId, status);
+        orderMapper.refoundById(orderId, status,0);
         LogEsUtil.info("订单取消成功,订单id为：{}",orderId);
         return Result.success(result);
     }
@@ -308,6 +312,9 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
      * @return true: 目标时间在距当前hours小时之前
      */
     public static boolean isTimeBeforeHours(Date targetDate, int hours) {
+        if (SecurityUtils.hasPermi("shop:background:admin")){
+            return true;
+        }
         if (targetDate == null) {
             //订单未推进到已完成状态或极限情况，不存在时间线，直接退款
             return true;
@@ -351,6 +358,42 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
             LogEsUtil.info("用户创建订单成功："+order);
             return Result.success(order);
 
+    }
+
+    /**
+     * [查询是否仅退款到余额，及退款费率]
+     *
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/4/1
+     **/
+    @Override
+    public Result findOnlyRefoundBalance() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 查询是否仅可退款至余额
+        String onlyRefundFlow = redisCache.getCacheObject("sys_config:sys:onlyRefound:flow");
+        boolean onlyRefundToBalance = "true".equalsIgnoreCase(onlyRefundFlow);
+
+        result.put("onlyRefundToBalance", onlyRefundToBalance);
+
+        // 如果不是仅退款至余额，查询手续费比例
+        if (!onlyRefundToBalance) {
+            String feeRateStr = redisCache.getCacheObject("sys_config:sys:refoundAll:fee");
+            BigDecimal refundFeeRate = BigDecimal.ZERO;
+            if (StrUtil.isNotBlank(feeRateStr)) {
+                try {
+                    refundFeeRate = new BigDecimal(feeRateStr);
+                } catch (NumberFormatException e) {
+                    // 解析失败，使用默认值0
+                    refundFeeRate = BigDecimal.ZERO;
+                }
+            }
+            result.put("refundFeeRate", refundFeeRate);
+        } else {
+            result.put("refundFeeRate", null);
+        }
+
+        return Result.success(result);
     }
 
     private Order buildOrder(BigDecimal bigDecimal){

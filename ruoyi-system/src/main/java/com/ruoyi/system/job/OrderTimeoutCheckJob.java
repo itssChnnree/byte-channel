@@ -1,5 +1,6 @@
 package com.ruoyi.system.job;
 
+import com.ruoyi.system.config.TraceIdContext;
 import com.ruoyi.system.service.IOrderService;
 import com.ruoyi.system.util.LogEsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
@@ -29,6 +30,8 @@ public class OrderTimeoutCheckJob {
      */
     @XxlJob("orderTimeoutCheckJob")
     public void execute() {
+        String traceId = TraceIdContext.generateTraceId();
+        TraceIdContext.initContext(traceId);
         LogEsUtil.info("订单超时关闭执行完成");
         try {
             orderService.autoCloseTimeoutOrders();

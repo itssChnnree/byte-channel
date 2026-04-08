@@ -48,7 +48,7 @@ public interface IWalletBalanceService{
      * @param type 类型
      * @return java.lang.Boolean
      **/
-    Boolean addBalance(BigDecimal amount, String type);
+    Boolean addBalance(BigDecimal amount, String type, String userId);
 
     /**
      * [余额充值订单已支付]
@@ -81,4 +81,12 @@ public interface IWalletBalanceService{
      * @return com.ruoyi.system.http.Result
      **/
     Result createOrderRecharge(RechargeDto rechargeDto);
+
+    /**
+     * [查询是否仅退款到余额，及退款费率]
+     * @author 陈湘岳 2026/4/1
+     * @param
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result findOnlyRefoundBalance();
 }

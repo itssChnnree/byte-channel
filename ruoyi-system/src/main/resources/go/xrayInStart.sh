@@ -12,8 +12,15 @@ NC='\033[0m'
 
 # 配置变量
 XRAY_INSTALL_CMD="bash -c \"\$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install"
-XRAY_CORE_URL="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
-CONFIG_URL="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
+# Gitee 主下载源
+XRAY_CORE_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
+CONFIG_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
+# GitHub 备用下载源
+XRAY_CORE_URL_GITHUB="https://github.com/itssChnnree/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
+CONFIG_URL_GITHUB="https://github.com/itssChnnree/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
+# 当前使用的URL（默认Gitee）
+XRAY_CORE_URL="$XRAY_CORE_URL_GITEE"
+CONFIG_URL="$CONFIG_URL_GITEE"
 XRAY_CONFIG_DIR="/usr/local/etc/xray"
 XRAY_CONFIG_FILE="$XRAY_CONFIG_DIR/config.json"
 TEMP_DIR="/tmp/xray_setup_$$"
@@ -297,75 +304,99 @@ EOF
     print_success "默认配置文件已创建"
 }
 
-# 下载文件（优化版）
+# 下载文件（优化版，支持Gitee和GitHub双源）
 download_files() {
     print_info "创建临时目录: $TEMP_DIR"
     mkdir -p "$TEMP_DIR"
 
     # 下载xray-core-in可执行文件
     print_info "下载xray-core-in可执行文件..."
-    local max_retries=3
-    local retry_count=0
-
-    while [ $retry_count -lt $max_retries ]; do
-        # 添加超时和重试参数
-        if curl -L --connect-timeout 30 --max-time 60 --retry 3 --retry-delay 5 -o "$TEMP_DIR/xray-core-in" "$XRAY_CORE_URL" --progress-bar 2>/dev/null; then
-            # 检查文件是否为有效的可执行文件
-            if file "$TEMP_DIR/xray-core-in" | grep -q "ELF.*executable"; then
-                chmod +x "$TEMP_DIR/xray-core-in"
-                print_success "xray-core-in下载完成"
-                break
-            else
-                print_warning "下载的文件不是有效的ELF可执行文件"
-                rm -f "$TEMP_DIR/xray-core-in"
+    
+    # 定义下载源数组（Gitee优先，GitHub备用）
+    local core_urls=(
+        "$XRAY_CORE_URL_GITEE"
+        "$XRAY_CORE_URL_GITHUB"
+    )
+    local core_download_success=false
+    
+    for url in "${core_urls[@]}"; do
+        print_info "尝试从: $url"
+        local retry_count=0
+        local max_retries=2
+        
+        while [ $retry_count -lt $max_retries ]; do
+            if curl -L --connect-timeout 30 --max-time 120 --retry 2 --retry-delay 5 -o "$TEMP_DIR/xray-core-in" "$url" --progress-bar 2>/dev/null; then
+                # 检查文件是否为有效的可执行文件
+                if file "$TEMP_DIR/xray-core-in" | grep -q "ELF.*executable"; then
+                    chmod +x "$TEMP_DIR/xray-core-in"
+                    print_success "xray-core-in下载完成"
+                    core_download_success=true
+                    break 2
+                else
+                    print_warning "下载的文件不是有效的ELF可执行文件"
+                    rm -f "$TEMP_DIR/xray-core-in"
+                fi
             fi
-        fi
-
-        retry_count=$((retry_count + 1))
-        if [ $retry_count -lt $max_retries ]; then
-            print_info "下载失败，第 $retry_count 次重试..."
-            sleep 2
-        else
-            print_error "xray-core-in下载失败，已尝试 $max_retries 次"
-            exit 1
-        fi
+            
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                print_info "下载失败，第 $retry_count 次重试..."
+                sleep 2
+            fi
+        done
+        
+        print_warning "从 $url 下载失败，尝试备用源..."
     done
+    
+    if [ "$core_download_success" = false ]; then
+        print_error "xray-core-in下载失败，所有源都不可用"
+        exit 1
+    fi
 
-    # 下载配置文件（优化版）
+    # 下载配置文件（优化版，支持Gitee和GitHub双源）
     print_info "下载配置文件..."
 
-    # 尝试多个配置文件URL
+    # 定义配置文件下载源数组（Gitee优先，GitHub备用）
     local config_urls=(
-        "$CONFIG_URL"
-        "https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
+        "$CONFIG_URL_GITEE"
+        "$CONFIG_URL_GITHUB"
     )
 
     local download_success=false
 
     for url in "${config_urls[@]}"; do
         print_info "尝试从: $url"
-        # 添加超时、重试和更详细的错误处理
-        if curl -L --connect-timeout 30 --max-time 60 --retry 2 --retry-delay 3 -o "$TEMP_DIR/xray-in-config.json" "$url" --progress-bar 2>/dev/null; then
-            # 验证下载的文件
-            if [ -s "$TEMP_DIR/xray-in-config.json" ]; then
-                # 检查是否是有效的JSON
-                if python3 -m json.tool "$TEMP_DIR/xray-in-config.json" > /dev/null 2>&1 ||
-                   python -m json.tool "$TEMP_DIR/xray-in-config.json" > /dev/null 2>&1; then
-                    print_success "配置文件下载完成"
-                    download_success=true
-                    break
+        local retry_count=0
+        local max_retries=2
+        
+        while [ $retry_count -lt $max_retries ]; do
+            if curl -L --connect-timeout 30 --max-time 120 --retry 2 --retry-delay 3 -o "$TEMP_DIR/xray-in-config.json" "$url" --progress-bar 2>/dev/null; then
+                # 验证下载的文件
+                if [ -s "$TEMP_DIR/xray-in-config.json" ]; then
+                    # 检查是否是有效的JSON
+                    if python3 -m json.tool "$TEMP_DIR/xray-in-config.json" > /dev/null 2>&1 ||
+                       python -m json.tool "$TEMP_DIR/xray-in-config.json" > /dev/null 2>&1; then
+                        print_success "配置文件下载完成"
+                        download_success=true
+                        break 2
+                    else
+                        print_warning "下载的文件不是有效的JSON格式"
+                        rm -f "$TEMP_DIR/xray-in-config.json"
+                    fi
                 else
-                    print_warning "下载的文件不是有效的JSON格式"
+                    print_warning "下载的文件为空"
                     rm -f "$TEMP_DIR/xray-in-config.json"
                 fi
-            else
-                print_warning "下载的文件为空"
-                rm -f "$TEMP_DIR/xray-in-config.json"
             fi
-        else
-            print_warning "从 $url 下载失败"
-        fi
-        sleep 1
+            
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                print_info "下载失败，第 $retry_count 次重试..."
+                sleep 2
+            fi
+        done
+        
+        print_warning "从 $url 下载失败，尝试备用源..."
     done
 
     # 如果所有URL都失败，创建默认配置

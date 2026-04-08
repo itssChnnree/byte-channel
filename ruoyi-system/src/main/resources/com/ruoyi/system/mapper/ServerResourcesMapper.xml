@@ -382,6 +382,11 @@
         and resources_status in ('NORMAL','WAIT_CHECK')
     </select>
 
+    <select id="findByResourcesStatus" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select * from server_resources where is_deleted = 0
+        and resources_status = #{resourcesStatus}
+    </select>
+
     <select id="selectByIdForUpdate" resultType="com.ruoyi.system.domain.entity.ServerResources">
         select * from server_resources where is_deleted = 0 and id = #{resourcesId} for update
     </select>
@@ -406,6 +411,7 @@
         where commodity_id = #{commodityId}
           and is_deleted = 0
           and sales_status = 'NOT_SALE'
+          and resources_status = 'NORMAL'
           and available_status = 1
           and (lease_expiration_time is null or lease_expiration_time &lt; date_sub(now(), interval 30 minute) )
         order by update_time

@@ -33,6 +33,13 @@
         in (select id from order_commodity where order_commodity.is_deleted=0 and order_id = #{orderId})
     </update>
 
+    <update id="resourceReplacement">
+        update order_commodity_resources
+        set resources_id = #{newResourcesId}
+        where resources_id = #{oldResourcesId}
+        and user_id = #{userId} and is_deleted = 0
+    </update>
+
     <!--��ѯ����-->
     <select id="queryById" resultMap="OrderCommodityResourcesVOMap">
         select
@@ -41,117 +48,11 @@ id, user_id, order_commodity_id, resources_id, is_deleted, create_user, update_u
         where id = #{id} and is_deleted = 0
     </select>
     
-    <!--��ѯָ��������-->
-    <select id="queryList" resultMap="OrderCommodityResourcesVOMap">
-        select
-id, user_id, order_commodity_id, resources_id, is_deleted, create_user, update_user, create_time, update_time        
-        from order_commodity_resources
-        <where>
-        1 = 1 and is_deleted = 0
-            <if test="id != null and id != ''">
-                and id = #{id}
-            </if>
-            <if test="userId != null and userId != ''">
-                and user_id = #{userId}
-            </if>
-            <if test="orderCommodityId != null and orderCommodityId != ''">
-                and order_commodity_id = #{orderCommodityId}
-            </if>
-            <if test="resourcesId != null and resourcesId != ''">
-                and resources_id = #{resourcesId}
-            </if>
-            <if test="isDeleted != null">
-                and is_deleted = #{isDeleted}
-            </if>
-            <if test="createUser != null and createUser != ''">
-                and create_user = #{createUser}
-            </if>
-            <if test="updateUser != null and updateUser != ''">
-                and update_user = #{updateUser}
-            </if>
-            <if test="createTime != null">
-                and create_time = #{createTime}
-            </if>
-            <if test="updateTime != null">
-                and update_time = #{updateTime}
-            </if>
-        </where>
-    </select>
+
     
-    <!--��ѯָ��������-->
-    <select id="queryListLimit" resultMap="OrderCommodityResourcesVOMap">
-        select
-id, user_id, order_commodity_id, resources_id, is_deleted, create_user, update_user, create_time, update_time
-        from order_commodity_resources
-        <where>
-        1 = 1 and is_deleted = 0 
-            <if test="dto.id != null and dto.id != ''">
-                and id = #{dto.id}
-            </if>
-            <if test="dto.userId != null and dto.userId != ''">
-                and user_id = #{dto.userId}
-            </if>
-            <if test="dto.orderCommodityId != null and dto.orderCommodityId != ''">
-                and order_commodity_id = #{dto.orderCommodityId}
-            </if>
-            <if test="dto.resourcesId != null and dto.resourcesId != ''">
-                and resources_id = #{dto.resourcesId}
-            </if>
-            <if test="dto.isDeleted != null">
-                and is_deleted = #{dto.isDeleted}
-            </if>
-            <if test="dto.createUser != null and dto.createUser != ''">
-                and create_user = #{dto.createUser}
-            </if>
-            <if test="dto.updateUser != null and dto.updateUser != ''">
-                and update_user = #{dto.updateUser}
-            </if>
-            <if test="dto.createTime != null">
-                and create_time = #{dto.createTime}
-            </if>
-            <if test="dto.updateTime != null">
-                and update_time = #{dto.updateTime}
-            </if>
-        </where>
-        limit #{limit}
-    </select>
+
     
-    <!--��ѯ��ҳ����-->
-    <select id="queryPage" resultMap="OrderCommodityResourcesVOMap">
-        select
-id, user_id, order_commodity_id, resources_id, is_deleted, create_user, update_user, create_time, update_time
-        from order_commodity_resources
-        <where>
-        1 = 1 and is_deleted = 0 
-            <if test="dto.id != null and dto.id != ''">
-                and id = #{dto.id}
-            </if>
-            <if test="dto.userId != null and dto.userId != ''">
-                and user_id = #{dto.userId}
-            </if>
-            <if test="dto.orderCommodityId != null and dto.orderCommodityId != ''">
-                and order_commodity_id = #{dto.orderCommodityId}
-            </if>
-            <if test="dto.resourcesId != null and dto.resourcesId != ''">
-                and resources_id = #{dto.resourcesId}
-            </if>
-            <if test="dto.isDeleted != null">
-                and is_deleted = #{dto.isDeleted}
-            </if>
-            <if test="dto.createUser != null and dto.createUser != ''">
-                and create_user = #{dto.createUser}
-            </if>
-            <if test="dto.updateUser != null and dto.updateUser != ''">
-                and update_user = #{dto.updateUser}
-            </if>
-            <if test="dto.createTime != null">
-                and create_time = #{dto.createTime}
-            </if>
-            <if test="dto.updateTime != null">
-                and update_time = #{dto.updateTime}
-            </if>
-        </where>
-    </select>
+
 
 
     <select id="findByOrderId" resultType="com.ruoyi.system.domain.entity.OrderCommodityResources">

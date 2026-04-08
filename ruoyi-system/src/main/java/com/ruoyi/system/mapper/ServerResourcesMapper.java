@@ -234,6 +234,13 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      **/
     List<ServerResources> findNormalAll();
 
+    /**
+     * [根据资源状态查询资源列表]
+     * @author 陈湘岳 2026/3/30
+     * @param resourcesStatus 资源状态
+     * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    List<ServerResources> findByResourcesStatus(@Param("resourcesStatus") String resourcesStatus);
 
     /**
      * [查询商品，上锁]

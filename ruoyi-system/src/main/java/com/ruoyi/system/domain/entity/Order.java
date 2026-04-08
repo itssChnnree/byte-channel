@@ -67,7 +67,11 @@ private static final long serialVersionUID = 1L;
          */
         @TableField(value = "payment_period")
         private String paymentPeriod;
-
+        /**
+         * 是否退款到余额，0为否，1为是，用作用户退款时
+         */
+        @TableField(value = "refound_to_balance")
+        private Integer refoundToBalance;
 
         /**
             * 订单状态

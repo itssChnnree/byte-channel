@@ -1,5 +1,6 @@
 package com.ruoyi.system.job;
 
+import com.ruoyi.system.config.TraceIdContext;
 import com.ruoyi.system.service.IServerResourcesService;
 import com.ruoyi.system.util.LogEsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
@@ -28,15 +29,20 @@ public class ResourceStatusCheckJob {
      * - 执行策略: 根据业务需求配置（如每5分钟执行一次）
      */
     @XxlJob("resourceStatusCheckJob")
-    public void execute() {
+    public String execute() {
         XxlJobHelper.log("开始执行资源状态检测任务");
+        String traceId = TraceIdContext.generateTraceId();
+        TraceIdContext.initContext(traceId);
         try {
             iServerResourcesService.resourceDetectionTask();
             LogEsUtil.info("资源状态检测任务执行完成");
-            XxlJobHelper.handleSuccess("资源状态检测成功");
+            String message = "资源状态检测成功，traceId：" + traceId;
+            XxlJobHelper.handleSuccess(message);
+            return message;
         } catch (Exception e) {
             LogEsUtil.error("资源状态检测任务执行失败", e);
             XxlJobHelper.handleFail("资源状态检测任务执行失败: " + e.getMessage());
+            return "资源状态检测任务执行失败: " + e.getMessage();
         }
     }
 }

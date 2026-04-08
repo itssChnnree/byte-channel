@@ -1,6 +1,7 @@
 package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.system.domain.dto.RechargeDto;
 import com.ruoyi.system.group.InsertGroup;
 import com.ruoyi.system.http.Result;
@@ -12,6 +13,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * [˵��/����]
@@ -28,6 +32,8 @@ public class WalletBalanceController{
 
     @Resource(name = "walletBalanceService")
     IWalletBalanceService walletBalanceService;
+
+
 
 
     @ApiOperation("查询余额")
@@ -76,5 +82,12 @@ public class WalletBalanceController{
         return walletBalanceService.createOrderRecharge(rechargeDto);
     }
 
+    @GetMapping("/findOnlyRefoundBalance")
+    @ApiOperation("查询退款配置")
+    public Result findOnlyRefoundBalance() {
+
+        return walletBalanceService.findOnlyRefoundBalance();
+
+    }
 
 }

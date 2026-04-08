@@ -1,5 +1,6 @@
 package com.ruoyi.system.job;
 
+import com.ruoyi.system.config.TraceIdContext;
 import com.ruoyi.system.service.IResourceAllocationService;
 import com.ruoyi.system.util.LogEsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
@@ -18,6 +19,8 @@ public class ResourceAllocationJob {
 
     @XxlJob("resourceAllocationJob")
     public void execute() {
+        String traceId = TraceIdContext.generateTraceId();
+        TraceIdContext.initContext(traceId);
         XxlJobHelper.log("Start executing resource allocation job");
         LogEsUtil.info("Resource allocation job started");
 

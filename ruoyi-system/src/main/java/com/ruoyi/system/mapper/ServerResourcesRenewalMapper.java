@@ -36,4 +36,16 @@ public interface ServerResourcesRenewalMapper extends BaseMapper<ServerResources
      * @return int
      **/
     int deleteByResourcesId(@Param("resourcesId") String resourcesId);
+
+    /**
+     * [将老的资源id替换为新的]
+     * @author 陈湘岳 2026/4/7
+     * @param oldId 老的资源id
+     * @param newId 新的资源id
+     * @param userId 用户id
+     * @return int
+     **/
+    int resourceReplacement(@Param("oldResourcesId")String oldId,
+                            @Param("newResourcesId")String newId,
+                            @Param("userId")String userId);
 }

@@ -32,13 +32,15 @@
         <result property="isAgreeOriginalPrice" column="is_agree_original_price" jdbcType="INTEGER"/>
         <result property="acceptablePriceIncreasePct" column="acceptable_price_increase_pct" jdbcType="INTEGER"/>
         <result property="currentPriceSnapshot" column="current_price_snapshot" jdbcType="NUMERIC"/>
-        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
-        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
-        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-        <result property="status" column="status" jdbcType="VARCHAR"/>
     </resultMap>
+
+
+    <update id="resourceReplacement">
+        update server_resources_renewal
+        set resources_id = #{newResourcesId}
+        where user_id = #{userId}
+        and resources_id = #{oldResourcesId}
+    </update>
 
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesRenewalVOMap">

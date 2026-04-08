@@ -229,4 +229,12 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     ServerResources findByCommodityId(String commodityId);
+
+    /**
+     * [资源置换]
+     * @author 陈湘岳 2026/4/7
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result resourceReplacement(String id);
 }

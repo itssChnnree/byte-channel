@@ -77,7 +77,7 @@ public interface IOrderService{
      * @param orderId 订单id
      * @return com.ruoyi.system.http.Result
      **/
-    Result cancelOrderNew(String orderId);
+    Result cancelOrderNew(String orderId,Boolean refoundToBalance);
 
 
     /**
@@ -130,7 +130,7 @@ public interface IOrderService{
      * @param orderId 订单id
      * @return com.ruoyi.system.http.Result
      **/
-    Result cancelOrderRenewal(String orderId);
+    Result cancelOrderRenewal(String orderId,Boolean refoundToBalance);
 
     /**
      * [分页查询订单-客服]

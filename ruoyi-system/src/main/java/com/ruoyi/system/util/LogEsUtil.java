@@ -96,7 +96,8 @@ public class LogEsUtil {
      * @param message 日志消息
      */
     public static void info(String message) {
-        info(message, null, null);
+        String traceId = TraceIdContext.getTraceId();
+        info(message, traceId, null);
     }
     
     /**
@@ -106,7 +107,8 @@ public class LogEsUtil {
      * @param extraFields 额外字段
      */
     public static void info(String message, Map<String, Object> extraFields) {
-        info(message, null,  extraFields);
+        String traceId = TraceIdContext.getTraceId();
+        info(message, traceId, extraFields);
     }
     
     /**

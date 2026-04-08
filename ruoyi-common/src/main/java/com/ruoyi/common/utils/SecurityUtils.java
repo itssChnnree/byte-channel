@@ -51,6 +51,14 @@ public class SecurityUtils
         }
     }
 
+    //判断传入的创建用户id是否具有权限
+    public static Boolean hasPre(String userId){
+        if (SecurityUtils.hasPermi("shop:background:admin")){
+            return true;
+        }
+        return StringUtils.equals(userId, getStrUserId());
+    }
+
     /**
      * 用户ID
      **/

@@ -59,11 +59,11 @@ public class OrderController {
 
     @GetMapping("/cancelOrder")
     @ApiOperation("新购订单取消")
-    public Result cancelOrder(String orderId){
+    public Result cancelOrder(String orderId,Boolean refoundToBalance){
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");
         }
-        return orderService.cancelOrderNew(orderId);
+        return orderService.cancelOrderNew(orderId,refoundToBalance);
     }
 
 
@@ -93,11 +93,11 @@ public class OrderController {
 
     @GetMapping("/cancelRenewalOrder")
     @ApiOperation("续费订单取消")
-    public Result cancelOrderRenewal(String orderId){
+    public Result cancelOrderRenewal(String orderId, Boolean refoundToBalance){
         if (StrUtil.isBlank(orderId)) {
             return Result.fail("请选择订单");
         }
-        return orderService.cancelOrderRenewal(orderId);
+        return orderService.cancelOrderRenewal(orderId,refoundToBalance);
     }
 
 

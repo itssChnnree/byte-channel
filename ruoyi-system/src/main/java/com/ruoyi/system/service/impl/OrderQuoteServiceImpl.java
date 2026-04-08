@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
@@ -61,6 +62,9 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
     private RestTemplate restTemplate;
 
     @Resource
+    private RedisCache redisCache;
+
+    @Resource
     private IOrderStatusTimelineService orderStatusTimelineService;
 
 
@@ -82,7 +86,7 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
      **/
     @Override
     @Transactional
-    public Result cancelQuoteOrder(String orderId) {
+    public Result cancelQuoteOrder(String orderId,Boolean refoundToBalance) {
         //一锁
         Order order = orderMapper.queryByIdForUpdate(orderId);
         //二判
@@ -94,8 +98,8 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
             LogEsUtil.warn("订单类型不为报价，订单id为：" + orderId);
             return Result.fail("该订单不是报价订单");
         }
-        String strUserId = SecurityUtils.getStrUserId();
-        if (!strUserId.equals(order.getCreateUser())){
+
+        if (!SecurityUtils.hasPre(order.getCreateUser())){
             LogEsUtil.warn("用户对订单没有操作权限，订单id为：" + orderId);
             return Result.fail("对该订单暂无操作权限");
         }
@@ -136,9 +140,18 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
             status = OrderStatus.WAIT_REFUND;
             result = ResultMessage.REFUND_ORDER_SUCCESS;
         }
-        orderMapper.updateStatusById(orderId, status);
+        orderMapper.refoundById(orderId, status, refoundToBalance(refoundToBalance));
         LogEsUtil.info("订单取消成功,订单id为：{}",orderId);
         return Result.success(result);
+    }
+
+    private Integer refoundToBalance(Boolean refoundToBalance) {
+        String onlyRefundFlow = redisCache.getCacheObject("sys_config:sys:onlyRefound:flow");
+        boolean onlyRefundToBalance = "true".equalsIgnoreCase(onlyRefundFlow);
+        if (onlyRefundToBalance){
+            return 1;
+        }
+        return ObjectUtil.equals(refoundToBalance,Boolean.TRUE) ? 1 : 0;
     }
 
     /**

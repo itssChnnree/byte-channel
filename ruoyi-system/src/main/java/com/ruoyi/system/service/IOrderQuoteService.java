@@ -24,7 +24,7 @@ public interface IOrderQuoteService {
      * @param orderId 订单id
      * @return com.ruoyi.system.http.Result
      **/
-    Result cancelQuoteOrder(String orderId);
+    Result cancelQuoteOrder(String orderId,Boolean refoundToBalance);
 
     /**
      * [报价订单支付]

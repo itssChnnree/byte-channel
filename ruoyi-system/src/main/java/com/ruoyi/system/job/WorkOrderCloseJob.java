@@ -1,5 +1,6 @@
 package com.ruoyi.system.job;
 
+import com.ruoyi.system.config.TraceIdContext;
 import com.ruoyi.system.domain.entity.Ticket;
 import com.ruoyi.system.service.ITicketService;
 import com.ruoyi.system.service.impl.TicketServiceImpl;
@@ -31,6 +32,8 @@ public class WorkOrderCloseJob {
      */
     @XxlJob("workOrderCloseJob")
     public void execute() {
+        String traceId = TraceIdContext.generateTraceId();
+        TraceIdContext.initContext(traceId);
         LogEsUtil.info("开始执行工单关闭任务");
         try {
             ticketService.autoCloseTimeoutTickets();

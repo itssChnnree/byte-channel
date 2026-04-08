@@ -392,14 +392,6 @@ public class PayOrderApplicationService {
             results.add(aliResult);
         }
 
-        // 3. 处理余额支付（如果支付方式不是余额）
-        if (!OrderStatus.BALANCE_PAY.equals(paymentType)) {
-            // 查询余额是否已支付（需要根据实际情况判断）
-            RefundResultVo.ChannelRefundResult balanceResult = refundBalance(
-                    order, refundAmount);
-            results.add(balanceResult);
-        }
-
         return results;
     }
 
@@ -519,7 +511,7 @@ public class PayOrderApplicationService {
 
         try {
             // 增加用户余额（使用通用方法）
-            walletBalanceService.addBalance(refundAmount, BalanceDetailStatus.REFUND);
+            walletBalanceService.addBalance(refundAmount, BalanceDetailStatus.REFUND,order.getUserId());
 
             return RefundResultVo.ChannelRefundResult.builder()
                     .channel(OrderStatus.BALANCE_PAY)
@@ -545,7 +537,7 @@ public class PayOrderApplicationService {
             Order order, BigDecimal refundAmount, String channel) {
 
         try {
-            walletBalanceService.addBalance(refundAmount, BalanceDetailStatus.REFUND);
+            walletBalanceService.addBalance(refundAmount, BalanceDetailStatus.REFUND,order.getUserId());
 
             return RefundResultVo.ChannelRefundResult.builder()
                     .channel(channel)

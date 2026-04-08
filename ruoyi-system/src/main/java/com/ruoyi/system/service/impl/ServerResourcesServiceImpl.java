@@ -117,7 +117,17 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     @Value("${resources.clashUrl}")
     private String clashDownloadUrl;
 
+    @Resource
+    private CommodityServiceImpl commodityService;
 
+    @Resource
+    private OrderCommodityResourcesMapper orderCommodityResourcesMapper;
+
+    @Resource
+    private OrderRenewalResourcesMapper orderRenewalResourcesMapper;
+
+    @Resource
+    private ServerResourcesRenewalMapper serverResourcesRenewalMapper;
 
 
     /**
@@ -743,6 +753,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         ServerResourcesXrayValid byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(id);
         String deletedResult = XrayManager.deleteValidXray(byResourcesId);
         int delete = serverResourcesMapper.deleteById(id);
+        LogEsUtil.info("删除资源,id=" + id);
         return delete > 0 ? Result.success("删除成功") : Result.fail("删除失败");
     }
 
@@ -1191,6 +1202,51 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             }
         }
         return null;
+    }
+
+    /**
+     * [资源置换]
+     *
+     * @param id 资源id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/4/7
+     **/
+    @Override
+    @Transactional
+    public Result resourceReplacement(String id) {
+        ServerResources oldResource = serverResourcesMapper.findByIdForUpdate(id);
+        if (oldResource == null){
+            return Result.fail("资源不存在");
+        }
+        if (SalesStatus.NOT_SALE.equals(oldResource.getSalesStatus())) {
+            return Result.fail("服务器未售出，无需置换");
+        }
+        ServerResources newResource = findByCommodityId(oldResource.getCommodityId());
+        if (newResource == null){
+            return Result.fail("暂无可替换的资源");
+        }
+        transferTenantInfo(oldResource, newResource);
+        //变更orderCommodityResources、serverResourcesRenewal、OrderRenewalResources
+        orderCommodityResourcesMapper.resourceReplacement(oldResource.getId(), newResource.getId(),newResource.getResourceTenant());
+        serverResourcesRenewalMapper.resourceReplacement(oldResource.getId(), newResource.getId(),newResource.getResourceTenant());
+        orderRenewalResourcesMapper.resourceReplacement(oldResource.getId(), newResource.getId(),newResource.getResourcesIp(),newResource.getResourceTenant());
+
+        return Result.success("资源置换成功");
+    }
+
+    //将旧资源的租户信息转移到新资源
+    private void transferTenantInfo(ServerResources oldResource, ServerResources newResource) {
+        //为新资源赋值旧资源数据，清除旧资源租赁信息
+        newResource.setResourceTenant(oldResource.getResourceTenant());
+        newResource.setLeaseExpirationTime(oldResource.getLeaseExpirationTime());
+        newResource.setSalesStatus(oldResource.getSalesStatus());
+        newResource.setAvailableStatus(oldResource.getAvailableStatus());
+        serverResourcesMapper.updateById(newResource);
+        oldResource.setResourceTenant(null);
+        oldResource.setLeaseExpirationTime(null);
+        oldResource.setSalesStatus(SalesStatus.NOT_SALE);
+        oldResource.setAvailableStatus(AvailableStatus.AVAILABLE_STATUS_DOWN);
+        serverResourcesMapper.updateById(oldResource);
     }
 
     /**

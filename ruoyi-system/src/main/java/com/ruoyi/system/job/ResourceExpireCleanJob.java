@@ -1,5 +1,6 @@
 package com.ruoyi.system.job;
 
+import com.ruoyi.system.config.TraceIdContext;
 import com.ruoyi.system.service.IServerResourcesService;
 import com.ruoyi.system.util.LogEsUtil;
 import com.xxl.job.core.context.XxlJobHelper;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
+//资源清理
 @Slf4j
 @Component
 public class ResourceExpireCleanJob {
@@ -18,6 +20,8 @@ public class ResourceExpireCleanJob {
 
     @XxlJob("resourceExpireCleanJob")
     public int execute() {
+        String traceId = TraceIdContext.generateTraceId();
+        TraceIdContext.initContext(traceId);
         XxlJobHelper.log("Start resource expire clean job");
         LogEsUtil.info("Resource expire clean job started");
 

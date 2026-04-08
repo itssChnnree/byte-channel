@@ -64,6 +64,17 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return int
      **/
     int updateStatusById(@Param("id") String id, @Param("status") String status);
+
+    /**
+     * [将指定id的订单状态修改为待退款]
+     * @author 陈湘岳 2025/10/16
+     * @param id 订单id
+     * @param status 订单状态
+     * @return int
+     **/
+    int refoundById(@Param("id") String id,
+                    @Param("status") String status,
+                    @Param("refound_to_balance")Integer refoundToBalance);
     
     
     /**
@@ -76,7 +87,7 @@ public interface OrderMapper extends BaseMapper<Order> {
     OrderInfoVo getOrderInfoById(@Param("id") String id, @Param("userId") String userId);
 
     /**
-     * [查询已完成且需要差错退款的订单]
+     * [查询已完成或已取消且需要差错退款的订单]
      * 查询状态为 COMPLETED 且存在微信或支付宝渠道的订单
      * @author 陈湘岳
      * @param limit 查询数量限制
@@ -118,4 +129,13 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return java.util.List<com.ruoyi.system.domain.entity.Order>
      **/
     List<Order> selectWaitAllocationOrders();
+
+    /**
+     * [查询待退款订单]
+     * 查询状态为 WAIT_REFUND 的订单
+     * @author 陈湘岳
+     * @param limit 查询数量限制
+     * @return java.util.List<com.ruoyi.system.domain.entity.Order>
+     **/
+    List<Order> findWaitRefundOrders(@Param("limit") int limit);
 }
