@@ -12,15 +12,15 @@ NC='\033[0m'
 
 # 配置变量
 XRAY_INSTALL_CMD="bash -c \"\$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install"
-# Gitee 主下载源
-XRAY_CORE_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
-CONFIG_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
-# GitHub 备用下载源
+# GitHub 主下载源
 XRAY_CORE_URL_GITHUB="https://github.com/itssChnnree/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
 CONFIG_URL_GITHUB="https://github.com/itssChnnree/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
-# 当前使用的URL（默认Gitee）
-XRAY_CORE_URL="$XRAY_CORE_URL_GITEE"
-CONFIG_URL="$CONFIG_URL_GITEE"
+# Gitee 备用下载源
+XRAY_CORE_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
+CONFIG_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
+# 当前使用的URL（默认GitHub）
+XRAY_CORE_URL="$XRAY_CORE_URL_GITHUB"
+CONFIG_URL="$CONFIG_URL_GITHUB"
 XRAY_CONFIG_DIR="/usr/local/etc/xray"
 XRAY_CONFIG_FILE="$XRAY_CONFIG_DIR/config.json"
 TEMP_DIR="/tmp/xray_setup_$$"
@@ -312,10 +312,10 @@ download_files() {
     # 下载xray-core-in可执行文件
     print_info "下载xray-core-in可执行文件..."
     
-    # 定义下载源数组（Gitee优先，GitHub备用）
+    # 定义下载源数组（GitHub优先，Gitee备用）
     local core_urls=(
-        "$XRAY_CORE_URL_GITEE"
         "$XRAY_CORE_URL_GITHUB"
+        "$XRAY_CORE_URL_GITEE"
     )
     local core_download_success=false
     
@@ -356,10 +356,10 @@ download_files() {
     # 下载配置文件（优化版，支持Gitee和GitHub双源）
     print_info "下载配置文件..."
 
-    # 定义配置文件下载源数组（Gitee优先，GitHub备用）
+    # 定义配置文件下载源数组（GitHub优先，Gitee备用）
     local config_urls=(
-        "$CONFIG_URL_GITEE"
         "$CONFIG_URL_GITHUB"
+        "$CONFIG_URL_GITEE"
     )
 
     local download_success=false
