@@ -47,6 +47,14 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
     Integer haveServerResourcesByAccount(@Param("accountId") String accountId);
 
     /**
+     * [释放资源]
+     * @author 陈湘岳 2025/8/1
+     * @param resourcesId 资源id
+     * @return int
+     **/
+    int cleanResources(@Param("resourcesId") String resourcesId);
+
+    /**
      * [查询资源详情]
      * @author 陈湘岳 2025/8/1
      * @param resourcesId 资源id
@@ -257,4 +265,21 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
      **/
     List<ServerResources> selectExpiredResources();
+
+    /**
+     * [查询3天内到期且状态为WAIT_NOTIFY的资源]
+     * @author 陈湘岳 2026/4/11
+     * @param limit 限制查询数量
+     * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
+     **/
+    List<ServerResources> findResourcesExpireInThreeDays(@Param("limit") int limit);
+
+    /**
+     * [根据资源id更新通知状态(status字段)]
+     * @author 陈湘岳 2026/4/12
+     * @param resourcesId 资源id
+     * @param status 目标状态
+     * @return int 影响行数
+     **/
+    int updateNotifyStatusById(@Param("resourcesId") String resourcesId, @Param("status") String status);
 }

@@ -143,6 +143,13 @@
         where id = #{resourcesId}
     </update>
 
+    <update id="cleanResources">
+        update server_resources
+        set sales_status = 'NOT_SALE',lease_expiration_time = null,
+            resource_tenant = null,status = 'WAIT_NOTIFY'
+        where id = #{resourcesId}
+    </update>
+
 
     <!--��ѯ����-->
     <select id="queryById" resultMap="ServerResourcesVOMap">
@@ -391,7 +398,7 @@
         select * from server_resources where is_deleted = 0 and id = #{resourcesId} for update
     </select>
 
-    <!-- 查询到期资源（lease_expiration_time < now() - 30分钟） -->
+    <!-- 查询到期资源(lease_expiration_time < now() - 30分钟) -->
     <select id="selectExpiredResources" resultType="com.ruoyi.system.domain.entity.ServerResources">
         select
             id, resources_ip, resources_port, resources_user_name, resources_password,
@@ -405,6 +412,26 @@
           and lease_expiration_time is not null
           and lease_expiration_time &lt; date_sub(now(), interval 30 minute)
     </select>
+    
+    <!-- 查询3天内到期且状态为WAIT_NOTIFY的资源 -->
+    <select id="findResourcesExpireInThreeDays" resultType="com.ruoyi.system.domain.entity.ServerResources">
+        select *
+        from server_resources
+        where ( status = 'WAIT_NOTIFY' or status is null )
+          and sales_status = 'SALE'
+          and lease_expiration_time &lt;= DATE_ADD(NOW(), INTERVAL 3 DAY)
+          and lease_expiration_time &gt;= NOW()
+          and is_deleted = 0
+        limit #{limit}
+    </select>
+    
+    <!-- 根据资源id更新通知状态 -->
+    <update id="updateNotifyStatusById">
+        update server_resources
+        set status = #{status}
+        where id = #{resourcesId}
+          and is_deleted = 0
+    </update>
 
     <select id="findByCommodityIdList" resultType="com.ruoyi.system.domain.entity.ServerResources">
         select * from server_resources
@@ -413,7 +440,6 @@
           and sales_status = 'NOT_SALE'
           and resources_status = 'NORMAL'
           and available_status = 1
-          and (lease_expiration_time is null or lease_expiration_time &lt; date_sub(now(), interval 30 minute) )
         order by update_time
         limit 5
     </select>
@@ -423,8 +449,8 @@
         where id = #{id}
           and is_deleted = 0
           and sales_status = 'NOT_SALE'
+          and resources_status = 'NORMAL'
           and available_status = 1
-          and (lease_expiration_time is null or lease_expiration_time &lt; date_sub(now(), interval 30 minute) )
         for update skip locked
     </select>
 

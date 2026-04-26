@@ -2,11 +2,14 @@ package com.ruoyi.web.controller.shopController;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.ruoyi.system.domain.dto.ProcessQuoteDto;
 import com.ruoyi.system.domain.dto.TicketMainTextQuoteDto;
+import com.ruoyi.system.domain.dto.UpdateQuoteRecordDto;
 import com.ruoyi.system.group.InsertGroup;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IOrderQuoteService;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -64,6 +67,17 @@ public class OrderQuoteController {
         return orderQuoteService.getQuoteOrderInfo(orderId);
     }
 
+
+    @GetMapping("/getQuoteOrderRecord")
+    @ApiOperation("订单信息页-报价处理记录查询")
+    public Result getQuoteOrderRecord(String orderId){
+        if (StrUtil.isBlank(orderId)) {
+            return Result.fail("请选择订单");
+        }
+        return orderQuoteService.getQuoteOrderRecord(orderId);
+    }
+
+
     @PostMapping("/createOrderQuote")
     @ApiOperation("创建报价订单")
     public Result createOrderQuote(@RequestBody @Validated(InsertGroup.class) TicketMainTextQuoteDto ticketMainTextQuoteDto
@@ -72,6 +86,32 @@ public class OrderQuoteController {
             return Result.fail(bindingResult.getAllErrors().get(0).getDefaultMessage());
         }
         return orderQuoteService.createOrderQuote(ticketMainTextQuoteDto);
+    }
+
+    @PostMapping("/processQuoteOrder")
+    @ApiOperation("处理报价订单")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result processQuoteOrder(@RequestBody ProcessQuoteDto processQuoteDto) {
+        if (StrUtil.isBlank(processQuoteDto.getOrderId())) {
+            return Result.fail("请选择订单");
+        }
+        if (StrUtil.isBlank(processQuoteDto.getQuoteProcessingRecord())) {
+            return Result.fail("请输入处理记录");
+        }
+        return orderQuoteService.processQuoteOrder(processQuoteDto);
+    }
+
+    @PostMapping("/updateQuoteRecord")
+    @ApiOperation("修改报价处理记录")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result updateQuoteRecord(@RequestBody UpdateQuoteRecordDto updateQuoteRecordDto) {
+        if (StrUtil.isBlank(updateQuoteRecordDto.getOrderId())) {
+            return Result.fail("请选择订单");
+        }
+        if (StrUtil.isBlank(updateQuoteRecordDto.getQuoteProcessingRecord())) {
+            return Result.fail("请输入处理记录");
+        }
+        return orderQuoteService.updateQuoteRecord(updateQuoteRecordDto);
     }
 
 }

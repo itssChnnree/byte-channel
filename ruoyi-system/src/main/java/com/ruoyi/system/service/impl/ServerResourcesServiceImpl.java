@@ -3,7 +3,6 @@ package com.ruoyi.system.service.impl;
 
 import cn.hutool.core.lang.Dict;
 
-import cn.hutool.core.net.url.UrlPath;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.extra.template.Template;
@@ -28,7 +27,6 @@ import com.ruoyi.system.mapstruct.ServerResourcesMapstruct;
 import com.ruoyi.system.service.IServerResourceAlarmService;
 import com.ruoyi.system.service.IServerResourcesService;
 import com.ruoyi.system.util.LogEsUtil;
-import com.ruoyi.system.util.LogEsUtil;
 import com.ruoyi.system.util.NetworkUtil;
 import com.ruoyi.system.util.XrayManager;
 import lombok.Cleanup;
@@ -37,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -220,14 +217,15 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         //删除暂存数据
         int deleteByIp = resourceAllocationTemporaryStorageMapper.deleteByIp(resourceProcessingDto.getResourcesIp());
 
+        //增加商品库存
+        commodityService.addCommodityStockLock(commodity.getId(),1);
+
         if (insert > 0){
             //新增资源校验数据
             Authentication authentication = SecurityUtils.getAuthentication();
             CompletableFuture.runAsync(() -> {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 newResourcesValid(userId, serverResources);
-                ServerResourcesServiceImpl serverResourcesService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
-                serverResourcesService.getResourcesStatus(serverResources.getId());
             });
             return Result.success(serverResources);
         }else{
@@ -475,8 +473,6 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             CompletableFuture.runAsync(() -> {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 newResourcesValid(userId, serverResources);
-                ServerResourcesServiceImpl serverResourcesService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
-                serverResourcesService.getResourcesStatus(serverResources.getId());
             });
             return Result.success("重置资源成功");
         }else{
@@ -707,7 +703,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         if (ObjectUtils.isEmpty(orderAdd)){
             return Result.fail("订单不存在");
         }
-        if(!SecurityUtils.hasPermi()&&!SecurityUtils.getStrUserId().equals(orderAdd.getUserId())){
+        if(!SecurityUtils.hasPre(orderAdd.getUserId())){
             return Result.fail("您没有权限查看此订单");
         }
         return Result.success(orderAdd);
@@ -723,11 +719,11 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      **/
     @Override
     public Result getOrderRenewal(String orderId) {
-        OrderNewVo orderAdd = serverResourcesMapper.getOrderAdd(orderId);
+        OrderRenewalVo orderAdd = serverResourcesMapper.getOrderRenewal(orderId);
         if (ObjectUtils.isEmpty(orderAdd)){
             return Result.fail("订单不存在");
         }
-        if(!SecurityUtils.hasPermi()&&!SecurityUtils.getStrUserId().equals(orderAdd.getUserId())){
+        if(!SecurityUtils.hasPre(orderAdd.getUserId())){
             return Result.fail("您没有权限查看此订单");
         }
         return Result.success(orderAdd);
@@ -751,10 +747,14 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             return Result.fail("资源正在出售中，请勿删除");
         }
         ServerResourcesXrayValid byResourcesId = serverResourcesXrayValidMapper.findByResourcesId(id);
-        String deletedResult = XrayManager.deleteValidXray(byResourcesId);
+        XrayManager.deleteValidXray(byResourcesId);
         int delete = serverResourcesMapper.deleteById(id);
         LogEsUtil.info("删除资源,id=" + id);
-        return delete > 0 ? Result.success("删除成功") : Result.fail("删除失败");
+        if (delete > 0){
+            return Result.success("删除成功");
+        }else {
+            return Result.fail("删除失败");
+        }
     }
 
     //获取到期时间类型,1为7天内到期，2为15天，3为一月
@@ -1011,6 +1011,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
             if (!ObjectUtils.isEmpty(result) && !ObjectUtils.isEmpty(result.getData()) 
                     && "200".equals(result.getData().toString().trim())) {
                 LogEsUtil.info("资源 " + resourcesId + " 整体检测正常");
+                if (ResourcesStatus.WAIT_CHECK.equals(resource.getResourcesStatus())){
+                    serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.NORMAL);
+                }
                 return;
             }
             serverResourcesMapper.updateResourcesStatus(resourcesId, ResourcesStatus.ERROR);
@@ -1230,7 +1233,13 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         orderCommodityResourcesMapper.resourceReplacement(oldResource.getId(), newResource.getId(),newResource.getResourceTenant());
         serverResourcesRenewalMapper.resourceReplacement(oldResource.getId(), newResource.getId(),newResource.getResourceTenant());
         orderRenewalResourcesMapper.resourceReplacement(oldResource.getId(), newResource.getId(),newResource.getResourcesIp(),newResource.getResourceTenant());
-
+        //重置资源
+        CompletableFuture.runAsync(() -> {
+            transactionTemplate.execute(status -> {
+                resourceReset(oldResource.getId());
+                return null;
+            });
+        },resourceDetectionExecutor);
         return Result.success("资源置换成功");
     }
 
@@ -1242,11 +1251,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         newResource.setSalesStatus(oldResource.getSalesStatus());
         newResource.setAvailableStatus(oldResource.getAvailableStatus());
         serverResourcesMapper.updateById(newResource);
-        oldResource.setResourceTenant(null);
-        oldResource.setLeaseExpirationTime(null);
-        oldResource.setSalesStatus(SalesStatus.NOT_SALE);
         oldResource.setAvailableStatus(AvailableStatus.AVAILABLE_STATUS_DOWN);
         serverResourcesMapper.updateById(oldResource);
+        serverResourcesMapper.cleanResources(oldResource.getId());
     }
 
     /**
@@ -1303,26 +1310,20 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         String resourceId = resource.getId();
 
         try {
-            // 1. 先执行资源重置（通过SpringUtil获取代理对象，避免AOP失效）
-            ServerResourcesServiceImpl proxyService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
-            Result<ServerResources> resetResult = proxyService.resourceReset(resourceId);
 
-            if (ObjectUtils.isEmpty(resetResult) || resetResult.getCode() != 200) {
-                LogEsUtil.warn("Resource reset failed, resourceId: " + resourceId + ", msg: " + resetResult.getMessage());
-                return 0;
-            }
 
             // 2. 再使用编程式事务更新资源过期状态
             Integer expireUpdateResult = transactionTemplate.execute(status -> {
                 try {
                     ServerResources serverResources = serverResourcesMapper.selectByIdForUpdate(resourceId);
-                    serverResources.setId(resourceId);
-                    serverResources.setSalesStatus(SalesStatus.NOT_SALE);
-                    serverResources.setLeaseExpirationTime(null);
-                    serverResources.setResourceTenant(null);
-
-                    int updated = serverResourcesMapper.updateById(serverResources);
+                    if (ObjectUtils.isEmpty(serverResources)) {
+                        LogEsUtil.info("Resource expire update failed,resource is null, resourceId: " + resourceId);
+                        return 0;
+                    }
+                    int updated = serverResourcesMapper.cleanResources(resourceId);
                     if (updated > 0) {
+                        //删除自动续费配置
+                        serverResourcesRenewalMapper.deleteByResourcesId(resourceId);
                         LogEsUtil.info("Resource expire status updated, resourceId: " + resourceId);
                         return 1;
                     } else {
@@ -1337,6 +1338,15 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
                 }
             });
 
+            // 1. 先执行资源重置（通过SpringUtil获取代理对象，避免AOP失效）
+            ServerResourcesServiceImpl proxyService = SpringUtil.getBean(ServerResourcesServiceImpl.class);
+            Result<ServerResources> resetResult = proxyService.resourceReset(resourceId);
+
+            if (ObjectUtils.isEmpty(resetResult) || resetResult.getCode() != 200) {
+                LogEsUtil.warn("Resource reset failed, resourceId: " + resourceId + ", msg: " + resetResult.getMessage());
+                return 0;
+            }
+
             if (expireUpdateResult == null || expireUpdateResult == 0) {
                 return 0;
             }
@@ -1349,7 +1359,76 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         }
     }
 
+    /**
+     * [扣减资源到期时间]
+     * 根据付款周期扣减租赁到期时间，采用写锁查询
+     * @author 陈湘岳 2026/4/7
+     * @param resourceId 资源id
+     * @param paymentPeriod 付款周期（PaymentPeriodConstant）
+     * @return java.util.Date 扣减后的到期时间
+     **/
+    @Override
+    public Date deductLeaseExpirationTime(String resourceId, String paymentPeriod) {
+        // 1. FOR UPDATE write lock
+        ServerResources resource = serverResourcesMapper.selectByIdForUpdate(resourceId);
+        if (resource == null) {
+            LogEsUtil.info("扣减资源到期时间失败，资源不存在，资源id："+resourceId);
+            return null;
+        }
+        if (resource.getLeaseExpirationTime() == null) {
+            LogEsUtil.info("扣减资源到期时间失败，资源未租赁，资源id："+resourceId);
+            return null;
+        }
+        if (!StrUtil.equals(resource.getResourceTenant(),SecurityUtils.getStrUserId())){
+            LogEsUtil.info("扣减资源到期时间失败，资源不属于该用户，资源id："+resourceId);
+            return null;
+        }
 
+        // 2. Calculate deducted time
+        Date deductedTime = calculateDeductedDate(resource.getLeaseExpirationTime(), paymentPeriod);
 
+        // 3. Update
+        resource.setLeaseExpirationTime(deductedTime);
+        serverResourcesMapper.updateById(resource);
+
+        LogEsUtil.info("扣减资源到期时间, 资源id: " + resourceId
+                + ", 周期: " + paymentPeriod
+                + ", 新到期时间: " + deductedTime);
+        return deductedTime;
+    }
+
+    /**
+     * Calculate deducted date based on payment period
+     */
+    private static Date calculateDeductedDate(Date date, String paymentPeriod) {
+        if (date == null) {
+            throw new IllegalArgumentException("date cannot be null");
+        }
+        if (paymentPeriod == null) {
+            throw new IllegalArgumentException("paymentPeriod cannot be null");
+        }
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+
+        switch (paymentPeriod) {
+            case PaymentPeriodConstant.MONTHLY:
+                calendar.add(Calendar.DAY_OF_YEAR, -30);
+                break;
+            case PaymentPeriodConstant.QUARTERLY:
+                calendar.add(Calendar.DAY_OF_YEAR, -90);
+                break;
+            case PaymentPeriodConstant.YEARLY:
+                calendar.add(Calendar.DAY_OF_YEAR, -365);
+                break;
+            case PaymentPeriodConstant.SINGLE:
+                // single payment, no deduction
+                break;
+            default:
+                throw new IllegalArgumentException("unsupported payment period: " + paymentPeriod);
+        }
+
+        return calendar.getTime();
+    }
 
 }

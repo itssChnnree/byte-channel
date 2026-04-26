@@ -29,4 +29,7 @@ public interface BalanceDetailStatus {
 
     //提现
     String WITHDRAW = "WITHDRAW";
+
+    //推广返现
+    String CASHBACK = "CASHBACK";
 }

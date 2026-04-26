@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.UserConfigMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.UserConfig" id="UserConfigMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="expireEmailNotice" column="expire_email_notice" jdbcType="INTEGER"/>
+                <result property="renewFailEmailNotice" column="renew_fail_email_notice" jdbcType="INTEGER"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+    
+    <resultMap type="com.ruoyi.system.domain.vo.UserConfigVo" id="UserConfigVOMap">
+                <result property="id" column="id" jdbcType="VARCHAR"/>
+                <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+                <result property="expireEmailNotice" column="expire_email_notice" jdbcType="INTEGER"/>
+                <result property="renewFailEmailNotice" column="renew_fail_email_notice" jdbcType="INTEGER"/>
+                <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+                <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+                <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+                <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+                <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+                <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="UserConfigVOMap">
+        select
+id, user_id, expire_email_notice, renew_fail_email_notice, is_deleted, create_user, update_user, create_time, update_time, status
+        from user_config
+        where id = #{id} and is_deleted = 0
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="UserConfigVOMap">
+        select
+id, user_id, expire_email_notice, renew_fail_email_notice, is_deleted, create_user, update_user, create_time, update_time, status        
+        from user_config
+        <where>
+        1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="userId != null and userId != ''">
+                and user_id = #{userId}
+            </if>
+            <if test="expireEmailNotice != null">
+                and expire_email_notice = #{expireEmailNotice}
+            </if>
+            <if test="renewFailEmailNotice != null">
+                and renew_fail_email_notice = #{renewFailEmailNotice}
+            </if>
+            <if test="isDeleted != null">
+                and is_deleted = #{isDeleted}
+            </if>
+            <if test="createUser != null and createUser != ''">
+                and create_user = #{createUser}
+            </if>
+            <if test="updateUser != null and updateUser != ''">
+                and update_user = #{updateUser}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+    
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="UserConfigVOMap">
+        select
+id, user_id, expire_email_notice, renew_fail_email_notice, is_deleted, create_user, update_user, create_time, update_time, status
+        from user_config
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.expireEmailNotice != null">
+                and expire_email_notice = #{dto.expireEmailNotice}
+            </if>
+            <if test="dto.renewFailEmailNotice != null">
+                and renew_fail_email_notice = #{dto.renewFailEmailNotice}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+    
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="UserConfigVOMap">
+        select
+id, user_id, expire_email_notice, renew_fail_email_notice, is_deleted, create_user, update_user, create_time, update_time, status
+        from user_config
+        <where>
+        1 = 1 and is_deleted = 0 
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.userId != null and dto.userId != ''">
+                and user_id = #{dto.userId}
+            </if>
+            <if test="dto.expireEmailNotice != null">
+                and expire_email_notice = #{dto.expireEmailNotice}
+            </if>
+            <if test="dto.renewFailEmailNotice != null">
+                and renew_fail_email_notice = #{dto.renewFailEmailNotice}
+            </if>
+            <if test="dto.isDeleted != null">
+                and is_deleted = #{dto.isDeleted}
+            </if>
+            <if test="dto.createUser != null and dto.createUser != ''">
+                and create_user = #{dto.createUser}
+            </if>
+            <if test="dto.updateUser != null and dto.updateUser != ''">
+                and update_user = #{dto.updateUser}
+            </if>
+            <if test="dto.createTime != null">
+                and create_time = #{dto.createTime}
+            </if>
+            <if test="dto.updateTime != null">
+                and update_time = #{dto.updateTime}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and status = #{dto.status}
+            </if>
+        </where>
+    </select>
+    
+    
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into user_config(id,user_id, expire_email_notice, renew_fail_email_notice, is_deleted, create_user, update_user, create_time, update_time, status)
+        values (#{id},#{userId}, #{expireEmailNotice}, #{renewFailEmailNotice}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime}, #{status})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into user_config(id,user_id, expire_email_notice, renew_fail_email_notice, is_deleted, create_user, update_user, create_time, update_time, status)
+        values
+             <foreach collection="entities" item="entity" separator=",">
+             (#{entity.id},#{entity.userId}, #{entity.expireEmailNotice}, #{entity.renewFailEmailNotice}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+             </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into user_config(id,user_id, expire_email_notice, renew_fail_email_notice, is_deleted, create_user, update_user, create_time, update_time, status)
+        values
+            <foreach collection="entities" item="entity" separator=",">
+                (#{entity.id},#{entity.userId}, #{entity.expireEmailNotice}, #{entity.renewFailEmailNotice}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+            </foreach>
+            on duplicate key update
+user_id = values(user_id),
+expire_email_notice = values(expire_email_notice),
+renew_fail_email_notice = values(renew_fail_email_notice),
+is_deleted = values(is_deleted),
+create_user = values(create_user),
+update_user = values(update_user),
+create_time = values(create_time),
+update_time = values(update_time),
+status = values(status)    </insert>
+
+</mapper>
+

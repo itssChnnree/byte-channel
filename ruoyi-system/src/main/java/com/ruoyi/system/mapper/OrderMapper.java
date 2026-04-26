@@ -114,13 +114,15 @@ public interface OrderMapper extends BaseMapper<Order> {
     OrderDetailVo getOrderDetailById(String orderId);
 
     /**
-     * [查询超时未支付订单]
+     * [查询指定订单类型的超时未支付订单]
      * 查询状态为 WAIT_PAY 且 order_time 距今超过指定分钟数的订单
      * @author 陈湘岳
      * @param minutes 超时分钟数
+     * @param orderType 订单类型
      * @return java.util.List<com.ruoyi.system.domain.entity.Order>
      **/
-    List<Order> findTimeoutWaitPayOrders(@Param("minutes") int minutes);
+    List<Order> findTimeoutWaitPayOrders(@Param("minutes") int minutes,
+                                         @Param("orderType")String orderType);
 
     /**
      * [查询待分配资源的新购订单]
@@ -138,4 +140,12 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return java.util.List<com.ruoyi.system.domain.entity.Order>
      **/
     List<Order> findWaitRefundOrders(@Param("limit") int limit);
+
+    /**
+     * [通过id上锁查询订单]
+     * @author 陈湘岳 2026/4/7
+     * @param id 订单id
+     * @return com.ruoyi.system.domain.entity.Order
+     **/
+    Order selectByIdForUpdate(@Param("id") String id);
 }

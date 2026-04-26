@@ -34,6 +34,7 @@ public interface TicketMapper extends BaseMapper<Ticket> {
      **/
     int updateStatusById(@Param("id") String id, @Param("status")String status);
 
+
     /**
      * [根据用户id工单状态为等待用户回复的工单]
      * @author 陈湘岳 2025/10/10

@@ -59,6 +59,9 @@ public class OrderDto extends PageBase {
 
     @ApiModelProperty(value = "支付方式")
     private String paymentType;
+
+    @ApiModelProperty("用户名（模糊查询）")
+    private String userName;
     
 
 }

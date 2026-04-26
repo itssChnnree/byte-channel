@@ -62,4 +62,20 @@ public interface PromoRecordsMapper extends BaseMapper<PromoRecords> {
      **/
     List<PromoRecordsPageVo> getRecords(@Param("dto") PromoRecordsDto promoRecordsDto,
                                         @Param("userId") String userId);
+
+    /**
+     * [查询待返现的推广记录]
+     * 状态为WAIT_CONFIRM且订单完成超过24小时
+     * @author 陈湘岳 2026/4/7
+     * @return java.util.List<com.ruoyi.system.domain.entity.PromoRecords>
+     **/
+    List<PromoRecords> selectWaitCashbackRecords(@Param("limit") int limit);
+
+    /**
+     * [通过id上锁查询推广记录]
+     * @author 陈湘岳 2026/4/7
+     * @param id 推广记录id
+     * @return com.ruoyi.system.domain.entity.PromoRecords
+     **/
+    PromoRecords selectByIdForUpdate(@Param("id") String id);
 }

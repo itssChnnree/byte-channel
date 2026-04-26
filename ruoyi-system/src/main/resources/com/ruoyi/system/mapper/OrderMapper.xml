@@ -59,31 +59,39 @@
     <!--��ѯ��ҳ����-->
     <select id="queryPage" resultType="com.ruoyi.system.domain.vo.OrderVo">
         select
-        id, amount, status,description, order_time,order_type, payment_type
-        from `order`
-        where 1 = 1 and is_deleted = 0
-            <if test="dto.status != null and dto.status != ''">
-                and status = #{dto.status}
+        o.id, o.amount, o.status, o.description, o.order_time,
+        o.order_type, o.payment_type,su.user_name
+        from `order` o
+            left join sys_user su on o.user_id = su.user_id
+        where 1 = 1 and o.is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and o.id = #{dto.id}
             </if>
-            <if test="userId != null and userId != ''">
-                and user_id = #{userId}
+            <if test="dto.userName != null and dto.userName != ''">
+                and su.user_name like concat('%', #{dto.userName}, '%')
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                and o.status = #{dto.status}
             </if>
             <if test="dto.orderType != null and dto.orderType != ''">
-                and order_type = #{dto.orderType}
+                and o.order_type = #{dto.orderType}
             </if>
             <if test="dto.orderCreateTime != null and dto.orderCreateTime != ''">
-                and order_time >= #{dto.orderCreateTime}
+                and o.order_time &gt;= #{dto.orderCreateTime}
             </if>
             <if test="dto.orderEndTime != null and dto.orderEndTime != ''">
-                and order_time &lt;= #{dto.orderEndTime}
+                and o.order_time &lt;= #{dto.orderEndTime}
             </if>
             <if test="dto.paymentPeriod != null and dto.paymentPeriod !=''">
-                and payment_period = #{dto.paymentPeriod}
+                and o.payment_period = #{dto.paymentPeriod}
             </if>
             <if test="dto.paymentType != null and dto.paymentType !=''">
-                and payment_type = #{dto.paymentType}
+                and o.payment_type = #{dto.paymentType}
             </if>
-            order by create_time desc
+            <if test="dto.description != null and dto.description != ''">
+                and o.description like concat('%', #{dto.description}, '%')
+            </if>
+            order by o.create_time desc
     </select>
 
 
@@ -193,6 +201,7 @@
         from `order`
         where is_deleted = 0
           and status = 'WAIT_PAY'
+          and order_type = #{orderType}
           and order_time &lt; DATE_SUB(NOW(), INTERVAL #{minutes} MINUTE)
     </select>
 
@@ -235,6 +244,17 @@
         where is_deleted = 0
           and status = 'WAIT_REFUND'
         limit #{limit}
+    </select>
+
+    <!-- 通过id上锁查询订单 -->
+    <select id="selectByIdForUpdate" resultMap="OrderMap">
+        select
+            id, user_id, amount, payment_period, payment_id, payment_type,
+            order_type, status, description, order_time, refound_to_balance,
+            is_deleted, create_user, update_user, create_time, update_time
+        from `order`
+        where id = #{id} and is_deleted = 0
+        for update
     </select>
 
 </mapper>

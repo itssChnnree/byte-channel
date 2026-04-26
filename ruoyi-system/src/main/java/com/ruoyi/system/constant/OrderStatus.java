@@ -1,5 +1,8 @@
 package com.ruoyi.system.constant;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * []
  *
@@ -46,6 +49,8 @@ public interface OrderStatus {
     //已退款
      String REFUND_SUCCESS = "REFUND_SUCCESS";
 
+    //差错退款订单状态集合
+    List<String> ERROR_REFUND_JOB_STATUS_LIST = Arrays.asList(USER_CANCELED,CANCELED_TIMEOUT,WAIT_ALLOCATION_RESOURCES,COMPLETED);
     //-----------------------------------------------支付方式--------------------------------------------------------------------
 
     //支付宝支付

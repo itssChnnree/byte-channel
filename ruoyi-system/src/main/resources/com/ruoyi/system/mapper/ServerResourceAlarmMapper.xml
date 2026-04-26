@@ -213,7 +213,7 @@
             r.sales_status,
             r.available_status
         FROM server_resource_alarm a
-        LEFT JOIN server_resources r ON a.resource_id = r.id AND r.is_deleted = 0
+        JOIN server_resources r ON a.resource_id = r.id AND r.is_deleted = 0
         LEFT JOIN commodity c ON r.commodity_id = c.id AND c.is_deleted = 0
         LEFT JOIN vendor_account_information vai ON r.vendor_account_id = vai.id AND vai.is_deleted = 0
         LEFT JOIN vendor_information vi ON vai.vendor_id = vi.id AND vi.is_deleted = 0

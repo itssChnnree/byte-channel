@@ -18,4 +18,10 @@ public interface ResourcesStatus {
     //待检测
      String WAIT_CHECK = "WAIT_CHECK";
 
+     //续费待通知
+    String WAIT_NOTIFY = "WAIT_NOTIFY";
+
+    //已通知
+    String NOTIFIED = "NOTIFIED";
+
 }

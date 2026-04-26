@@ -1,11 +1,14 @@
 package com.ruoyi.system.service;
 
 
+import com.ruoyi.system.domain.dto.ManualRefundDto;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.dto.OrderByRenewalDto;
 import com.ruoyi.system.domain.dto.OrderByShoppingCartDto;
 import com.ruoyi.system.domain.dto.OrderDto;
 import com.ruoyi.system.http.Result;
+
+import java.math.BigDecimal;
 
 /**
  * 订单表(Order)�����ӿ�
@@ -147,4 +150,14 @@ public interface IOrderService{
      * @return int 本次关闭的订单数量
      **/
     int autoCloseTimeoutOrders();
+
+    /**
+     * [手动退款 - 管理员确认WAIT_REFUND订单退款]
+     * 跳过支付平台API，直接变更状态为REFUND_SUCCESS并扣减利润流水
+     *
+     * @param dto 手动退款参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/4/6
+     **/
+    Result<String> manualRefund(ManualRefundDto dto);
 }

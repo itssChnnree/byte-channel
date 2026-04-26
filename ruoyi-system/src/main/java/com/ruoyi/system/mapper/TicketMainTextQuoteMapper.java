@@ -36,5 +36,13 @@ public interface TicketMainTextQuoteMapper extends BaseMapper<TicketMainTextQuot
      * @param orderId 订单id
      * @return com.ruoyi.system.domain.entity.TicketMainTextQuote
      **/
+    TicketMainTextQuote findByOrderIdForUpdate(@Param("orderId") String orderId);
+
+    /**
+     * [根据订单id查询报价单]
+     * @author 陈湘岳 2026/3/1
+     * @param orderId 订单id
+     * @return com.ruoyi.system.domain.entity.TicketMainTextQuote
+     **/
     TicketMainTextQuote findByOrderId(@Param("orderId") String orderId);
 }

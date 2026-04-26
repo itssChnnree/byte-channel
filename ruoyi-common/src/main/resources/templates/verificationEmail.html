@@ -4,92 +4,37 @@
     <meta charset="UTF-8">
     <title>邮箱验证码</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #3498db, #2c3e50);
-            padding: 30px;
-            text-align: center;
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 10px;
-        }
-        .content {
-            padding: 30px;
-            color: #333;
-            line-height: 1.6;
-        }
-        .code-container {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            margin: 25px 0;
-            border: 1px dashed #e0e0e0;
-        }
-        .verification-code {
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 5px;
-            color: #e74c3c;
-            margin: 10px 0;
-        }
-        .footer {
-            background-color: #f1f1f1;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #7f8c8d;
-        }
-        .note {
-            background-color: #fff8e1;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin-top: 25px;
-            border-radius: 0 4px 4px 0;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #3498db, #2c3e50); padding: 30px; text-align: center; }
+        .logo { font-size: 28px; font-weight: bold; color: white; margin-bottom: 10px; }
+        .content { padding: 30px; color: #333; line-height: 1.6; }
+        .code-container { background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0; border: 1px dashed #e0e0e0; }
+        .verification-code { font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #e74c3c; margin: 10px 0; }
+        .footer { background-color: #f1f1f1; padding: 20px; text-align: center; font-size: 12px; color: #7f8c8d; }
+        .note { background-color: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin-top: 25px; border-radius: 0 4px 4px 0; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <div class="logo">ByteChannel</div>
+        <div class="logo">甘果出海</div>
         <h2 style="color: white; margin: 0;">邮箱验证码</h2>
     </div>
-
     <div class="content">
-        <p>尊敬的 <span style="font-weight: bold;" th:text="${username}">用户</span>，您好：</p>
+        <p>尊敬的用户</span>，您好：</p>
         <p>您正在执行 <span style="color: #3498db;" th:text="${operation}">操作</span>，请使用以下验证码完成验证：</p>
-
         <div class="code-container">
             <div class="verification-code" th:text="${verificationCode}">123456</div>
             <p>该验证码有效期为 <span style="color: #e74c3c;" th:text="${expiryMinutes}">5</span> 分钟</p>
         </div>
-
         <p>如果您未进行此操作，请忽略此邮件或联系客服。</p>
-
         <div class="note">
             <p>安全提示：请勿向任何人泄露此验证码，包括我们的工作人员。</p>
         </div>
     </div>
-
     <div class="footer">
-        <p>© 2025 ByteChannel 版权所有</p>
+        <p>© <span th:text="${#dates.year(new java.util.Date())}">2026</span> 甘果出海 版权所有</p>
         <p>此邮件为系统自动发送，请勿直接回复</p>
     </div>
 </div>

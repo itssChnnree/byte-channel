@@ -165,11 +165,19 @@
         </foreach>
     </select>
 
+    <select id="findByOrderIdForUpdate" resultType="com.ruoyi.system.domain.entity.TicketMainTextQuote">
+        select
+            id, ticket_main_text_id, quote,status,quote_order_id,create_time
+        from ticket_main_text_quote
+        where is_deleted = 0 and quote_order_id = #{orderId}
+        for update
+    </select>
+
     <select id="findByOrderId" resultType="com.ruoyi.system.domain.entity.TicketMainTextQuote">
         select
             id, ticket_main_text_id, quote,status,quote_order_id,create_time
         from ticket_main_text_quote
-        where is_deleted = 0 and quote_order_id = {orderId}
+        where is_deleted = 0 and quote_order_id = #{orderId}
     </select>
 
 

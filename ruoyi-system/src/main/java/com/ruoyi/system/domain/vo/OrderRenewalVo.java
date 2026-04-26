@@ -1,6 +1,9 @@
 package com.ruoyi.system.domain.vo;
 
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * [续费订单-订单资源详情]
@@ -9,6 +12,9 @@ import io.swagger.annotations.ApiModelProperty;
  * @version v1.0.0
  * @date 2025/11/19
  */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderRenewalVo implements OrderResourcesVo{
 
     @ApiModelProperty("商品名")

@@ -275,5 +275,32 @@ update_user = values(update_user),
 create_time = values(create_time),
 update_time = values(update_time)    </insert>
 
+    <!-- 查询待返现的推广记录（状态为WAIT_CONFIRM且订单完成超过24小时） -->
+    <select id="selectWaitCashbackRecords" resultType="com.ruoyi.system.domain.entity.PromoRecords">
+        select
+            pr.id, pr.user_id, pr.referrals_user_id, pr.promo_code_records_id,
+            pr.order_id, pr.cashback_amount, pr.status, pr.purchase_amount,
+            pr.cashback_percentage, pr.is_deleted, pr.create_user, pr.update_user,
+            pr.create_time, pr.update_time
+        from promo_records pr
+        inner join order_status_timeline ost on pr.order_id = ost.order_id
+        where pr.is_deleted = 0
+          and pr.status = 'WAIT_CONFIRM'
+          and ost.completed_time is not null
+          and ost.completed_time &lt; date_sub(now(), interval 24 hour)
+        limit #{limit}
+    </select>
+
+    <!-- 通过id上锁查询推广记录 -->
+    <select id="selectByIdForUpdate" resultType="com.ruoyi.system.domain.entity.PromoRecords">
+        select
+            id, user_id, referrals_user_id, promo_code_records_id, order_id,
+            cashback_amount, status, purchase_amount, cashback_percentage,
+            is_deleted, create_user, update_user, create_time, update_time
+        from promo_records
+        where id = #{id} and is_deleted = 0
+        for update
+    </select>
+
 </mapper>
 

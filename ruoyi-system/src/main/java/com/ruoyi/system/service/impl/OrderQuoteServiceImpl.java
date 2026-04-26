@@ -9,17 +9,16 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.dto.OrderQuoteDto;
+import com.ruoyi.system.domain.dto.ProcessQuoteDto;
 import com.ruoyi.system.domain.dto.TicketMainTextQuoteDto;
+import com.ruoyi.system.domain.dto.UpdateQuoteRecordDto;
 import com.ruoyi.system.domain.entity.*;
-import com.ruoyi.system.domain.vo.OrderStatusTimelineVo;
-import com.ruoyi.system.domain.vo.OrderVo;
-import com.ruoyi.system.domain.vo.YiPayResponse;
+import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.mapstruct.OrderMapstruct;
 import com.ruoyi.system.service.IOrderBaseService;
 import com.ruoyi.system.service.IOrderQuoteService;
-import com.ruoyi.system.domain.vo.OrderQuoteVo;
 import com.ruoyi.system.service.IOrderStatusTimelineService;
 import com.ruoyi.system.service.IWalletBalanceService;
 import com.ruoyi.system.util.LogEsUtil;
@@ -76,6 +75,8 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
 
     @Resource
     private TicketMainTextMapper ticketMainTextMapper;
+
+
 
     /**
      * [取消报价订单]
@@ -140,19 +141,13 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
             status = OrderStatus.WAIT_REFUND;
             result = ResultMessage.REFUND_ORDER_SUCCESS;
         }
-        orderMapper.refoundById(orderId, status, refoundToBalance(refoundToBalance));
+        orderMapper.refoundById(orderId, status, orderBaseService.refoundToBalance(refoundToBalance));
         LogEsUtil.info("订单取消成功,订单id为：{}",orderId);
+        updateTicketMainTextQuote(orderId,TicketStatus.QUOTE_USER_CANCEL);
         return Result.success(result);
     }
 
-    private Integer refoundToBalance(Boolean refoundToBalance) {
-        String onlyRefundFlow = redisCache.getCacheObject("sys_config:sys:onlyRefound:flow");
-        boolean onlyRefundToBalance = "true".equalsIgnoreCase(onlyRefundFlow);
-        if (onlyRefundToBalance){
-            return 1;
-        }
-        return ObjectUtil.equals(refoundToBalance,Boolean.TRUE) ? 1 : 0;
-    }
+
 
     /**
      * [报价订单支付]
@@ -189,14 +184,17 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
     //分配资源
     public Result<Boolean> allocationResources(String orderId, Order order) {
         //分配资源，新增订单资源
+        //修改订单时间线
         orderStatusTimelineService.setUserPayAndWaitAllocationTime(orderId);
+        //变更订单状态
         order.setStatus(OrderStatus.WAIT_ALLOCATION_RESOURCES);
         orderMapper.updateById(order);
         //更新报价单状态
-        TicketMainTextQuote ticketMainTextQuote
-                = ticketMainTextQuoteMapper.findByOrderId(orderId);
-        ticketMainTextQuote.setStatus(TicketStatus.WAITING_RESOURCE_ALLOCATION);
-        ticketMainTextQuoteMapper.updateById(ticketMainTextQuote);
+        updateTicketMainTextQuote(orderId, TicketStatus.WAITING_RESOURCE_ALLOCATION);
+        TicketMainTextQuote ticketMainTextQuote = ticketMainTextQuoteMapper.findByOrderId(orderId);
+        //更新工单状态
+        TicketMainText ticketMainText = ticketMainTextMapper.selectById(ticketMainTextQuote.getTicketMainTextId());
+        ticketMapper.updateStatusById(ticketMainText.getTicketId(),TicketStatus.WAITING_SERVICE_REPLY);
         LogEsUtil.info("报价单支付成功,ticketMainTextQuote:"+ticketMainTextQuote+",order:"+order);
         return Result.success("支付成功",true);
     }
@@ -305,5 +303,144 @@ public class OrderQuoteServiceImpl implements IOrderQuoteService {
         order.setUpdateTime(new Date());
         order.setIsDeleted(0);
         return order;
+    }
+
+    /**
+     * [处理报价订单]
+     *
+     * @param processQuoteDto 处理参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/4/6
+     **/
+    @Override
+    @Transactional
+    public Result processQuoteOrder(ProcessQuoteDto processQuoteDto) {
+        // 1. 查询订单
+        Order order = orderMapper.queryByIdForUpdate(processQuoteDto.getOrderId());
+        if (order == null) {
+            LogEsUtil.warn("订单不存在：" + processQuoteDto.getOrderId());
+            return Result.fail("订单不存在");
+        }
+
+        // 2. 校验订单类型
+        if (!StrUtil.equals(OrderTypeConstant.QUOTE, order.getOrderType())) {
+            LogEsUtil.warn("订单类型不为报价，订单id为：" + processQuoteDto.getOrderId());
+            return Result.fail("该订单不是报价订单");
+        }
+
+        // 3. 查询或创建 OrderQuote 记录
+        OrderQuote orderQuote = orderQuoteMapper.selectOne(
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<OrderQuote>()
+                .eq(OrderQuote::getOrderId, order.getId())
+                .eq(OrderQuote::getIsDeleted, 0)
+        );
+
+        if (orderQuote == null) {
+            // 创建新记录
+            orderQuote = new OrderQuote();
+            orderQuote.setId(cn.hutool.core.util.IdUtil.simpleUUID());
+            orderQuote.setOrderId(order.getId());
+            orderQuote.setUserId(order.getUserId());
+            orderQuote.setQuoteProcessingRecord(processQuoteDto.getQuoteProcessingRecord());
+            orderQuote.setCreateTime(new Date());
+            orderQuote.setUpdateTime(new Date());
+            orderQuote.setIsDeleted(0);
+            orderQuoteMapper.insert(orderQuote);
+            LogEsUtil.info("创建报价处理记录成功，订单ID：{}", order.getId());
+        } else {
+            // 更新记录
+            orderQuote.setQuoteProcessingRecord(processQuoteDto.getQuoteProcessingRecord());
+            orderQuote.setUpdateTime(new Date());
+            orderQuoteMapper.updateById(orderQuote);
+            LogEsUtil.info("更新报价处理记录成功，订单ID：{}", order.getId());
+        }
+
+        // 4. 变更订单状态为 COMPLETED
+        orderMapper.updateStatusById(order.getId(), OrderStatus.COMPLETED);
+        
+        // 5. 更新订单状态时间线
+        orderStatusTimelineService.setCompletedTime(order.getId());
+
+        LogEsUtil.info("报价订单处理成功，订单ID：{}", order.getId());
+        return Result.success("报价处理成功");
+    }
+
+    /**
+     * [修改报价处理记录]
+     *
+     * @param updateQuoteRecordDto 修改参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/4/6
+     **/
+    @Override
+    @Transactional
+    public Result updateQuoteRecord(UpdateQuoteRecordDto updateQuoteRecordDto) {
+        // 1. 查询订单
+        Order order = orderMapper.queryById(updateQuoteRecordDto.getOrderId());
+        if (order == null) {
+            LogEsUtil.warn("订单不存在：" + updateQuoteRecordDto.getOrderId());
+            return Result.fail("订单不存在");
+        }
+
+        // 2. 校验订单类型
+        if (!StrUtil.equals(OrderTypeConstant.QUOTE, order.getOrderType())) {
+            LogEsUtil.warn("订单类型不为报价，订单id为：" + updateQuoteRecordDto.getOrderId());
+            return Result.fail("该订单不是报价订单");
+        }
+
+        // 3. 查询 OrderQuote 记录
+        OrderQuote orderQuote = orderQuoteMapper.selectOne(
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<OrderQuote>()
+                .eq(OrderQuote::getOrderId, order.getId())
+                .eq(OrderQuote::getIsDeleted, 0)
+        );
+
+        if (orderQuote == null) {
+            LogEsUtil.warn("报价处理记录不存在，订单ID：{}", order.getId());
+            return Result.fail("报价处理记录不存在");
+        }
+
+        // 4. 更新记录（不改变订单状态）
+        orderQuote.setQuoteProcessingRecord(updateQuoteRecordDto.getQuoteProcessingRecord());
+        orderQuote.setUpdateTime(new Date());
+        orderQuoteMapper.updateById(orderQuote);
+
+        LogEsUtil.info("修改报价处理记录成功，订单ID：{}", order.getId());
+        return Result.success("修改成功");
+    }
+
+    /**
+     * [订单信息页-报价处理记录查询]
+     *
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/4/15
+     **/
+    @Override
+    public Result getQuoteOrderRecord(String orderId) {
+        OrderQuoteVo orderQuoteVo = orderQuoteMapper.selectOrderQuoteVoByOrderId(orderId);
+        if (ObjectUtils.isEmpty(orderQuoteVo)){
+            return Result.success();
+        }
+        if(!SecurityUtils.hasPre(orderQuoteVo.getUserId())){
+            return Result.fail("您没有权限查看此订单");
+        }
+        return Result.success(orderQuoteVo);
+    }
+
+    /**
+     * [根据订单id修改报价单状态]
+     *
+     * @param orderId 订单id
+     * @param status  状态
+     * @return void
+     * @author 陈湘岳 2026/4/18
+     **/
+    @Override
+    public void updateTicketMainTextQuote(String orderId, String status) {
+        //查询工单正文报价单并修改状态
+        TicketMainTextQuote ticketMainTextQuote = ticketMainTextQuoteMapper.findByOrderIdForUpdate(orderId);
+        ticketMainTextQuote.setStatus(status);
+        ticketMainTextQuoteMapper.updateById(ticketMainTextQuote);
     }
 }

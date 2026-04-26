@@ -121,53 +121,32 @@ xss:
 shop:
   name: ByteChannel
 
-# XXL-JOB 分布式定时任务配置
-xxl:
-  job:
-    # 执行器开关
-    enabled: true
-    # 调度中心部署根地址 [选填]：如调度中心集群部署存在多个地址则用逗号分隔。执行器将会使用该地址进行"执行器心跳注册"和"任务结果回调"；为空则关闭自动注册；
-    admin:
-      addresses: http://127.0.0.1:28080/xxl-job-admin
-    # 执行器通讯TOKEN [选填]：非空时启用；
-    accessToken: 6dxNwQtfuGSarWxB
-    executor:
-      # 执行器AppName [选填]：执行器心跳注册分组依据；为空则关闭自动注册
-      appname: ruoyi-system
-      # 执行器注册 [选填]：优先使用该配置作为注册地址，为空时使用内嵌服务 "IP:PORT" 作为注册地址。从而更灵活的支持容器类型执行器动态IP和动态映射端口问题。
-      address:
-      # 执行器IP [选填]：默认为空表示自动获取IP，多网卡时可手动设置指定IP，该IP不会绑定Host仅作为通讯实用；地址信息用于 "执行器注册" 和 "调度中心请求并触发任务"；
-      ip: 192.168.1.11
-      # 执行器端口号 [选填]：小于等于0则自动获取；默认端口为9999，单机部署多个执行器时，注意要配置不同执行器端口；
-      port: 9999
-      # 执行器运行日志文件存储磁盘路径 [选填] ：需要对该路径拥有读写权限；为空则使用默认路径；
-      logpath: /data/applogs/xxl-job/jobhandler
-      # 执行器日志文件保存天数 [选填] ：过期日志自动清理, 限制值大于等于3时生效; 否则, 如-1, 关闭自动清理功能；
-      logretentiondays: 30
+
 
 # 支付平台配置
 pay:
   platform:
-    # 支付平台域名
-#    base-url: https://xnoo.cn/
-#    pid: 1901
-#    merchant-private-key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC6xnKRBplIA0EI7HtQZvrsnYd460Xtsmi8wjuVcc4u+vG9a2r7isrLu0NW2qWN+ST++FV92VWPCMiAea6rDkfB+BUlUVTIMseJFusdQLnaorNUxnzzqM8VVLjbcqSIEPs9cODpr0UCHApxsFdEPlwSCD+UDPGjINYMgsAa0dRCvq8g1RPur3iVQb1c0OEuCs3rx/6xuKjhk5lXKBfGfG2atRAd3YI/aD/hGJF5Ez/dhcKeVraiBpeD+38gIzWXIPzZf5Fp/K7nQt5c9RcKA1sIBj0Qe40t972mAwJw+97kNRXWtsscisIt0cI0CEys7BFf9+lJ453WdDt9YaC0buATAgMBAAECggEAZhb+nELNGc2diLEqHiKL2TWpzPBcwrYYBcTtKJySJJ/J7s1+JowQmRd8kUbl4xphnHRE1osq9wnH/mGElb8yfdWKSWGRQ/RtmINMdCri65yvBRGRTuXgezpZ6KlbQXx2t3ixl0nUIHkPRGEs8gJb9QdJKTWCBrZ2CVSWiJJUwT3kFkpXjREYJ3ZW7YCdQcKmdKRdkRPX8RiPXfi7LGo/s5tBESF/RQkm41cDBLkJRNsvxdnzqZ/xwWBFgp9sNc5eogjhQj8bNYhjgWsU9MqvpSdSkq5goPEb4zOwlECDrnferhwdVSEyIAyeaTyHMvNNFxf+cB9KriWs8iU9E/Li4QKBgQD4xp05V0XGyzVgyRcOdmd6B6MBkDLuP00yYPWMqU+eAEsYQO8yt5QsFT4g4KZBtwqWO2F+dO5ZSrEXrG5SI9Op+A6foY5bod7g0y4sebFnDUcJEQr2qSJJ/+iVVH4mWzbinvKOYFarX+uUw6yW+nHeCai8mNPZ6i/eLlZZIxQqKQKBgQDAMuyIDeHNoLlYgTSfSfDSfQeZ4pSoZ1sqnQJTRxmoWx5BAuOH7TDLvghjj+vMo/gwVpi0fAXaP/cZSsPcicQuKMfOsztjqRJ00FKRxvbj0LuwY4pZQ7BMcPNzeNgNaeFrltKpqq02Xk8nzvwZ+ta0L0vVWNG20gIqkf2bWCA32wKBgCuHPP1KeugEqEtOBB3As+xTJ79fRroPE2fMNUquWULxFDKjMfcyzddExEEmbZC0AUM2EqH4vbeb7Q6SWh8/K4ri31QpBWqdEQ1PhhW8GUFJvnMkq0FraJeAEmcGiKgXb6wJWbF1w9RqjSLTdgBYw9Gw6PhO2UqYwlVi0DL6g025AoGBALOz6Wwcbq+wQxv5UpZMsBpeRKkhLRV37cmeG/p5VAgRiewHI26H20PkXjuY6UPhW8D2drjp7R7vB75iJVciiIcQIiGlezXncxY9YbZjbZv8IkD+EPD9VO1j/nxM1NVV1iqeTkHNDz7yVthFs3knC3BVeHX2Ib7qBJSBA7onX5hZAoGAAO+CmIPV33h4HYOgXb/3wV5jxFq1rFz4FP8CYrmWqeYUAiXvtXsw4O8g4tGTKu/pN3QPDXjKUbIpWV/593oU3W7IcUahFl9VX1eU39cQDaFcMu0dwdbMAxe0Qo/fOy/ezQuQf0gTmy5zwDMIqQAdsfeglMJeg5T2azMgSlKmePc=
-#    platform-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn2GWLNHtZVxBz0sqKpHEOuL4deFGAi722xtZeK4X7XdVOykGHAT+xVJlzd8tTUYJENSyBM36Y4hIY0lWzO+/P8C5OSMPdE272JWfYvaaFa4UC6MCYjVwatYwcN1TBhVEg/8vmUXv3r3EGhlMAHTt7dLsTOZ5oEQzNDOhFJsSo4YIPfEJ7AlVbHof22g9ezmhIoS6bTcH2ksa0PK1kskGHN+haNbbhaJJSxUkP35iTy9nW2WSVgO1THTAFqW5MI7XPg2Au+OwPyAitUdL1/iSTtPM1O27fjebcNi+385ebN/j9eNGaUegyp2lACx5qNFhwf+letMwwKTa/mBYno/JuwIDAQAB
-    pid: 1054
-    merchant-private-key: MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCqVowvNHMZY4WXWIu84rvTsvktAACG9SPsS0V2kB3THvmqM+JmVn4ppJH0HBvkStNt5k/T2ndMmVNpbnj/6TxL0T+MQWk/VWeHyk8vJz3nbbofVJVU/RDmcBfW1pcVdpV8y+ZJMUcOIsxiMgp4qNGMShE882yNytZGvzPEkfhu1LaopRdQCLxCnUcF7hTC5LrLjT8ADzVtTU9WIYjBv9jbDT1twCVM5pAc2lDm1lZnb9hrU62hlC6Ce5uHM/0SUa7zftHSYITJ5jY1Qzzxf/aDlk7eEE83qDY/dQCE5xeiFsM2WthqcjiU7oCUWyDBZXC1ppp0MubH1AllFyzWQRc/AgMBAAECggEAA/tZ85CKUEGfUdZkDdpPAbfhU0f4uy7n1BI+YXMk/1ZuB6iG1lWXRWnvb4FotYF6R8tmelFVEJlU9dX7RiAxpKQTlDfDOhPJA8ea6kNEkzBhdXIIu5/e0UQ1inQhvAK1o+EwVO2t94qgtHru+7sWiu0AUihulTH0qFq33xR6djzA9DfYGhiIJ4X+bdyEQImzYLmWIDFby7kB3pVc08nl4Pqy4eydhDnmKOYqqhjO3l8cxIjTapFAs5wm7VK25dLqwT+uffQnm1Gl3z8bFbxwNHXvMAM3FgUtM+EW7/bBv27epHWW8F1jNcHYjomCqaxT3casoE2qagWsDTDWfV2JgQKBgQDWJBYbThnn+taUL0kRU9ymfH9PzTXcfS18a/CXcIc0/dquc/5EgqfW3daMUZI6R5ox0nTy8YtLfEAEVNsp1y59uggashds9AvM/56FwMiW8sVqEq+m98k+jb+i0sxj3FSe2EH1JVwRM3gGSsaT/te/zf7n0J3HraXauW8ZD8i97wKBgQDLooDk9SCVcNvC54frMeFTZvS6GN4HNixB8FXNswWP/9uwSrfyByrw7L7+sMJHCh1Qbn58oIyvaa7NF1YdVZINGk9Sl3z31vr2wy6vsneM3f5nehlJzDFPv1yqYvL67RdZ88gcbSLstCs6uYb7LwERePF9VlUrL44WISXKjPuLsQKBgFuE1rHawjWjvZtdTiQKrE22/Y40jOVr1knLs+p1HEPojlJqnmvXTzYEX1Je9ljUCzFp2bOOydJ8CrwPLA+IuIThQd9u55YYAwcc5DoTt2bT4M1BqTJ5yddjK1jCMLopCz1L/Xxw+BUd4xkFUjMkAj8mIeAfB5+0NiLxh2q1lTyfAoGAaZgavp9eBiA/1RG6qXt0HIuG2/mJKLQuvwKhe8kZWVKT2Rbly9trqQMbB3chRzU3fj3N2VJnoY5r1m4DebKlyaWa/HkRlHMmME+GJhWlaKa1BXOLKXl5GKFiq/gjh3rqYPrJCfSN57CFui36kMYPB8BveU8LWxmN1Gvb7OyuhAECgYAcLxdoNaWIfeUVhnYcu/cq91UO892G0SyOT3V293wDeUAZfHOffewcnwMEy7yafejY1VXF/SxslvrU6LXGCAWckctFZj/PqDl8kqI5g51Di8cv1f/BkLCFbrhQPOOFYJiC/7lj18w1g/DsjpVqkXbQUCEgJsqurprEenvQ5yV1lw==
-    platform-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtIj8OGRj+BOkTRWwrHd33NXyZNKWjoaffguOR1sl7yhJ198ObCrASLgXDi0UxsGo47EYQw35jOm9QEjL6E0gqUJWs8KXZuNMpqX10/biWDWoCnCr9Mx2+QOCuy3qtqrhjUImnJ8STulP2na3FKnQSWMUbJ/frBHPBf4zVIfmApFM27oNmqB/NXJAcIH+dv3LB16CX8Z/+AgDoRjM6z/AcQ2rcuuOuiQ3p27HvmnSOHZNIQtSE1jeIMS6yd03wQRW/lWziGMQYAof3oYNhm4DUGcZfqpz80dkWJWVdTHjgy/YlpMBdSlAL/P2gP7RS9tGf3aF1yjattUq/a8/Q659awIDAQAB
-    base-url: https://api.jianxipay.com
-    # 异步通知地址
-    notify-url: http://81.71.137.39:18080/pay/notify
-    # 同步跳转地址
-    return-url: http://localhost:8081/#/payment/
-    # 签名类型（V2固定为RSA）
-    sign-type: RSA
-    # 连接超时时间（毫秒）
-    connect-timeout: 5000
-    # 读取超时时间（毫秒）
-    read-timeout: 10000
-    # 微信手续费
-    wechat-refound: 0.07
-    # 支付宝手续费
-    alipay-refound: 0.07
+    # 支付策略版本：v1（小白云OS/MD5签名） 或 v2（佳梦云付/RSA签名），默认v2
+    version: v1
+    # === V1专用配置（小白云OS，version=v1时生效）===
+    v1:
+      base-url: https://yikexinrong.com/
+      pid: 1104
+      key: DuuuP9QCpIiiu22bipQ5pZqKcF5M9bqG
+      notify-url: http://81.71.137.39:18080/pay/notify
+      return-url: http://localhost:8080/#/payment/
+      wechat-fee-rate: 0.05
+      alipay-fee-rate: 0.05
+    # === V2专用配置（佳梦云付，version=v2时生效）===
+    v2:
+      base-url: https://app.xn--6krw8b915a62m.xn--io0a7i/
+      pid: 87608
+      merchant-private-key: R05m8z9I089MGwrm05g8Lgifyfy8Y90m
+      platform-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtIj8OGRj+BOkTRWwrHd33NXyZNKWjoaffguOR1sl7yhJ198ObCrASLgXDi0UxsGo47EYQw35jOm9QEjL6E0gqUJWs8KXZuNMpqX10/biWDWoCnCr9Mx2+QOCuy3qtqrhjUImnJ8STulP2na3FKnQSWMUbJ/frBHPBf4zVIfmApFM27oNmqB/NXJAcIH+dv3LB16CX8Z/+AgDoRjM6z/AcQ2rcuuOuiQ3p27HvmnSOHZNIQtSE1jeIMS6yd03wQRW/lWziGMQYAof3oYNhm4DUGcZfqpz80dkWJWVdTHjgy/YlpMBdSlAL/P2gP7RS9tGf3aF1yjattUq/a8/Q659awIDAQAB
+      notify-url: http://81.71.137.39:18080/pay/notify
+      return-url: http://localhost:8081/#/payment/
+      sign-type: RSA
+      connect-timeout: 5000
+      read-timeout: 10000
+      wechat-fee-rate: 0.07
+      alipay-fee-rate: 0.07

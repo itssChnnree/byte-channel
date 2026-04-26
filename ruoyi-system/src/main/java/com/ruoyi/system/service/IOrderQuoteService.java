@@ -2,7 +2,9 @@ package com.ruoyi.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ruoyi.system.domain.dto.OrderQuoteDto;
+import com.ruoyi.system.domain.dto.ProcessQuoteDto;
 import com.ruoyi.system.domain.dto.TicketMainTextQuoteDto;
+import com.ruoyi.system.domain.dto.UpdateQuoteRecordDto;
 import com.ruoyi.system.domain.entity.OrderQuote;
 import com.ruoyi.system.domain.vo.OrderQuoteVo;
 import com.ruoyi.system.http.Result;
@@ -50,4 +52,37 @@ public interface IOrderQuoteService {
      * @return
      */
     Result createOrderQuote(TicketMainTextQuoteDto ticketMainTextQuoteDto);
+
+    /**
+     * [处理报价订单]
+     * @author 陈湘岳 2026/4/6
+     * @param processQuoteDto 处理参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result processQuoteOrder(ProcessQuoteDto processQuoteDto);
+
+    /**
+     * [修改报价处理记录]
+     * @author 陈湘岳 2026/4/6
+     * @param updateQuoteRecordDto 修改参数
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result updateQuoteRecord(UpdateQuoteRecordDto updateQuoteRecordDto);
+
+    /**
+     * [订单信息页-报价处理记录查询]
+     * @author 陈湘岳 2026/4/15
+     * @param orderId 订单id
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getQuoteOrderRecord(String orderId);
+
+    /**
+     * [根据订单id修改报价单状态]
+     * @author 陈湘岳 2026/4/18
+     * @param orderId 订单id
+     * @param status 状态
+     * @return void
+     **/
+    void updateTicketMainTextQuote(String orderId,String status);
 }

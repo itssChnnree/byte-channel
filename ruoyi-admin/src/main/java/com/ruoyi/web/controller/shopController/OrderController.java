@@ -1,6 +1,7 @@
 package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
+import com.ruoyi.system.domain.dto.ManualRefundDto;
 import com.ruoyi.system.domain.dto.OrderByCommodityDto;
 import com.ruoyi.system.domain.dto.OrderByRenewalDto;
 import com.ruoyi.system.domain.dto.OrderDto;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.io.*;
+import java.math.BigDecimal;
 
 /**
  * [˵��/����]
@@ -186,6 +188,20 @@ public class OrderController {
             return Result.fail("请选择订单");
         }
         return orderService.getOrderDetailById(orderId);
+    }
+
+
+    @PostMapping("/manualRefund")
+    @ApiOperation("手动退款 - 管理员确认退款")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result<String> manualRefund(@RequestBody ManualRefundDto dto) {
+        if (dto == null || StrUtil.isBlank(dto.getOrderId())) {
+            return Result.fail("请选择订单");
+        }
+        if (dto.getRefundAmount() == null) {
+            return Result.fail("请输入退款金额");
+        }
+        return orderService.manualRefund(dto);
     }
 
 }

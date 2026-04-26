@@ -1,6 +1,7 @@
 package com.ruoyi.system.service;
 
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.dto.EmailRegisterDto;
 import com.ruoyi.system.domain.dto.ResetPasswordDto;
 import com.ruoyi.system.domain.dto.UpdatePasswordDto;
 import com.ruoyi.system.domain.vo.UserInfoVo;
@@ -38,4 +39,12 @@ public interface IUserService {
      * @return Result
      */
     Result resetPasswordByEmail(ResetPasswordDto dto);
+
+    /**
+     * 获取重置密码邮箱验证码
+     *
+     * @param emailRegisterDto 邮箱注册DTO(包含邮箱和图形验证码)
+     * @return Result
+     */
+    Result getResetPasswordEmailCode(EmailRegisterDto emailRegisterDto);
 }

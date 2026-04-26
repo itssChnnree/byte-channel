@@ -4,6 +4,7 @@ package com.ruoyi.system.service;
 import com.ruoyi.system.domain.dto.CommodityCategoryDto;
 import com.ruoyi.system.domain.dto.CommodityDto;
 import com.ruoyi.system.domain.dto.ListDto;
+import com.ruoyi.system.domain.entity.Commodity;
 import com.ruoyi.system.http.Result;
 
 /**
@@ -23,6 +24,15 @@ public interface ICommodityService {
      * @return com.ruoyi.system.http.Result
      **/
     Result insert(CommodityDto commodityDto);
+
+    /**
+     * [增加商品库存]
+     * @author 陈湘岳 2026/4/11
+     * @param commodityId 商品id
+     * @param num 变更数量
+     * @return void
+     **/
+    void addCommodityStockLock( String commodityId, int num);
 
     /**
      * [修改商品]

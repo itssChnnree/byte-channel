@@ -51,6 +51,9 @@ public class OrderVo{
     @ApiModelProperty(value = "支付方式")
     private String paymentType;
 
+    @ApiModelProperty("用户名")
+    private String userName;
+
     private Integer isDeleted;
 
     public String getPayCycle(){

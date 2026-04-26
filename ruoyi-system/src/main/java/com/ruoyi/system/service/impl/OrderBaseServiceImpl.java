@@ -2,28 +2,26 @@ package com.ruoyi.system.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.OrderStatus;
-import com.ruoyi.system.constant.OrderTypeConstant;
-import com.ruoyi.system.domain.dto.ProfitFlowDto;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.entity.OrderPayType;
 import com.ruoyi.system.domain.entity.ProfitFlow;
 import com.ruoyi.system.domain.vo.YiPayResponse;
 import com.ruoyi.system.http.Result;
-import com.ruoyi.system.pay.infrastructure.client.PayPlatformClient;
-import com.ruoyi.system.pay.infrastructure.config.PayProperties;
+import com.ruoyi.system.pay.application.dto.request.QueryPayOrderRequest;
+import com.ruoyi.system.pay.application.service.PayOrderApplicationService;
+import com.ruoyi.system.pay.application.vo.QueryPayOrderVo;
 import com.ruoyi.system.service.IOrderBaseService;
 import com.ruoyi.system.service.IOrderPayTypeService;
 import com.ruoyi.system.service.IProfitFlowService;
 import com.ruoyi.system.util.LogEsUtil;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -40,19 +38,20 @@ public class OrderBaseServiceImpl implements IOrderBaseService {
     @Resource
     private IProfitFlowService profitFlowService;
 
-    private OrderServiceImpl orderService;
+    @Resource
+    private RedisCache redisCache;
 
     @Resource
     private IOrderBaseService iOrderBaseService;
 
     @Resource
-    private PayProperties payProperties;
-
-    @Resource
-    private PayPlatformClient payPlatformClient;
+    private PayOrderApplicationService payOrderApplicationService;
 
     @Resource
     private IOrderPayTypeService orderPayTypeService;
+
+    @Resource(name = "refundWhitelistCache")
+    private Cache<String, String> refundWhitelistCache;
 
     //订单状态转化
     public String orderStatusConvert(String status) {
@@ -76,6 +75,21 @@ public class OrderBaseServiceImpl implements IOrderBaseService {
             default:
                 return "订单状态异常";
         }
+    }
+
+    @Override
+    public Integer refoundToBalance(Boolean refoundToBalance) {
+        String onlyRefundFlow = redisCache.getCacheObject("sys_config:sys:onlyRefound:flow");
+        boolean onlyRefundToBalance = "true".equalsIgnoreCase(onlyRefundFlow);
+        if (onlyRefundToBalance) {
+            // 如果用户在退款白名单中，允许原路退款
+            String username = SecurityUtils.getUsername();
+            if (StrUtil.isNotBlank(username) && refundWhitelistCache.getIfPresent(username) != null) {
+                return ObjectUtil.equals(refoundToBalance, Boolean.TRUE) ? 1 : 0;
+            }
+            return 1;
+        }
+        return ObjectUtil.equals(refoundToBalance, Boolean.TRUE) ? 1 : 0;
     }
 
     //调用订单平台获取订单信息
@@ -143,38 +157,24 @@ public class OrderBaseServiceImpl implements IOrderBaseService {
      */
     private YiPayResponse querySingleOrderStatus(String virtualOrderId, String payType) {
         try {
-            Map<String, String> params = new HashMap<>();
-            params.put("pid", String.valueOf(payProperties.getPid()));
-            params.put("out_trade_no", virtualOrderId);
-            Map<String, Object> response = payPlatformClient.queryOrder(params);
+            QueryPayOrderRequest queryRequest = new QueryPayOrderRequest();
+            queryRequest.setOutTradeNo(virtualOrderId);
+            Result<QueryPayOrderVo> queryResult = payOrderApplicationService.queryOrder(queryRequest);
 
-            if (ObjectUtil.isNull(response)) {
-                LogEsUtil.warn("查询订单支付状态失败，返回为空，虚拟订单id：" + virtualOrderId);
+            if (queryResult.getCode() != 200 || queryResult.getData() == null) {
+                LogEsUtil.warn("查询订单支付状态失败，虚拟订单id：" + virtualOrderId);
                 return null;
             }
 
-            // 验签
-            boolean verified = payPlatformClient.verifyResponse(response);
-            if (!verified) {
-                LogEsUtil.warn("支付平台响应验签失败，虚拟订单id：" + virtualOrderId + "，响应数据：" + response);
-                return null;
-            }
-
-            Integer code = (Integer) response.get("code");
-            if (code == null || code != 1) {
-                LogEsUtil.warn("查询订单支付状态失败，虚拟订单id：" + virtualOrderId + "，返回码：" + code);
-                return null;
-            }
-
-            Integer status = (Integer) response.get("status");
-            if (status == null || status != 1) {
+            QueryPayOrderVo orderVo = queryResult.getData();
+            if (orderVo.getStatus() == null || orderVo.getStatus() != 1) {
                 // 订单未支付
                 return null;
             }
 
             // 订单已支付，构造返回对象
             YiPayResponse yiPayResponse = new YiPayResponse();
-            yiPayResponse.setPayId(String.valueOf(response.get("trade_no")));
+            yiPayResponse.setPayId(orderVo.getTradeNo());
             yiPayResponse.setPayType(payType);
 
             return yiPayResponse;

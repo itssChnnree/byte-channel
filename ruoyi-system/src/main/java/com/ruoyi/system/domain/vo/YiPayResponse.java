@@ -6,6 +6,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * [易支付返回数据]
  *
@@ -18,7 +23,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class YiPayResponse {
 
-
     @ApiModelProperty("支付类型")
     private String payType;
 
@@ -26,8 +30,22 @@ public class YiPayResponse {
     private String payId;
 
 
-    public String getPayType() {
-        //todo 返回真实支付方式
-        return Math.random()>0.5? OrderStatus.ALIPAY_PAY:OrderStatus.WECHAT_PAY;
+    /** 支付宝支付方式集合（平台原始type码） */
+    private static final Set<String> ALIPAY_TYPES = new HashSet<>(Arrays.asList("alipay"));
+
+       /** 微信支付方式集合（平台原始type码） */
+    private static final Set<String> WECHAT_TYPES = new HashSet<>(Arrays.asList("wxpay", "wechat"));
+
+    public void setPayType(String payType) {
+        if (payType == null) {
+            this.payType = null;
+        } else if (ALIPAY_TYPES.contains(payType)) {
+            this.payType = OrderStatus.ALIPAY_PAY;
+        } else if (WECHAT_TYPES.contains(payType)) {
+            this.payType = OrderStatus.WECHAT_PAY;
+        }else {
+            this.payType = payType;
+        }
+
     }
 }

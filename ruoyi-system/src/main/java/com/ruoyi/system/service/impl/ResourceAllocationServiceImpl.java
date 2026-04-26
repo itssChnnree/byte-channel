@@ -1,15 +1,17 @@
 package com.ruoyi.system.service.impl;
 
 import com.ruoyi.system.constant.OrderStatus;
+import com.ruoyi.system.constant.ResourcesStatus;
 import com.ruoyi.system.constant.SalesStatus;
+import com.ruoyi.system.domain.dto.ServerResourcesRenewalDto;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.entity.OrderCommodity;
+import com.ruoyi.system.domain.entity.OrderCommodityResources;
 import com.ruoyi.system.domain.entity.ServerResources;
-import com.ruoyi.system.mapper.OrderCommodityMapper;
-import com.ruoyi.system.mapper.OrderMapper;
-import com.ruoyi.system.mapper.ServerResourcesMapper;
+import com.ruoyi.system.mapper.*;
 import com.ruoyi.system.service.IOrderStatusTimelineService;
 import com.ruoyi.system.service.IResourceAllocationService;
+import com.ruoyi.system.service.IServerResourcesRenewalService;
 import com.ruoyi.system.service.IServerResourcesService;
 import com.ruoyi.system.util.LogEsUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -49,7 +52,16 @@ public class ResourceAllocationServiceImpl implements IResourceAllocationService
     private IOrderStatusTimelineService orderStatusTimelineService;
 
     @Resource
+    private OrderInformationSnapshotMapper orderInformationSnapshotMapper;
+
+    @Resource
     private PlatformTransactionManager transactionManager;
+
+    @Resource
+    private IServerResourcesRenewalService serverResourcesRenewalService;
+
+    @Resource
+    private OrderCommodityResourcesMapper orderCommodityResourcesMapper;
 
     @Resource
     private IServerResourcesService serverResourcesService;
@@ -190,10 +202,16 @@ public class ResourceAllocationServiceImpl implements IResourceAllocationService
                         return 0;
                     }
 
+                    String resourcesId = resource.getId();
+                    OrderCommodityResources orderCommodityResources = buildOrderCommodityResources(order, orderCommodity.getId(), resourcesId);
+                    orderCommodityResourcesMapper.insert(orderCommodityResources);
+
+                    orderInformationSnapshotMapper.updateIpByOrderId(orderId,resource.getResourcesIp());
+                    serverResourcesRenewalInsert(resource.getId(),order.getAmount());
+                    LogEsUtil.info("订单分配资源成功,订单id："+orderId+",资源id："+resourcesId);
+
                     // 5. Record order status timeline
                     orderStatusTimelineService.setCompletedTime(orderId);
-
-                    LogEsUtil.info("Order " + orderId + " resource allocated successfully, resourceId: " + resource.getId());
                     return 1;
 
                 } catch (Exception e) {
@@ -206,6 +224,13 @@ public class ResourceAllocationServiceImpl implements IResourceAllocationService
             LogEsUtil.error("Order " + orderId + " transaction execution exception: " + e.getMessage(), e);
             return 0;
         }
+    }
+
+    private void serverResourcesRenewalInsert(String resourcesId, BigDecimal price){
+        ServerResourcesRenewalDto serverResourcesRenewalDto = new ServerResourcesRenewalDto();
+        serverResourcesRenewalDto.setResourcesId(resourcesId);
+        serverResourcesRenewalDto.setRenewalSwitch(0);
+        serverResourcesRenewalService.insertOrUpdate(serverResourcesRenewalDto);
     }
 
     /**
@@ -224,13 +249,21 @@ public class ResourceAllocationServiceImpl implements IResourceAllocationService
             resource.setResourceTenant(order.getUserId());
             resource.setLeaseExpirationTime(expirationTime);
             resource.setSalesStatus(SalesStatus.ON_SALE);
-
+            resource.setStatus(ResourcesStatus.WAIT_NOTIFY);
             int updated = serverResourcesMapper.updateById(resource);
             return updated > 0;
         } catch (Exception e) {
             LogEsUtil.error("Allocate resource failed, orderId: " + order.getId() + ", resourceId: " + resource.getId(), e);
             return false;
         }
+    }
+
+    private OrderCommodityResources buildOrderCommodityResources(Order order, String orderCommodityId, String resourcesId) {
+        OrderCommodityResources orderCommodityResources = new OrderCommodityResources();
+        orderCommodityResources.setUserId(order.getUserId());
+        orderCommodityResources.setOrderCommodityId(orderCommodityId);
+        orderCommodityResources.setResourcesId(resourcesId);
+        return orderCommodityResources;
     }
 
     /**

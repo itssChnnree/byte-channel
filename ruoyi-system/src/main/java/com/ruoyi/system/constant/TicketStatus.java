@@ -15,6 +15,9 @@ public interface TicketStatus {
     //等待用户回复
      String WAITING_USER_REPLY = "等待用户回复";
 
+    //用户已阅
+    String READ_BY_USER = "READ_BY_USER";
+
     //等待客服回复
      String WAITING_SERVICE_REPLY = "等待客服回复";
 
@@ -38,6 +41,10 @@ public interface TicketStatus {
 
      //报价待付款
      String QUOTE_WAITING_PAYMENT = "报价待付款";
+
+     //报价已取消
+     String QUOTE_USER_CANCEL = "报价已取消";
+
 
      //待分配资源
      String WAITING_RESOURCE_ALLOCATION = "待分配资源";

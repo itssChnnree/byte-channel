@@ -156,12 +156,27 @@ public class ErrorRefundJob {
 
     /**
      * 处理单个订单的差错退款
-     * 使用独立事务，确保每个订单的退款操作原子性
+     * 在独立事务中：先加行锁，再校验实时状态，最后执行退款
      *
-     * @param order 订单对象
+     * @param order 订单快照对象（仅用于获取id）
      */
     public void processErrorRefund(Order order) {
         String orderId = order.getId();
+
+        // 1. FOR UPDATE 加行锁，读取最新数据
+        Order lockedOrder = orderMapper.selectByIdForUpdate(orderId);
+        if (lockedOrder == null) {
+            LogEsUtil.info("订单不存在，跳过差错退款，orderId: " + orderId);
+            return;
+        }
+
+        // 2. 实时状态校验：只有 COMPLETED 状态才执行差错退款
+        //    如果已被用户退款流程修改为 WAIT_REFUND/USER_CANCELED 等，说明退款已在处理，跳过
+        if (!OrderStatus.ERROR_REFUND_JOB_STATUS_LIST.contains(lockedOrder.getStatus())) {
+            LogEsUtil.info("订单状态已变更，跳过差错退款，orderId: " + orderId + ", currentStatus: " + lockedOrder.getStatus());
+            return;
+        }
+
         LogEsUtil.info("开始处理订单差错退款，订单id: " + orderId);
 
         try {
@@ -180,11 +195,7 @@ public class ErrorRefundJob {
                 orderPayTypeMapper.updateIsCheckInt(orderId);
                 LogEsUtil.info("订单差错退款成功，订单id: " + orderId +
                         ", 退款金额: " + result.getTotalRefundAmount());
-                if (OrderStatus.USER_CANCELED.equals(order.getStatus())
-                        || OrderStatus.CANCELED_TIMEOUT.equals(order.getStatus())){
-                    orderMapper.updateStatusById(orderId, OrderStatus.REFUND_SUCCESS);
-                    orderStatusTimelineService.setRefundedSuccessTime(orderId);
-                }
+                // 差错退款只退差错通道，不改变订单状态（订单仍为COMPLETED）
             } else {
                 LogEsUtil.warn("订单差错退款失败，订单id: " + orderId +
                         ", 原因: " + result.getMessage());

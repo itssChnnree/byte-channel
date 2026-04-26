@@ -1,7 +1,7 @@
 package com.ruoyi.system.pay.interfaces.listener;
 
+import com.ruoyi.system.pay.application.service.PayOrderApplicationService;
 import com.ruoyi.system.pay.application.vo.PayNotifyVo;
-import com.ruoyi.system.pay.infrastructure.client.PayPlatformClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +15,7 @@ import java.util.Map;
 
 /**
  * [支付回调监听器]
+ * 验签逻辑委托给PayStrategy，支持V1(MD5)和V2(RSA)两种验签方式
  *
  * @author 陈湘岳
  * @version v1.0.0
@@ -26,7 +27,7 @@ import java.util.Map;
 public class PayNotifyListener {
 
     @Resource
-    private PayPlatformClient payPlatformClient;
+    private PayOrderApplicationService payOrderApplicationService;
 
     /**
      * 异步通知处理
@@ -35,7 +36,6 @@ public class PayNotifyListener {
     public void handleAsyncNotify(HttpServletRequest request, HttpServletResponse response) throws IOException {
         log.info("收到支付异步通知");
 
-        // 获取所有参数
         Map<String, String> params = new HashMap<>();
         request.getParameterMap().forEach((k, v) -> {
             if (v != null && v.length > 0) {
@@ -45,19 +45,15 @@ public class PayNotifyListener {
 
         log.debug("Notify params: {}", params);
 
-        // 验签
-        Map<String, Object> responseMap = new HashMap<>(params);
-        boolean verified = payPlatformClient.verifyResponse(responseMap);
-
+        boolean verified = payOrderApplicationService.verifyNotifySign(params);
         if (!verified) {
             log.error("异步通知验签失败");
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        // 构建通知VO
         PayNotifyVo notifyVo = new PayNotifyVo();
-        notifyVo.setPid(Integer.valueOf(params.get("pid")));
+        notifyVo.setPid(Integer.valueOf(params.getOrDefault("pid", "0")));
         notifyVo.setTradeNo(params.get("trade_no"));
         notifyVo.setOutTradeNo(params.get("out_trade_no"));
         notifyVo.setType(params.get("type"));
@@ -69,31 +65,16 @@ public class PayNotifyListener {
         notifyVo.setSign(params.get("sign"));
         notifyVo.setSignType(params.get("sign_type"));
 
-        // 处理支付成功
         if (notifyVo.isTradeSuccess()) {
             log.info("支付成功，商户订单号：{}，平台订单号：{}",
                     notifyVo.getOutTradeNo(), notifyVo.getTradeNo());
-            // TODO: 调用业务系统处理支付成功逻辑
         }
 
-        // 返回success表示接收成功
         response.setContentType("text/plain;charset=UTF-8");
         PrintWriter writer = response.getWriter();
         writer.write("success");
         writer.flush();
     }
-
-
-    @GetMapping("/test")
-    public void test(){
-        Map<String, String> params = new HashMap<>();
-        params.put("type","alipay");
-        params.put("account","a1152581244@163.com");
-        params.put("money","11");
-
-        payPlatformClient.transfer(params);
-    }
-
 
     /**
      * 同步跳转处理
@@ -102,7 +83,6 @@ public class PayNotifyListener {
     public void handleSyncReturn(HttpServletRequest request, HttpServletResponse response) throws IOException {
         log.info("收到支付同步跳转");
 
-        // 获取所有参数
         Map<String, String> params = new HashMap<>();
         request.getParameterMap().forEach((k, v) -> {
             if (v != null && v.length > 0) {
@@ -110,12 +90,7 @@ public class PayNotifyListener {
             }
         });
 
-        log.debug("Return params: {}", params);
-
-        // 验签
-        Map<String, Object> responseMap = new HashMap<>(params);
-        boolean verified = payPlatformClient.verifyResponse(responseMap);
-
+        boolean verified = payOrderApplicationService.verifyNotifySign(params);
         if (!verified) {
             log.error("同步跳转验签失败");
             response.sendRedirect("/pay/error?msg=验签失败");

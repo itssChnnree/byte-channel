@@ -111,6 +111,82 @@ install_dependencies() {
     print_success "依赖安装完成"
 }
 
+# 启用BBR网络优化
+enable_bbr() {
+    print_info "检查并启用BBR网络优化..."
+
+    # 检查内核版本（BBR需要 >= 4.9）
+    local kernel_ver=$(uname -r | cut -d. -f1,2)
+    local major=$(echo "$kernel_ver" | cut -d. -f1)
+    local minor=$(echo "$kernel_ver" | cut -d. -f2)
+
+    if [ "$major" -lt 4 ] || ([ "$major" -eq 4 ] && [ "$minor" -lt 9 ]); then
+        print_warning "内核版本 $kernel_ver 低于4.9，不支持BBR，跳过"
+        return 0
+    fi
+
+    # 检查BBR是否已启用
+    local current_cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)
+    if [ "$current_cc" = "bbr" ]; then
+        # 验证BBR模块已加载
+        if lsmod 2>/dev/null | grep -q "^tcp_bbr"; then
+            print_success "BBR已启用，跳过配置"
+            return 0
+        fi
+    fi
+
+    # 加载BBR模块
+    print_info "加载tcp_bbr模块..."
+    if modprobe tcp_bbr 2>/dev/null; then
+        print_success "tcp_bbr模块加载成功"
+    else
+        print_warning "无法加载tcp_bbr模块，可能内核未编译BBR支持"
+        return 0
+    fi
+
+    # 检查sysctl.conf中是否已有BBR配置
+    local bbr_configured=false
+    if grep -q "net.core.default_qdisc.*=.*fq" /etc/sysctl.conf 2>/dev/null; then
+        print_info "sysctl.conf中已存在fq队列规则"
+        bbr_configured=true
+    fi
+    if grep -q "net.ipv4.tcp_congestion_control.*=.*bbr" /etc/sysctl.conf 2>/dev/null; then
+        print_info "sysctl.conf中已存在bbr拥塞控制"
+        bbr_configured=true
+    fi
+
+    if [ "$bbr_configured" = false ]; then
+        print_info "配置BBR参数到sysctl.conf..."
+        cat >> /etc/sysctl.conf << 'EOF'
+
+# BBR网络优化配置
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+EOF
+    fi
+
+    # 立即生效
+    print_info "应用sysctl配置..."
+    if sysctl -p > /dev/null 2>&1; then
+        print_success "sysctl配置已生效"
+    else
+        print_warning "部分sysctl配置应用失败"
+    fi
+
+    # 验证BBR状态
+    local verify_cc=$(sysctl -n net.ipv4.tcp_congestion_control)
+    if [ "$verify_cc" = "bbr" ]; then
+        print_success "BBR网络优化已启用 (拥塞控制: bbr, 队列规则: fq)"
+        echo -e "${YELLOW}当前TCP拥塞控制算法:${NC} $verify_cc"
+        if lsmod 2>/dev/null | grep -q "^tcp_bbr"; then
+            local bbr_info=$(lsmod 2>/dev/null | grep "^tcp_bbr")
+            echo -e "${YELLOW}BBR模块状态:${NC} $bbr_info"
+        fi
+    else
+        print_warning "BBR启用验证失败，当前拥塞控制: $verify_cc"
+    fi
+}
+
 # 配置防火墙端口
 configure_firewall() {
     local PORT="$1"
@@ -645,6 +721,7 @@ main() {
     # 执行部署流程
     detect_distro
     install_dependencies
+    enable_bbr
     cleanup_existing
     install_xray
     download_files

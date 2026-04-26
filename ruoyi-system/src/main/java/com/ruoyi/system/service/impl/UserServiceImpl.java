@@ -1,8 +1,13 @@
 package com.ruoyi.system.service.impl;
 
+import com.ruoyi.common.constant.CacheConstants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.core.dto.EmailRegisterDto;
+import com.ruoyi.common.core.redis.RedisCache;
+import com.ruoyi.common.helper.email.EmailSender;
+import com.ruoyi.common.helper.email.EmailConstant;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.dto.ResetPasswordDto;
 import com.ruoyi.system.domain.dto.UpdatePasswordDto;
@@ -11,11 +16,15 @@ import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.SysUserMapper;
 import com.ruoyi.system.service.IUserService;
 import com.ruoyi.system.service.ISysUserService;
+import com.ruoyi.system.util.LogEsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
+import javax.mail.MessagingException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 用户服务实现类
@@ -34,6 +43,12 @@ public class UserServiceImpl implements IUserService {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Resource
+    private RedisCache redisCache;
+
+    @Resource
+    private EmailSender emailSender;
 
     /**
      * 获取当前登录用户信息
@@ -93,8 +108,8 @@ public class UserServiceImpl implements IUserService {
         String newPassword = dto.getNewPassword();
 
         // 1. 验证邮箱验证码
-        String cacheKey = "email_code:" + email;
-        String cachedCode = redisTemplate.opsForValue().get(cacheKey);
+        String cacheKey = CacheConstants.EMAIL_CAPTCHA_CODE_KEY + email;
+        String cachedCode = redisCache.getCacheObject(cacheKey);
 
         if (cachedCode == null) {
             return Result.fail("验证码已过期，请重新获取");
@@ -116,10 +131,67 @@ public class UserServiceImpl implements IUserService {
         // 4. 更新密码
         if (userService.resetUserPwd(user.getUserId(), encryptedPassword) > 0) {
             // 删除验证码
-            redisTemplate.delete(cacheKey);
+            redisCache.deleteObject(cacheKey);
+            LogEsUtil.info("用户密码重置成功，邮箱：" + email);
             return Result.success("密码重置成功");
         }
 
         return Result.fail("密码重置失败，请稍后重试");
+    }
+
+    /**
+     * 获取重置密码邮箱验证码
+     */
+    @Override
+    public Result getResetPasswordEmailCode(EmailRegisterDto emailRegisterDto) {
+        String email = emailRegisterDto.getEmail();
+
+        // 1. 校验图形验证码
+        validateCaptcha(emailRegisterDto.getCode(), emailRegisterDto.getUuid());
+
+        // 2. 校验邮箱是否已注册(重置密码必须邮箱已注册)
+        SysUser user = userMapper.checkEmailUnique(email);
+        if (user == null) {
+            return Result.fail("该邮箱未注册");
+        }
+
+        // 3. 生成邮箱验证码
+        try {
+            String emailCode = EmailSender.generateVerificationCode(6);
+            // 设置验证码过期时间为5分钟
+            redisCache.setCacheObject(CacheConstants.EMAIL_CAPTCHA_CODE_KEY + email, emailCode, 5, TimeUnit.MINUTES);
+
+            // 4. 发送邮件
+            emailSender.sendVerificationEmail(
+                    email,
+                    email,
+                    emailCode,
+                    EmailConstant.RESET_PASSWORD,
+                    5
+            );
+
+            LogEsUtil.info("重置密码验证码发送成功，邮箱：" + email);
+            return Result.success("验证码已发送，请注意查收");
+        } catch (MessagingException e) {
+            LogEsUtil.error("发送重置密码验证码邮件失败，邮箱：" + email, e);
+            return Result.fail("发送邮件失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 校验图形验证码
+     */
+    private void validateCaptcha(String code, String uuid) {
+        String verifyKey = CacheConstants.CAPTCHA_CODE_KEY + (uuid != null ? uuid : "");
+        String captcha = redisCache.getCacheObject(verifyKey);
+        redisCache.deleteObject(verifyKey);
+
+        if (captcha == null) {
+            throw new com.ruoyi.common.exception.user.CaptchaExpireException();
+        }
+
+        if (!code.equalsIgnoreCase(captcha)) {
+            throw new com.ruoyi.common.exception.user.CaptchaException();
+        }
     }
 }

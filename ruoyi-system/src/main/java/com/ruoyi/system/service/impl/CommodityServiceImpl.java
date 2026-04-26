@@ -25,7 +25,6 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -80,6 +79,31 @@ public class CommodityServiceImpl  implements ICommodityService {
         int insert = commodityMapper.insert(commodity);
         return insert > 0 ? Result.success(commodity) : Result.fail("添加失败");
     }
+
+    //撤销时回滚商品库存
+    @Override
+    public void addCommodityStockLock(String commodityId, int num) {
+        //一锁
+        Commodity normalCommodity = commodityMapper.selectByIdForUpdate(commodityId);
+        //二判
+        if ( normalCommodity == null){
+            LogEsUtil.warn("变更商品库存失败，商品不存在，商品id："+commodityId);
+            //没有查询到商品直接结束，不阻塞主流程
+            return;
+        }
+        addCommodityStock(num, normalCommodity);
+        commodityMapper.update(normalCommodity);
+        LogEsUtil.info("商品库存变更成功,商品id为：" + normalCommodity.getId());
+    }
+
+    private void addCommodityStock(int buyNum, Commodity normalCommodity) {
+        if (normalCommodity.getOversold()==0){
+            normalCommodity.setInventory(normalCommodity.getInventory()+buyNum);
+        }else {
+            normalCommodity.setOversold(normalCommodity.getOversold()-buyNum);
+        }
+    }
+
 
     /**
      * [修改商品]

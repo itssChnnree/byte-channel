@@ -2,10 +2,13 @@ package com.ruoyi.system.service;
 
 
 import com.ruoyi.system.domain.dto.RechargeDto;
+import com.ruoyi.system.domain.dto.RefundFeeConfigDto;
 import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.http.Result;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 钱包余额表(WalletBalance)�����ӿ�
@@ -89,4 +92,42 @@ public interface IWalletBalanceService{
      * @return com.ruoyi.system.http.Result
      **/
     Result findOnlyRefoundBalance();
+
+    /**
+     * [管理页查询退款配置（费率及开关，不做白名单校验）]
+     * @author 陈湘岳 2026/4/6
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result findRefundConfig();
+
+    /**
+     * [管理员添加退款白名单用户]
+     * @param username 用户名
+     * @author 陈湘岳 2026/4/6
+     **/
+    Result<String> addRefundWhitelist(String username);
+
+    /**
+     * [查询退款白名单用户，支持用户名模糊查询]
+     * @param username 用户名（可选），为空则返回全部
+     * @return List<String> 用户名列表
+     * @author 陈湘岳 2026/4/6
+     **/
+    Result<List<String>> getRefundWhitelist(String username);
+
+    /**
+     * [管理员删除退款白名单用户]
+     * @param username 用户名
+     * @author 陈湘岳 2026/4/6
+     **/
+    void deleteRefundWhitelist(String username);
+
+    /**
+     * [管理员更新退款费率及开关配置]
+     * 费率：同时更新活跃的Properties和Redis
+     * 开关：仅更新Redis
+     * @param dto 配置DTO
+     * @author 陈湘岳 2026/4/6
+     **/
+    Result<String> updateRefundFeeConfig(RefundFeeConfigDto dto);
 }

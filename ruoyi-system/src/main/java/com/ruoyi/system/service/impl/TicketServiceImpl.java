@@ -323,7 +323,7 @@ public class TicketServiceImpl  implements ITicketService {
     @Override
     public Result getTicketDetails(String id,Boolean hasPermi,int pageNum,int pageSize) {
         Ticket ticket = ticketMapper.selectById(id);
-        if (!hasPermi&&!StrUtil.equals(ticket.getUserId(),SecurityUtils.getStrUserId())){
+        if (!SecurityUtils.hasPre(ticket.getUserId())){
             return Result.fail("您没有权限查看此工单");
         }
         TicketDetailVo ticketDetailVo = ticketMapstruct.change2DetailVo(ticket);

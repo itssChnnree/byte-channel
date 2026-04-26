@@ -3,11 +3,14 @@ package com.ruoyi.web.controller.shopController;
 import cn.hutool.core.util.StrUtil;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.system.domain.dto.RechargeDto;
+import com.ruoyi.system.domain.dto.RefundFeeConfigDto;
+import com.ruoyi.system.domain.dto.RefundWhitelistDto;
 import com.ruoyi.system.group.InsertGroup;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IWalletBalanceService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -88,6 +92,51 @@ public class WalletBalanceController{
 
         return walletBalanceService.findOnlyRefoundBalance();
 
+    }
+
+    @GetMapping("/findRefundConfig")
+    @ApiOperation("管理页查询退款配置（费率及开关）")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result findRefundConfig() {
+        return walletBalanceService.findRefundConfig();
+    }
+
+    @PostMapping("/addRefundWhitelist")
+    @ApiOperation("管理员添加退款白名单用户")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result<String> addRefundWhitelist(@RequestBody RefundWhitelistDto dto) {
+        if (dto == null || StrUtil.isBlank(dto.getUsername())) {
+            return Result.fail("请输入用户名");
+        }
+        return walletBalanceService.addRefundWhitelist(dto.getUsername());
+    }
+
+    @GetMapping("/getRefundWhitelist")
+    @ApiOperation("查询退款白名单用户")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result<List<String>> getRefundWhitelist(String username) {
+        return walletBalanceService.getRefundWhitelist(username);
+    }
+
+    @PostMapping("/deleteRefundWhitelist")
+    @ApiOperation("管理员删除退款白名单用户")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result<String> deleteRefundWhitelist(String username) {
+        if (StrUtil.isBlank(username)) {
+            return Result.fail("请输入用户名");
+        }
+        walletBalanceService.deleteRefundWhitelist(username);
+        return Result.success("删除成功");
+    }
+
+    @PostMapping("/updateRefundFeeConfig")
+    @ApiOperation("管理员更新退款费率及开关配置")
+    @PreAuthorize("@ss.hasPermi('shop:background:admin')")
+    public Result<String> updateRefundFeeConfig(@RequestBody RefundFeeConfigDto dto) {
+        if (dto == null) {
+            return Result.fail("请传入配置参数");
+        }
+        return walletBalanceService.updateRefundFeeConfig(dto);
     }
 
 }

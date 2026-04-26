@@ -150,12 +150,27 @@ public class RefundProcessJob {
 
     /**
      * 处理单个订单的退款
-     * 使用独立事务，确保每个订单的退款操作原子性
+     * 在独立事务中：先加行锁，再校验实时状态，最后执行退款
      *
-     * @param order 订单对象
+     * @param order 订单快照对象（仅用于获取id）
      */
     public void processRefund(Order order) {
         String orderId = order.getId();
+
+        // 1. FOR UPDATE 加行锁，读取最新数据
+        Order lockedOrder = orderMapper.selectByIdForUpdate(orderId);
+        if (lockedOrder == null) {
+            LogEsUtil.info("订单不存在，跳过退款，orderId: " + orderId);
+            return;
+        }
+
+        // 2. 实时状态校验：只有 WAIT_REFUND 状态才执行用户退款
+        //    如果状态已被其他流程修改，跳过处理
+        if (!OrderStatus.WAIT_REFUND.equals(lockedOrder.getStatus())) {
+            LogEsUtil.info("订单状态已变更，跳过退款，orderId: " + orderId + ", currentStatus: " + lockedOrder.getStatus());
+            return;
+        }
+
         LogEsUtil.info("开始处理订单退款，订单id: " + orderId);
 
         try {
@@ -164,7 +179,7 @@ public class RefundProcessJob {
             request.setOrderId(orderId);
             // 用户退款模式（退所有已支付渠道）
             request.setRefundMode(RefundMode.USER_REFUND.getCode());
-            request.setRefundToBalance(needToRefundToBalance(order));
+            request.setRefundToBalance(needToRefundToBalance(lockedOrder));
             request.setRefundReason("定时任务：订单退款");
 
             // 调用退款服务
@@ -176,7 +191,7 @@ public class RefundProcessJob {
                 // 更新时间线
                 orderStatusTimelineService.setRefundedSuccessTime(orderId);
                 //扣减利润流水
-                reduceProfitFlow(order);
+                reduceProfitFlow(lockedOrder);
                 LogEsUtil.info("订单退款成功，订单id: " + orderId +
                         ", 退款金额: " + result.getTotalRefundAmount());
             } else {

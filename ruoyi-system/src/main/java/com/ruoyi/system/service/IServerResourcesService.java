@@ -13,6 +13,7 @@ import com.ruoyi.system.http.Result;
 import org.springframework.http.ResponseEntity;
 
 import javax.validation.Valid;
+import java.util.Date;
 
 /**
  * 服务器资源表(ServerResources)�����ӿ�
@@ -237,4 +238,14 @@ public interface IServerResourcesService{
      * @return com.ruoyi.system.http.Result
      **/
     Result resourceReplacement(String id);
+
+    /**
+     * [扣减资源到期时间]
+     * 根据付款周期扣减租赁到期时间，采用写锁查询
+     * @author 陈湘岳 2026/4/7
+     * @param resourceId 资源id
+     * @param paymentPeriod 付款周期（PaymentPeriodConstant）
+     * @return java.util.Date 扣减后的到期时间
+     **/
+    Date deductLeaseExpirationTime(String resourceId, String paymentPeriod);
 }

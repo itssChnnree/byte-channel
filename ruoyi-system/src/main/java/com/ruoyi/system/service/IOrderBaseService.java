@@ -25,6 +25,14 @@ public interface IOrderBaseService {
     String orderStatusConvert(String status);
 
     /**
+     * [判断是否退款到余额]
+     * @author 陈湘岳 2026/4/26
+     * @param refoundToBalance 用户决定是否退款到余额
+     * @return java.lang.Integer 1为退款到余额，0为原路退回
+     **/
+    Integer refoundToBalance(Boolean refoundToBalance);
+
+    /**
      * 获取订单信息(支付状态)
      *
      * @param order

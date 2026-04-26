@@ -3,10 +3,13 @@ package com.ruoyi.system.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.constant.*;
 import com.ruoyi.system.domain.dto.RechargeDto;
+import com.ruoyi.system.domain.dto.RefundFeeConfigDto;
 import com.ruoyi.system.domain.entity.*;
 import com.ruoyi.system.domain.vo.OrderStatusTimelineVo;
 import com.ruoyi.system.domain.vo.OrderVo;
@@ -16,19 +19,21 @@ import com.ruoyi.system.mapper.OrderMapper;
 import com.ruoyi.system.mapper.WalletBalanceDetailMapper;
 import com.ruoyi.system.mapper.WalletBalanceMapper;
 import com.ruoyi.system.mapstruct.OrderMapstruct;
+import com.ruoyi.system.pay.PayFeeRateConfig;
 import com.ruoyi.system.service.IOrderBaseService;
 import com.ruoyi.system.service.IOrderStatusTimelineService;
+import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.system.service.IWalletBalanceService;
 import com.ruoyi.system.util.LogEsUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 钱包余额表(WalletBalance)�����ʵ����
@@ -62,6 +67,15 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
     @Resource
     private RedisCache redisCache;
 
+    @Resource
+    private ISysUserService sysUserService;
+
+    @Resource(name = "refundWhitelistCache")
+    private Cache<String, String> refundWhitelistCache;
+
+    @Autowired(required = false)
+    private PayFeeRateConfig payFeeRateConfig;
+
     /**
      * [查询余额]
      *
@@ -78,12 +92,11 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
 
     //余额扣减
     public Boolean reduceBalance(Order order){
-        return reduceBalance(order.getAmount(),BalanceDetailStatus.BUY);
+        return reduceBalance(order.getAmount(),BalanceDetailStatus.BUY,order.getUserId());
     }
 
     //余额扣减
-    public Boolean reduceBalance(BigDecimal bigDecimal,String type){
-        String userId = SecurityUtils.getStrUserId();
+    public Boolean reduceBalance(BigDecimal bigDecimal,String type, String userId){
         //获取用户余额
         //一锁 余额
         WalletBalance walletBalanceByUserId = walletBalanceMapper.findWalletBalanceByUserId(userId);
@@ -281,7 +294,7 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
                 return Result.fail("订单退款失败，已超过退款时限");
             }
             //订单完成，需要扣减余额
-            Boolean reduceBalance = reduceBalance(order.getAmount(), BalanceDetailStatus.RECHARGE_REFUND);
+            Boolean reduceBalance = reduceBalance(order.getAmount(), BalanceDetailStatus.RECHARGE_REFUND,SecurityUtils.getStrUserId());
             if (!reduceBalance){
                 LogEsUtil.warn("充值订单退款失败，余额不足，订单id为：" + orderId);
                 return Result.fail("订单退款失败，余额不足");
@@ -374,26 +387,132 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
         String onlyRefundFlow = redisCache.getCacheObject("sys_config:sys:onlyRefound:flow");
         boolean onlyRefundToBalance = "true".equalsIgnoreCase(onlyRefundFlow);
 
+        // 如果用户在退款白名单中，允许原路退款
+        if (onlyRefundToBalance) {
+            String userId = SecurityUtils.getStrUserId();
+            if (refundWhitelistCache.asMap().containsValue(userId)) {
+                onlyRefundToBalance = false;
+            }
+        }
+
         result.put("onlyRefundToBalance", onlyRefundToBalance);
 
-        // 如果不是仅退款至余额，查询手续费比例
-        if (!onlyRefundToBalance) {
-            String feeRateStr = redisCache.getCacheObject("sys_config:sys:refoundAll:fee");
-            BigDecimal refundFeeRate = BigDecimal.ZERO;
-            if (StrUtil.isNotBlank(feeRateStr)) {
-                try {
-                    refundFeeRate = new BigDecimal(feeRateStr);
-                } catch (NumberFormatException e) {
-                    // 解析失败，使用默认值0
-                    refundFeeRate = BigDecimal.ZERO;
-                }
-            }
-            result.put("refundFeeRate", refundFeeRate);
+        // 从 PayFeeRateConfig 获取手续费比例
+        if (!onlyRefundToBalance && payFeeRateConfig != null) {
+            result.put("wechatFeeRate", payFeeRateConfig.getWechatFeeRate());
+            result.put("alipayFeeRate", payFeeRateConfig.getAlipayFeeRate());
         } else {
-            result.put("refundFeeRate", null);
+            result.put("wechatFeeRate", null);
+            result.put("alipayFeeRate", null);
         }
 
         return Result.success(result);
+    }
+
+    /**
+     * [管理页查询退款配置（费率及开关，不做白名单校验）]
+     *
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/4/6
+     **/
+    @Override
+    public Result findRefundConfig() {
+        Map<String, Object> result = new HashMap<>();
+
+        // 查询是否仅可退款至余额
+        String onlyRefundFlow = redisCache.getCacheObject("sys_config:sys:onlyRefound:flow");
+        boolean onlyRefundToBalance = "true".equalsIgnoreCase(onlyRefundFlow);
+        result.put("onlyRefundToBalance", onlyRefundToBalance);
+
+        // 始终返回费率，不做白名单校验
+        if (payFeeRateConfig != null) {
+            result.put("wechatFeeRate", payFeeRateConfig.getWechatFeeRate());
+            result.put("alipayFeeRate", payFeeRateConfig.getAlipayFeeRate());
+        } else {
+            result.put("wechatFeeRate", null);
+            result.put("alipayFeeRate", null);
+        }
+
+        return Result.success(result);
+    }
+
+    /**
+     * [管理员添加退款白名单用户]
+     *
+     * @param username 用户名
+     * @author 陈湘岳 2026/4/6
+     **/
+    @Override
+    public Result<String> addRefundWhitelist(String username) {
+        // 查询用户是否存在
+        SysUser user = sysUserService.selectUserByUserName(username);
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+        String userId = String.valueOf(user.getUserId());
+        refundWhitelistCache.put(username, userId);
+        LogEsUtil.info("添加退款白名单用户成功，username：" + username + "，userId：" + userId);
+        return Result.success("添加成功");
+    }
+
+    /**
+     * [查询退款白名单用户，支持用户名模糊查询]
+     *
+     * @param username 用户名（可选），为空则返回全部
+     * @return 每项包含 userId 和 username
+     * @author 陈湘岳 2026/4/6
+     **/
+    @Override
+    public Result<List<String>> getRefundWhitelist(String username) {
+        List<String> result = refundWhitelistCache.asMap().keySet().stream()
+                .filter(k -> StrUtil.isBlank(username) || k.contains(username))
+                .collect(Collectors.toList());
+        return Result.success(result);
+    }
+
+    /**
+     * [管理员删除退款白名单用户]
+     *
+     * @param username 用户名
+     * @author 陈湘岳 2026/4/6
+     **/
+    @Override
+    public void deleteRefundWhitelist(String username) {
+        refundWhitelistCache.invalidate(username);
+        LogEsUtil.info("删除退款白名单用户成功，username：" + username);
+    }
+
+    /**
+     * [管理员更新退款费率及开关配置]
+     *
+     * @param dto 配置DTO
+     * @author 陈湘岳 2026/4/6
+     **/
+    @Override
+    public Result<String> updateRefundFeeConfig(RefundFeeConfigDto dto) {
+        // 微信手续费：同时更新 Properties 和 Redis
+        if (dto.getWechatFeeRate() != null) {
+            if (payFeeRateConfig != null) {
+                payFeeRateConfig.setWechatFeeRate(dto.getWechatFeeRate());
+            }
+            redisCache.setCacheObject("sys_config:sys:refoundWx:fee", dto.getWechatFeeRate().toString());
+        }
+
+        // 支付宝手续费：同时更新 Properties 和 Redis
+        if (dto.getAlipayFeeRate() != null) {
+            if (payFeeRateConfig != null) {
+                payFeeRateConfig.setAlipayFeeRate(dto.getAlipayFeeRate());
+            }
+            redisCache.setCacheObject("sys_config:sys:refoundAli:fee", dto.getAlipayFeeRate().toString());
+        }
+
+        // 退款开关：仅更新 Redis
+        if (dto.getOnlyRefundToBalance() != null) {
+            redisCache.setCacheObject("sys_config:sys:onlyRefound:flow", dto.getOnlyRefundToBalance());
+        }
+
+        LogEsUtil.info("更新退款费率及开关配置成功");
+        return Result.success("更新成功");
     }
 
     private Order buildOrder(BigDecimal bigDecimal){

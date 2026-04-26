@@ -122,7 +122,6 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
      **/
     List<CommodityVo> userPage(@Param("dto") CommodityDto commodityDto);
 
-
     /**
      * [根据商品id查询资源管理商品详情]
      * @author 陈湘岳 2025/9/19

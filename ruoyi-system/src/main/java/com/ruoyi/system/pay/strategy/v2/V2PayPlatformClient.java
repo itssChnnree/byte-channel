@@ -1,11 +1,10 @@
-package com.ruoyi.system.pay.infrastructure.client;
+package com.ruoyi.system.pay.strategy.v2;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
-import com.ruoyi.system.pay.infrastructure.config.PayProperties;
-import com.ruoyi.system.pay.infrastructure.util.SignUtil;
 import com.ruoyi.system.util.LogEsUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -17,24 +16,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * [支付平台HTTP客户端]
+ * [V2支付平台HTTP客户端 - 佳梦云付]
+ * API路径：/api/pay/create, /api/pay/submit, /api/pay/query, /api/pay/refund
  *
  * @author 陈湘岳
  * @version v1.0.0
- * @date 2026/3/22
+ * @date 2026/4/6
  */
 @Slf4j
-@Component
-public class PayPlatformClient {
+@Component("v2PayPlatformClient")
+@ConditionalOnProperty(name = "pay.platform.version", havingValue = "v2", matchIfMissing = true)
+public class V2PayPlatformClient {
 
     @Resource
     private RestTemplate restTemplate;
-
     @Resource
-    private PayProperties payProperties;
-
+    private V2PayProperties v2PayProperties;
     @Resource
-    private SignUtil signUtil;
+    private V2SignUtil v2SignUtil;
 
     private static final String CREATE_ORDER_URL = "/api/pay/create";
     private static final String SUBMIT_ORDER_URL = "/api/pay/submit";
@@ -42,105 +41,62 @@ public class PayPlatformClient {
     private static final String REFUND_URL = "/api/pay/refund";
     private static final String TRANSFER_URL = "/api/transfer/submit";
 
-    /**
-     * 统一下单（API支付）
-     */
     public Map<String, Object> createOrder(Map<String, String> params) {
         return post(CREATE_ORDER_URL, params);
     }
 
-    /**
-     * 页面跳转支付
-     */
     public String submitOrder(Map<String, String> params) {
-        String url = payProperties.getBaseUrl() + SUBMIT_ORDER_URL;
+        String url = v2PayProperties.getBaseUrl() + SUBMIT_ORDER_URL;
         Map<String, String> signedParams = addSign(params);
-
-        // 构建表单提交的URL
         StringBuilder formUrl = new StringBuilder(url).append("?");
         signedParams.forEach((k, v) -> formUrl.append(k).append("=").append(v).append("&"));
-
         return formUrl.toString();
     }
 
-    /**
-     * 查询订单
-     */
     public Map<String, Object> queryOrder(Map<String, String> params) {
         return post(QUERY_ORDER_URL, params);
     }
 
-    /**
-     * 订单退款
-     */
     public Map<String, Object> refundOrder(Map<String, String> params) {
         return post(REFUND_URL, params);
     }
 
-    /**
-     * 订单退款
-     */
     public Map<String, Object> transfer(Map<String, String> params) {
         return post(TRANSFER_URL, params);
     }
 
-
-    /**
-     * 发送POST请求
-     */
     private Map<String, Object> post(String uri, Map<String, String> params) {
-        String url = payProperties.getBaseUrl() + uri;
+        String url = v2PayProperties.getBaseUrl() + uri;
         Map<String, String> signedParams = addSign(params);
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         signedParams.forEach(map::add);
-
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
-
-
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-
         if (response.getStatusCode() != HttpStatus.OK) {
-            LogEsUtil.warn("请求支付平台失败，HTTP状态码：" + response.getStatusCode());
+            LogEsUtil.warn("V2请求支付平台失败，HTTP状态码：" + response.getStatusCode());
             throw new RuntimeException("请求支付平台失败");
         }
-
-        String body = response.getBody();
-
-
-        return JSON.parseObject(body, new TypeReference<Map<String, Object>>() {});
+        return JSON.parseObject(response.getBody(), new TypeReference<Map<String, Object>>() {});
     }
 
-    /**
-     * 添加签名参数
-     */
     private Map<String, String> addSign(Map<String, String> params) {
         Map<String, String> newParams = new HashMap<>(params);
-
-        // 添加必要参数
         if (!newParams.containsKey("pid")) {
-            newParams.put("pid", String.valueOf(payProperties.getPid()));
+            newParams.put("pid", String.valueOf(v2PayProperties.getPid()));
         }
         if (!newParams.containsKey("timestamp")) {
-            newParams.put("timestamp", signUtil.getTimestamp());
+            newParams.put("timestamp", v2SignUtil.getTimestamp());
         }
         if (!newParams.containsKey("sign_type")) {
-            newParams.put("sign_type", payProperties.getSignType());
+            newParams.put("sign_type", v2PayProperties.getSignType());
         }
-
-        // 生成签名
-        String sign = signUtil.generateSign(newParams, payProperties.getMerchantPrivateKey());
+        String sign = v2SignUtil.generateSign(newParams, v2PayProperties.getMerchantPrivateKey());
         newParams.put("sign", sign);
-
         return newParams;
     }
 
-    /**
-     * 验证响应签名
-     */
     public boolean verifyResponse(Map<String, Object> response) {
         Map<String, String> params = new HashMap<>();
         response.forEach((k, v) -> {
@@ -148,12 +104,10 @@ public class PayPlatformClient {
                 params.put(k, v.toString());
             }
         });
-
         String sign = params.remove("sign");
         if (sign == null || sign.isEmpty()) {
             return false;
         }
-
-        return signUtil.verifySign(params, payProperties.getPlatformPublicKey(), sign);
+        return v2SignUtil.verifySign(params, v2PayProperties.getPlatformPublicKey(), sign);
     }
 }

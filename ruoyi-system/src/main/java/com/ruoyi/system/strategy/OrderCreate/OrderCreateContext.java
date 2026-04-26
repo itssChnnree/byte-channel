@@ -27,6 +27,13 @@ public class OrderCreateContext {
         orderCreateStrategy = SpringUtil.getBean(orderCreateType);
     }
 
+    /**
+     * 获取订单创建策略
+     */
+    public OrderCreateStrategy getOrderCreateStrategy() {
+        return orderCreateStrategy;
+    }
+
     public Order createOrder(OrderByCommodityDto orderByCommodityDto, Commodity normalCommodity, PromoCodeRecords promoCodeRecords) {
         return orderCreateStrategy.createOrder(orderByCommodityDto.getNum(), normalCommodity, promoCodeRecords);
     }

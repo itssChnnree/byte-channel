@@ -108,10 +108,24 @@
         select
             c.id, commodity_name, commodity_price,
             commodity_discounted_price, category_id,
-            oversold_configurations, oversold, inventory,
+            oversold_configurations,
             alarm_threshold, description, category,bandwidth,
             c.status, c.available_status,business_suitable,
             if(oversold=oversold_configurations,0,1) as hasStock,dest,server_names,
+            (select count(1)
+             from `order` o
+                      join order_commodity oc on o.id = oc.order_id
+             where o.is_deleted = 0
+               and oc.is_deleted = 0
+               and o.status = 'WAIT_ALLOCATION_RESOURCES'
+               and oc.commodity_id = c.id)                                                       as oversold,
+            (select count(1)
+             from server_resources
+             where commodity_id = c.id
+               and is_deleted = 0
+               and sales_status = 'NOT_SALE'
+               and resources_status = 'NORMAL'
+               and available_status = 1)                                                                 as inventory,
             (select count(1) from server_resources where commodity_id=c.id and is_deleted = 0) as resourceNum,
         cc.category_name as category
         from commodity c left join commodity_category cc on c.category_id = cc.id
@@ -141,145 +155,30 @@
           and c.is_deleted = 0
     </select>
     
-    <!--��ѯָ��������-->
-    <select id="queryList" resultMap="CommodityVOMap">
-        select
-id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time        
-        from commodity
-        <where>
-        1 = 1 and is_deleted = 0
-            <if test="id != null and id != ''">
-                and id = #{id}
-            </if>
-            <if test="commodityName != null and commodityName != ''">
-                and commodity_name = #{commodityName}
-            </if>
-            <if test="commodityPrice != null">
-                and commodity_price = #{commodityPrice}
-            </if>
-            <if test="commodityDiscountedPrice != null">
-                and commodity_discounted_price = #{commodityDiscountedPrice}
-            </if>
-            <if test="categoryId != null and categoryId != ''">
-                and category_id = #{categoryId}
-            </if>
-            <if test="oversoldConfigurations != null">
-                and oversold_configurations = #{oversoldConfigurations}
-            </if>
-            <if test="oversold != null">
-                and oversold = #{oversold}
-            </if>
-            <if test="inventory != null">
-                and inventory = #{inventory}
-            </if>
-            <if test="alarmThreshold != null">
-                and alarm_threshold = #{alarmThreshold}
-            </if>
-            <if test="description != null and description != ''">
-                and description = #{description}
-            </if>
-            <if test="category != null and category != ''">
-                and category = #{category}
-            </if>
-            <if test="isDeleted != null">
-                and is_deleted = #{isDeleted}
-            </if>
-            <if test="status != null and status != ''">
-                and status = #{status}
-            </if>
-            <if test="availableStatus != null">
-                and available_status = #{availableStatus}
-            </if>
-            <if test="createUser != null and createUser != ''">
-                and create_user = #{createUser}
-            </if>
-            <if test="updateUser != null and updateUser != ''">
-                and update_user = #{updateUser}
-            </if>
-            <if test="createTime != null">
-                and create_time = #{createTime}
-            </if>
-            <if test="updateTime != null">
-                and update_time = #{updateTime}
-            </if>
-        </where>
-    </select>
-    
-    <!--��ѯָ��������-->
-    <select id="queryListLimit" resultMap="CommodityVOMap">
-        select
-id, commodity_name, commodity_price, commodity_discounted_price, category_id, oversold_configurations, oversold, inventory, alarm_threshold, description, category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
-        from commodity
-        <where>
-        1 = 1 and is_deleted = 0 
-            <if test="dto.id != null and dto.id != ''">
-                and id = #{dto.id}
-            </if>
-            <if test="dto.commodityName != null and dto.commodityName != ''">
-                and commodity_name = #{dto.commodityName}
-            </if>
-            <if test="dto.commodityPrice != null">
-                and commodity_price = #{dto.commodityPrice}
-            </if>
-            <if test="dto.commodityDiscountedPrice != null">
-                and commodity_discounted_price = #{dto.commodityDiscountedPrice}
-            </if>
-            <if test="dto.categoryId != null and dto.categoryId != ''">
-                and category_id = #{dto.categoryId}
-            </if>
-            <if test="dto.oversoldConfigurations != null">
-                and oversold_configurations = #{dto.oversoldConfigurations}
-            </if>
-            <if test="dto.oversold != null">
-                and oversold = #{dto.oversold}
-            </if>
-            <if test="dto.inventory != null">
-                and inventory = #{dto.inventory}
-            </if>
-            <if test="dto.alarmThreshold != null">
-                and alarm_threshold = #{dto.alarmThreshold}
-            </if>
-            <if test="dto.description != null and dto.description != ''">
-                and description = #{dto.description}
-            </if>
-            <if test="dto.category != null and dto.category != ''">
-                and category = #{dto.category}
-            </if>
-            <if test="dto.isDeleted != null">
-                and is_deleted = #{dto.isDeleted}
-            </if>
-            <if test="dto.status != null and dto.status != ''">
-                and status = #{dto.status}
-            </if>
-            <if test="dto.availableStatus != null">
-                and available_status = #{dto.availableStatus}
-            </if>
-            <if test="dto.createUser != null and dto.createUser != ''">
-                and create_user = #{dto.createUser}
-            </if>
-            <if test="dto.updateUser != null and dto.updateUser != ''">
-                and update_user = #{dto.updateUser}
-            </if>
-            <if test="dto.createTime != null">
-                and create_time = #{dto.createTime}
-            </if>
-            <if test="dto.updateTime != null">
-                and update_time = #{dto.updateTime}
-            </if>
-        </where>
-        limit #{limit}
-    </select>
-    
     <!--��ѯ��ҳ����-->
     <select id="queryPage" resultType="com.ruoyi.system.domain.vo.CommodityVo">
             select
         id, commodity_name, commodity_price,
         commodity_discounted_price, category_id,
-        oversold_configurations, oversold, inventory,
+        oversold_configurations,
         alarm_threshold, description, category,
         status, available_status,business_suitable as businessSuitable,
         if(oversold=oversold_configurations,0,1) as hasStock,
         dest, server_names,
+        (select count(1)
+        from `order` o
+        join order_commodity oc on o.id = oc.order_id
+        where o.is_deleted = 0
+        and oc.is_deleted = 0
+        and o.status = 'WAIT_ALLOCATION_RESOURCES'
+        and oc.commodity_id = commodity.id)                                                       as oversold,
+        (select count(1)
+        from server_resources
+        where commodity_id = commodity.id
+        and is_deleted = 0
+        and sales_status = 'NOT_SALE'
+        and resources_status = 'NORMAL'
+        and available_status = 1)                                                                 as inventory,
         (select count(1) from server_resources where commodity_id=commodity.id and is_deleted = 0) as resourceNum
         from commodity
         <where>
@@ -361,8 +260,22 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
         select
         id, commodity_name, commodity_price,
         commodity_discounted_price, category_id,
-        inventory, description, category,
+        description, category,
         status, available_status,
+        (select count(1)
+        from `order` o
+        join order_commodity oc on o.id = oc.order_id
+        where o.is_deleted = 0
+        and oc.is_deleted = 0
+        and o.status = 'WAIT_ALLOCATION_RESOURCES'
+        and oc.commodity_id = commodity.id)                                                       as oversold,
+        (select count(1)
+        from server_resources
+        where commodity_id = commodity.id
+        and is_deleted = 0
+        and sales_status = 'NOT_SALE'
+        and resources_status = 'NORMAL'
+        and available_status = 1)                                                                 as inventory,
         if(oversold=oversold_configurations,0,1) as hasStock,
         business_suitable as businessSuitable,
         bandwidth
@@ -426,8 +339,22 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
         select
             id, commodity_name, commodity_price,
             commodity_discounted_price, category_id,
-            inventory, description, category,
+             description, category,
             status, available_status,
+            (select count(1)
+             from `order` o
+                      join order_commodity oc on o.id = oc.order_id
+             where o.is_deleted = 0
+               and oc.is_deleted = 0
+               and o.status = 'WAIT_ALLOCATION_RESOURCES'
+               and oc.commodity_id = commodity.id)                                                       as oversold,
+            (select count(1)
+             from server_resources
+             where commodity_id = commodity.id
+               and is_deleted = 0
+               and sales_status = 'NOT_SALE'
+               and resources_status = 'NORMAL'
+               and available_status = 1)                                                                 as inventory,
             if(oversold=oversold_configurations,0,1) as hasStock,
             business_suitable as businessSuitable,
             bandwidth
@@ -438,8 +365,22 @@ id, commodity_name, commodity_price, commodity_discounted_price, category_id, ov
     <select id="selectByIdForUpdate" resultType="com.ruoyi.system.domain.entity.Commodity">
         select
             id, commodity_name, commodity_price, commodity_discounted_price, category_id,
-            oversold_configurations, oversold, inventory, alarm_threshold, description,
-            category, is_deleted, status, available_status, create_user, update_user, create_time, update_time
+            oversold_configurations, alarm_threshold, description,update_user, create_time, update_time,
+            category, is_deleted, status, available_status, create_user,
+            (select count(1)
+             from `order` o
+                      join order_commodity oc on o.id = oc.order_id
+             where o.is_deleted = 0
+               and oc.is_deleted = 0
+               and o.status = 'WAIT_ALLOCATION_RESOURCES'
+               and oc.commodity_id = commodity.id)                                                       as oversold,
+            (select count(1)
+             from server_resources
+             where commodity_id = commodity.id
+               and is_deleted = 0
+               and sales_status = 'NOT_SALE'
+               and resources_status = 'NORMAL'
+               and available_status = 1)                                                                 as inventory
         from commodity
         where id = #{id} and is_deleted = 0 and available_status = 1 for update
     </select>

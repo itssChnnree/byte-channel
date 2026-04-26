@@ -166,7 +166,7 @@
     <insert id="insert" keyProperty="id" useGeneratedKeys="true">
         insert into order_quote(id, user_id, order_id, quote_processing_record, is_deleted, create_user, update_user,
                                 create_time, update_time)
-        values (#{entity.id}, #{userId}, #{orderId}, #{quoteProcessingRecord}, #{isDeleted}, #{createUser}, #{updateUser},
+        values (#{id}, #{userId}, #{orderId}, #{quoteProcessingRecord}, #{isDeleted}, #{createUser}, #{updateUser},
                 #{createTime}, #{updateTime})
     </insert>
 

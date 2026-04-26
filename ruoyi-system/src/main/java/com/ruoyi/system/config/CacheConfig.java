@@ -65,4 +65,14 @@ public class CacheConfig {
                 .expireAfterWrite(3, TimeUnit.HOURS)
                 .build();
     }
+
+    //退款原路返回白名单缓存，key=用户ID，过期时间3天
+    @Bean(name = "refundWhitelistCache")
+    public Cache<String, String> refundWhitelistCache() {
+        return Caffeine.newBuilder()
+                .initialCapacity(50)
+                .maximumSize(5000)
+                .expireAfterWrite(3, TimeUnit.DAYS)
+                .build();
+    }
 }
