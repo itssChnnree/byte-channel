@@ -269,7 +269,7 @@ public class TicketServiceImpl  implements ITicketService {
      **/
     @Override
     public Result getNeedServiceReply() {
-        Integer needUserReply = ticketMapper.getNeedServiceReply();
+        Long needUserReply = ticketMapper.getNeedServiceReply();
         if (ObjectUtils.isEmpty(needUserReply)||needUserReply==0){
             return Result.success(0);
         }

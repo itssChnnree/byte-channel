@@ -208,5 +208,12 @@ id, category_name, summary, status, available_status, is_deleted, create_user, u
             create_time = values(create_time),
             update_time = values(update_time)    </insert>
 
+    <!-- 查询全部商品分类数 -->
+    <select id="countTotal" resultType="java.lang.Long">
+        select count(1)
+        from commodity_category
+        where is_deleted = 0
+    </select>
+
 </mapper>
 

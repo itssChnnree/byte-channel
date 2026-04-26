@@ -204,7 +204,7 @@
            and create_user = #{userId}
     </select>
 
-    <select id="getNeedServiceReply" resultType="java.lang.Integer">
+    <select id="getNeedServiceReply" resultType="java.lang.Long">
         select count(*) from ticket
         where (status = '等待客服回复' or status = '处理中' or status = '新建')
           and is_deleted = 0

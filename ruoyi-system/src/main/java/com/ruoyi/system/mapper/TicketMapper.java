@@ -48,7 +48,7 @@ public interface TicketMapper extends BaseMapper<Ticket> {
      * @author 陈湘岳 2025/10/10
      * @return int
      **/
-    Integer getNeedServiceReply();
+    Long getNeedServiceReply();
 
     /**
      * [根据条件分页查询]

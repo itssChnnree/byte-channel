@@ -37,4 +37,11 @@ public interface VendorInformationMapper extends BaseMapper<VendorInformation> {
      **/
     Integer queryCountVendorAccountNum(String vendorId);
 
+    /**
+     * [查询厂商总数]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countTotal();
+
 }

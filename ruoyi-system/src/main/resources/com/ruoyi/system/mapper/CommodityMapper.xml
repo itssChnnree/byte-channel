@@ -427,5 +427,28 @@
         update_time = values(update_time)
     </insert>
 
+    <!-- 查询全部商品数量 -->
+    <select id="countTotal" resultType="java.lang.Long">
+        select count(1)
+        from commodity
+        where is_deleted = 0
+    </select>
+
+    <!-- 查询上架商品数量 -->
+    <select id="countListed" resultType="java.lang.Long">
+        select count(1)
+        from commodity
+        where is_deleted = 0
+          and available_status = 1
+    </select>
+
+    <!-- 查询上架商品分类数量（去重） -->
+    <select id="countListedCategories" resultType="java.lang.Long">
+        select count(1)
+        from commodity_category
+        where is_deleted = 0
+          and available_status = 1
+    </select>
+
 </mapper>
 

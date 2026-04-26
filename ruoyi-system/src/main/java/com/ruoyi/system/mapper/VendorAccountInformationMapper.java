@@ -39,4 +39,11 @@ public interface VendorAccountInformationMapper extends BaseMapper<VendorAccount
      * @return com.ruoyi.system.domain.vo.VendorAccountInformationVo
      **/
     List<VendorAccountInformationVo> queryList(VendorAccountInformationDto vendorAccountInformationDto);
+
+    /**
+     * [查询厂商账号总数]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countTotal();
 }

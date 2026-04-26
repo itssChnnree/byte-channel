@@ -471,5 +471,21 @@
         insert into server_resources(id,resources_ip, resources_port, resources_password, resources_status, resource_tenant, lease_expiration_time, sales_status, available_status, vendor_account_id, resources_user_name, node_port, public_broker_key, sni, short_id, user_id, commodity_id,password, is_deleted, create_user, update_user, create_time, update_time)
         values (#{id},#{resourcesIp}, #{resourcesPort}, #{resourcesPassword}, #{resourcesStatus}, #{resourceTenant}, #{leaseExpirationTime}, #{salesStatus}, #{availableStatus},  #{vendorAccountId}, #{resourcesUserName}, #{nodePort}, #{publicBrokerKey}, #{sni}, #{shortId}, #{userId}, #{commodityId},#{password}, #{isDeleted}, #{createUser}, #{updateUser}, #{createTime}, #{updateTime})
     </insert>
+
+    <!-- 查询全部资源数量 -->
+    <select id="countTotal" resultType="java.lang.Long">
+        select count(1)
+        from server_resources
+        where is_deleted = 0
+    </select>
+
+    <!-- 查询已售出资源数量 -->
+    <select id="countSold" resultType="java.lang.Long">
+        select count(1)
+        from server_resources
+        where is_deleted = 0
+          and sales_status = 'SALE'
+    </select>
+
 </mapper>
 

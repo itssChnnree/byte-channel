@@ -167,5 +167,12 @@
         update_time = values(update_time)
     </insert>
 
+    <!-- 查询厂商数量 -->
+    <select id="countTotal" resultType="java.lang.Long">
+        select count(1)
+        from vendor_information
+        where is_deleted = 0
+    </select>
+
 </mapper>
 

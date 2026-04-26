@@ -46,3 +46,6 @@ nbdist/
 !*/build/*.html
 !*/build/*.xml
 ./.qoder/
+application.yml
+application-dev.yml
+application-prod.yml

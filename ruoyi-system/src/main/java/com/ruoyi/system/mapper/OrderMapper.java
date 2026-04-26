@@ -9,11 +9,15 @@ import com.ruoyi.system.domain.entity.Order;
 import com.ruoyi.system.domain.vo.OrderDetailVo;
 import com.ruoyi.system.domain.vo.OrderInfoVo;
 import com.ruoyi.system.domain.vo.OrderVo;
+import com.ruoyi.system.domain.vo.SalesChartVo;
+import com.ruoyi.system.domain.vo.CategoryRankVo;
+import com.ruoyi.system.domain.vo.CommodityRankVo;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -148,4 +152,75 @@ public interface OrderMapper extends BaseMapper<Order> {
      * @return com.ruoyi.system.domain.entity.Order
      **/
     Order selectByIdForUpdate(@Param("id") String id);
+
+    /**
+     * [查询当日订单数]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countTodayOrders();
+
+    /**
+     * [查询当日订单总金额]
+     * @author 陈湘岳 2026/4/6
+     * @return java.math.BigDecimal
+     **/
+    BigDecimal sumTodayRevenue();
+
+    /**
+     * [查询当月订单数]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countMonthOrders();
+
+    /**
+     * [查询当月订单总金额]
+     * @author 陈湘岳 2026/4/6
+     * @return java.math.BigDecimal
+     **/
+    BigDecimal sumMonthRevenue();
+
+    /**
+     * [查询资源短缺订单数]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countResourceShortageOrders();
+
+    /**
+     * [查询待退款订单数]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countPendingRefundOrders();
+
+    /**
+     * [查询最近30天每日销售数据]
+     * @author 陈湘岳 2026/4/6
+     * @return java.util.List<com.ruoyi.system.domain.vo.SalesChartVo>
+     **/
+    List<SalesChartVo> getDailySalesChart();
+
+    /**
+     * [查询最近12个月每月销售数据]
+     * @author 陈湘岳 2026/4/6
+     * @return java.util.List<com.ruoyi.system.domain.vo.SalesChartVo>
+     **/
+    List<SalesChartVo> getMonthlySalesChart();
+
+    /**
+     * [查询近30天品类销量排行Top5]
+     * @author 陈湘岳 2026/4/26
+     * @return java.util.List<com.ruoyi.system.domain.vo.CategoryRankVo>
+     **/
+    List<CategoryRankVo> getCategorySalesRank();
+
+    /**
+     * [查询近30天商品销量排行]
+     * @param categoryId 品类ID，传null查全部
+     * @author 陈湘岳 2026/4/26
+     * @return java.util.List<com.ruoyi.system.domain.vo.CommodityRankVo>
+     **/
+    List<CommodityRankVo> getCommoditySalesRank(String categoryId);
 }

@@ -282,4 +282,18 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @return int 影响行数
      **/
     int updateNotifyStatusById(@Param("resourcesId") String resourcesId, @Param("status") String status);
+
+    /**
+     * [查询全部资源数量]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countTotal();
+
+    /**
+     * [查询已售出资源数量]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countSold();
 }

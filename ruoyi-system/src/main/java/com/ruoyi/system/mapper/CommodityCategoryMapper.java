@@ -49,4 +49,11 @@ public interface CommodityCategoryMapper extends BaseMapper<CommodityCategory> {
      * @return com.baomidou.mybatisplus.core.metadata.IPage<com.ruoyi.system.domain.vo.CommodityCategoryVo>
      **/
     List<CommodityCategoryVo> systemPage();
+
+    /**
+     * [查询商品分类总数]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countTotal();
 }

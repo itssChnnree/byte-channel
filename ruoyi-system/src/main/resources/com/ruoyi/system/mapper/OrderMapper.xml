@@ -257,5 +257,143 @@
         for update
     </select>
 
+    <!-- 查询当日订单数 -->
+    <select id="countTodayOrders" resultType="java.lang.Long">
+        select count(1)
+        from `order`
+        where is_deleted = 0
+          and date(create_time) = curdate()
+    </select>
+
+    <!-- 查询当日订单总金额 -->
+    <select id="sumTodayRevenue" resultType="java.math.BigDecimal">
+        select ifnull(sum(amount), 0)
+        from `order`
+        where is_deleted = 0
+          and date(create_time) = curdate()
+    </select>
+
+    <!-- 查询当月订单数 -->
+    <select id="countMonthOrders" resultType="java.lang.Long">
+        select count(1)
+        from `order`
+        where is_deleted = 0
+          and date_format(create_time, '%Y-%m') = date_format(curdate(), '%Y-%m')
+    </select>
+
+    <!-- 查询当月订单总金额 -->
+    <select id="sumMonthRevenue" resultType="java.math.BigDecimal">
+        select ifnull(sum(amount), 0)
+        from `order`
+        where is_deleted = 0
+          and date_format(create_time, '%Y-%m') = date_format(curdate(), '%Y-%m')
+    </select>
+
+    <!-- 查询资源短缺订单数（待分配资源） -->
+    <select id="countResourceShortageOrders" resultType="java.lang.Long">
+        select ifnull(count(1),0)
+        from `order`
+        where is_deleted = 0
+          and status = 'WAIT_ALLOCATION_RESOURCES'
+    </select>
+
+    <!-- 查询待退款订单数 -->
+    <select id="countPendingRefundOrders" resultType="java.lang.Long">
+        select count(1)
+        from `order`
+        where is_deleted = 0
+          and status = 'WAIT_REFUND'
+    </select>
+
+    <!-- 查询最近30天每日销售数据 -->
+    <select id="getDailySalesChart" resultType="com.ruoyi.system.domain.vo.SalesChartVo">
+        select
+            date(create_time) as name,
+            ifnull(sum(amount), 0) as amount,
+            count(1) as orderCount,
+            ifnull(sum(case when order_type = 'renew' then 1 else 0 end), 0) as renewCount,
+            ifnull(sum(case when order_type = 'add' then 1 else 0 end), 0) as addCount,
+            ifnull(sum(case when order_type = 'add' then amount else 0 end), 0) as addAmount,
+            ifnull(sum(case when order_type = 'renew' then amount else 0 end), 0) as renewAmount,
+            ifnull(sum(case when order_type = 'recharge' then 1 else 0 end), 0) as rechargeCount,
+            ifnull(sum(case when order_type = 'recharge' then amount else 0 end), 0) as rechargeAmount,
+            ifnull(sum(case when order_type = 'quote' then 1 else 0 end), 0) as quoteCount,
+            ifnull(sum(case when order_type = 'quote' then amount else 0 end), 0) as quoteAmount
+        from `order`
+        where is_deleted = 0
+          and status in ('WAIT_ALLOCATION_RESOURCES', 'COMPLETED')
+          and create_time >= date_sub(curdate(), interval 30 day)
+        group by date(create_time)
+        order by name asc
+    </select>
+
+    <!-- 查询最近12个月每月销售数据 -->
+    <select id="getMonthlySalesChart" resultType="com.ruoyi.system.domain.vo.SalesChartVo">
+        select
+            date_format(create_time, '%Y-%m') as name,
+            ifnull(sum(amount), 0) as amount,
+            count(1) as orderCount,
+            ifnull(sum(case when order_type = 'renew' then 1 else 0 end), 0) as renewCount,
+            ifnull(sum(case when order_type = 'add' then 1 else 0 end), 0) as addCount,
+            ifnull(sum(case when order_type = 'add' then amount else 0 end), 0) as addAmount,
+            ifnull(sum(case when order_type = 'renew' then amount else 0 end), 0) as renewAmount,
+            ifnull(sum(case when order_type = 'recharge' then 1 else 0 end), 0) as rechargeCount,
+            ifnull(sum(case when order_type = 'recharge' then amount else 0 end), 0) as rechargeAmount,
+            ifnull(sum(case when order_type = 'quote' then 1 else 0 end), 0) as quoteCount,
+            ifnull(sum(case when order_type = 'quote' then amount else 0 end), 0) as quoteAmount
+        from `order`
+        where is_deleted = 0
+          and status in ('WAIT_ALLOCATION_RESOURCES', 'COMPLETED')
+          and create_time >= date_sub(curdate(), interval 12 month)
+        group by date_format(create_time, '%Y-%m')
+        order by name asc
+    </select>
+
+    <select id="getCategorySalesRank" resultType="com.ruoyi.system.domain.vo.CategoryRankVo">
+        select
+            cc.id as categoryId,
+            cc.category_name as categoryName,
+            count(oc.id) as salesCount
+        from `order` o
+        inner join order_commodity oc on o.id = oc.order_id
+        inner join commodity c on oc.commodity_id = c.id
+        inner join commodity_category cc on c.category_id = cc.id
+        where o.is_deleted = 0
+          and oc.is_deleted = 0
+          and c.is_deleted = 0
+          and cc.is_deleted = 0
+          and o.status in ('WAIT_ALLOCATION_RESOURCES', 'COMPLETED')
+          and o.order_type in ('add', 'renew')
+          and o.create_time >= date_sub(curdate(), interval 30 day)
+        group by cc.id, cc.category_name
+        order by salesCount desc
+        limit 5
+    </select>
+
+    <select id="getCommoditySalesRank" resultType="com.ruoyi.system.domain.vo.CommodityRankVo">
+        select
+            c.id as commodityId,
+            c.commodity_name as commodityName,
+            cc.id as categoryId,
+            cc.category_name as categoryName,
+            count(oc.id) as salesCount
+        from `order` o
+        inner join order_commodity oc on o.id = oc.order_id
+        inner join commodity c on oc.commodity_id = c.id
+        inner join commodity_category cc on c.category_id = cc.id
+        where o.is_deleted = 0
+          and oc.is_deleted = 0
+          and c.is_deleted = 0
+          and cc.is_deleted = 0
+          and o.status in ('WAIT_ALLOCATION_RESOURCES', 'COMPLETED')
+          and o.order_type in ('add', 'renew')
+          and o.create_time >= date_sub(curdate(), interval 30 day)
+          <if test="categoryId != null and categoryId != ''">
+              and cc.id = #{categoryId}
+          </if>
+        group by c.id, c.commodity_name, cc.id, cc.category_name
+        order by salesCount desc
+    </select>
+
 </mapper>
 

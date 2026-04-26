@@ -189,5 +189,12 @@
         update_time = values(update_time)
     </insert>
 
+    <!-- 查询账号数量 -->
+    <select id="countTotal" resultType="java.lang.Long">
+        select count(1)
+        from vendor_account_information
+        where is_deleted = 0
+    </select>
+
 </mapper>
 

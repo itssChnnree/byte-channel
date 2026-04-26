@@ -148,4 +148,25 @@ public interface CommodityMapper extends BaseMapper<Commodity> {
      * @return com.ruoyi.system.domain.entity.OrderInformationSnapshot
      **/
     OrderInformationSnapshot selectSnapshotByCommodityId(@Param("commodityId") String commodityId);
+
+    /**
+     * [查询全部商品数量]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countTotal();
+
+    /**
+     * [查询上架商品数量]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countListed();
+
+    /**
+     * [查询上架商品分类数量（去重）]
+     * @author 陈湘岳 2026/4/6
+     * @return java.lang.Long
+     **/
+    Long countListedCategories();
 }
