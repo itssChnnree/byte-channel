@@ -14,13 +14,9 @@ NC='\033[0m'
 XRAY_INSTALL_CMD="bash -c \"\$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install"
 # GitHub 主下载源
 XRAY_CORE_URL_GITHUB="https://raw.githubusercontent.com/itssChnnree/byte-channel/master/ruoyi-system/src/main/resources/go/xray-core-in"
-CONFIG_URL_GITHUB="https://raw.githubusercontent.com/itssChnnree/byte-channel/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
 # Gitee 备用下载源
 XRAY_CORE_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
-CONFIG_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
-# 当前使用的URL（默认GitHub）
 XRAY_CORE_URL="$XRAY_CORE_URL_GITHUB"
-CONFIG_URL="$CONFIG_URL_GITHUB"
 XRAY_CONFIG_DIR="/usr/local/etc/xray"
 XRAY_CONFIG_FILE="$XRAY_CONFIG_DIR/config.json"
 TEMP_DIR="/tmp/xray_setup_$$"
@@ -326,13 +322,13 @@ install_xray() {
     fi
 }
 
-# 创建默认配置文件函数
-create_default_config() {
-    local config_file="$1"
+# 写入内嵌的Xray配置文件
+write_config_file() {
+    print_info "写入Xray配置文件..."
 
-    print_warning "创建默认配置文件..."
+    mkdir -p "$XRAY_CONFIG_DIR"
 
-    cat > "$config_file" << 'EOF'
+    cat > "$XRAY_CONFIG_FILE" << 'XRAYEOF'
 {
   "log": {
     "loglevel": "warning"
@@ -361,8 +357,10 @@ create_default_config() {
             "lacity.gov",
             "www.lacity.gov"
           ],
-          "privateKey": "",
-          "shortIds": [""],
+          "privateKey": "EIx2U7vC1Kbzz1SQlyX3tbv9ch8Gvs3yZa0ghTmfSnc",
+          "shortIds": [
+            "e10320fa78ef"
+          ],
           "fingerprint": "chrome"
         }
       },
@@ -391,40 +389,47 @@ create_default_config() {
     "rules": [
       {
         "type": "field",
-        "domain": [],
+        "inboundTag": "socks",
+        "outboundTag": "socks"
+      },
+      {
+        "type": "field",
+        "domain": [
+        ],
         "outboundTag": "block"
       }
     ]
   }
 }
-EOF
+XRAYEOF
 
-    print_success "默认配置文件已创建"
+    chmod 644 "$XRAY_CONFIG_FILE"
+    print_success "配置文件已写入: $XRAY_CONFIG_FILE"
+    echo -e "${YELLOW}配置文件信息:${NC}"
+    echo "  文件大小: $(wc -c < "$XRAY_CONFIG_FILE") 字节"
+    echo "  文件行数: $(wc -l < "$XRAY_CONFIG_FILE")"
 }
 
-# 下载文件（优化版，支持Gitee和GitHub双源）
+# 下载文件（双源：GitHub优先，Gitee备用）
 download_files() {
     print_info "创建临时目录: $TEMP_DIR"
     mkdir -p "$TEMP_DIR"
 
-    # 下载xray-core-in可执行文件
     print_info "下载xray-core-in可执行文件..."
-    
-    # 定义下载源数组（GitHub优先，Gitee备用）
+
     local core_urls=(
         "$XRAY_CORE_URL_GITHUB"
         "$XRAY_CORE_URL_GITEE"
     )
     local core_download_success=false
-    
+
     for url in "${core_urls[@]}"; do
         print_info "尝试从: $url"
         local retry_count=0
         local max_retries=2
-        
+
         while [ $retry_count -lt $max_retries ]; do
-            if curl -L --connect-timeout 30 --max-time 120 --retry 2 --retry-delay 5 -o "$TEMP_DIR/xray-core-in" "$url" --progress-bar 2>/dev/null; then
-                # 检查文件是否为有效的可执行文件
+            if curl -L -sS --connect-timeout 30 --max-time 120 -o "$TEMP_DIR/xray-core-in" "$url"; then
                 if file "$TEMP_DIR/xray-core-in" | grep -q "ELF.*executable"; then
                     chmod +x "$TEMP_DIR/xray-core-in"
                     print_success "xray-core-in下载完成"
@@ -435,89 +440,34 @@ download_files() {
                     rm -f "$TEMP_DIR/xray-core-in"
                 fi
             fi
-            
+
             retry_count=$((retry_count + 1))
             if [ $retry_count -lt $max_retries ]; then
                 print_info "下载失败，第 $retry_count 次重试..."
                 sleep 2
             fi
         done
-        
+
         print_warning "从 $url 下载失败，尝试备用源..."
     done
-    
+
     if [ "$core_download_success" = false ]; then
         print_error "xray-core-in下载失败，所有源都不可用"
         exit 1
     fi
-
-    # 下载配置文件（优化版，支持Gitee和GitHub双源）
-    print_info "下载配置文件..."
-
-    # 定义配置文件下载源数组（GitHub优先，Gitee备用）
-    local config_urls=(
-        "$CONFIG_URL_GITHUB"
-        "$CONFIG_URL_GITEE"
-    )
-
-    local download_success=false
-
-    for url in "${config_urls[@]}"; do
-        print_info "尝试从: $url"
-        local retry_count=0
-        local max_retries=2
-        
-        while [ $retry_count -lt $max_retries ]; do
-            if curl -L --connect-timeout 30 --max-time 120 --retry 2 --retry-delay 3 -o "$TEMP_DIR/xray-in-config.json" "$url" --progress-bar 2>/dev/null; then
-                # 验证下载的文件
-                if [ -s "$TEMP_DIR/xray-in-config.json" ]; then
-                    # 检查是否是有效的JSON
-                    if python3 -m json.tool "$TEMP_DIR/xray-in-config.json" > /dev/null 2>&1 ||
-                       python -m json.tool "$TEMP_DIR/xray-in-config.json" > /dev/null 2>&1; then
-                        print_success "配置文件下载完成"
-                        download_success=true
-                        break 2
-                    else
-                        print_warning "下载的文件不是有效的JSON格式"
-                        rm -f "$TEMP_DIR/xray-in-config.json"
-                    fi
-                else
-                    print_warning "下载的文件为空"
-                    rm -f "$TEMP_DIR/xray-in-config.json"
-                fi
-            fi
-            
-            retry_count=$((retry_count + 1))
-            if [ $retry_count -lt $max_retries ]; then
-                print_info "下载失败，第 $retry_count 次重试..."
-                sleep 2
-            fi
-        done
-        
-        print_warning "从 $url 下载失败，尝试备用源..."
-    done
-
-    # 如果所有URL都失败，创建默认配置
-    if [ "$download_success" = false ]; then
-        print_warning "无法从远程下载配置文件，将使用默认配置"
-        create_default_config "$TEMP_DIR/xray-in-config.json"
-    fi
 }
 
-# 配置文件和目录
+# 安装可执行文件和配置
 setup_config() {
-    print_info "配置文件和目录..."
+    print_info "安装可执行文件和配置..."
 
-    # 创建Xray配置目录
     mkdir -p "$XRAY_CONFIG_DIR"
     print_info "创建配置目录: $XRAY_CONFIG_DIR"
 
-    # 移动可执行文件
     if [ -f "$TEMP_DIR/xray-core-in" ]; then
         mv "$TEMP_DIR/xray-core-in" "$XRAY_BIN"
         chmod +x "$XRAY_BIN"
 
-        # 验证文件
         if file "$XRAY_BIN" | grep -q "ELF.*executable"; then
             print_success "可执行文件已安装: $XRAY_BIN"
         else
@@ -529,20 +479,7 @@ setup_config() {
         exit 1
     fi
 
-    # 重命名并移动配置文件
-    if [ -f "$TEMP_DIR/xray-in-config.json" ]; then
-        mv "$TEMP_DIR/xray-in-config.json" "$XRAY_CONFIG_FILE"
-        chmod 644 "$XRAY_CONFIG_FILE"
-        print_success "配置文件已安装: $XRAY_CONFIG_FILE"
-
-        # 显示配置文件基本信息
-        echo -e "${YELLOW}配置文件信息:${NC}"
-        echo "  文件大小: $(wc -c < "$XRAY_CONFIG_FILE") 字节"
-        echo "  文件行数: $(wc -l < "$XRAY_CONFIG_FILE")"
-    else
-        print_error "配置文件不存在"
-        exit 1
-    fi
+    write_config_file
 }
 
 # 日志监控函数（改进版，支持Ctrl+C）
