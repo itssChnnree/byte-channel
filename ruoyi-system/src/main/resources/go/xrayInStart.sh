@@ -13,8 +13,8 @@ NC='\033[0m'
 # 配置变量
 XRAY_INSTALL_CMD="bash -c \"\$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install"
 # GitHub 主下载源
-XRAY_CORE_URL_GITHUB="https://github.com/itssChnnree/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
-CONFIG_URL_GITHUB="https://github.com/itssChnnree/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
+XRAY_CORE_URL_GITHUB="https://raw.githubusercontent.com/itssChnnree/byte-channel/master/ruoyi-system/src/main/resources/go/xray-core-in"
+CONFIG_URL_GITHUB="https://raw.githubusercontent.com/itssChnnree/byte-channel/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
 # Gitee 备用下载源
 XRAY_CORE_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-core-in"
 CONFIG_URL_GITEE="https://gitee.com/itsschener/byte-channel/raw/master/ruoyi-system/src/main/resources/go/xray-in-config.json"
