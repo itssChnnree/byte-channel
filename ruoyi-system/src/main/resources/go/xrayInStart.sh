@@ -84,38 +84,55 @@ detect_distro() {
         exit 1
     fi
 
-    if [[ "$DISTRO_ID" != "ubuntu" && "$DISTRO_ID" != "centos" ]]; then
-        print_error "不支持的系统: $DISTRO_ID"
-        exit 1
-    fi
+    case "$DISTRO_ID" in
+        ubuntu|debian) PKG_TYPE="apt" ;;
+        centos|rhel|fedora) PKG_TYPE="yum" ;;
+        *)
+            print_error "不支持的系统: $DISTRO_ID (仅支持 Ubuntu/Debian/CentOS/RHEL/Fedora)"
+            exit 1
+            ;;
+    esac
 
-    print_success "系统检测完成: $DISTRO_ID $DISTRO_VERSION_ID"
+    print_success "系统检测完成: $DISTRO_ID $DISTRO_VERSION_ID ($PKG_TYPE)"
 }
 
 # 安装依赖
 install_dependencies() {
     print_info "安装必要依赖..."
 
-    if [[ "$DISTRO_ID" == "ubuntu" ]]; then
-        apt-get update -q
-        apt-get install -y curl wget net-tools
-    elif [[ "$DISTRO_ID" == "centos" ]]; then
-        yum install -y curl wget net-tools epel-release
+    if [ "$PKG_TYPE" = "apt" ]; then
+        print_info "更新apt源..."
+        apt-get update -qq
+        print_info "安装基础工具(curl/wget/net-tools/ss)..."
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl wget net-tools iproute2
+    elif [ "$PKG_TYPE" = "yum" ]; then
+        # CentOS Stream 8 EOL 修复：切换到 vault 归档源
+        if [ -f /etc/yum.repos.d/CentOS-Stream-AppStream.repo ] 2>/dev/null; then
+            print_info "检测到 CentOS Stream，检查源配置..."
+            if grep -q 'mirrorlist.centos.org' /etc/yum.repos.d/CentOS-Stream-* 2>/dev/null; then
+                print_info "切换 CentOS 源为 vault.centos.org 归档源..."
+                sed -i 's/mirrorlist=/#mirrorlist=/g' /etc/yum.repos.d/CentOS-Stream-* 2>/dev/null || true
+                sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Stream-* 2>/dev/null || true
+                yum clean all -q 2>/dev/null || true
+                yum makecache -q 2>/dev/null || true
+            fi
+        fi
+        print_info "安装基础工具(curl/wget/net-tools)..."
+        yum install -y -q curl wget net-tools epel-release 2>/dev/null || true
     fi
 
     if ! command -v curl &> /dev/null; then
-        print_error "curl安装失败"
+        print_error "curl安装失败，请手动安装后重试"
         exit 1
     fi
 
-    print_success "依赖安装完成"
+    print_success "依赖安装完成 (curl/wget/net-tools)"
 }
 
 # 启用BBR网络优化
 enable_bbr() {
     print_info "检查并启用BBR网络优化..."
 
-    # 检查内核版本（BBR需要 >= 4.9）
     local kernel_ver=$(uname -r | cut -d. -f1,2)
     local major=$(echo "$kernel_ver" | cut -d. -f1)
     local minor=$(echo "$kernel_ver" | cut -d. -f2)
@@ -125,17 +142,14 @@ enable_bbr() {
         return 0
     fi
 
-    # 检查BBR是否已启用
     local current_cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)
     if [ "$current_cc" = "bbr" ]; then
-        # 验证BBR模块已加载
         if lsmod 2>/dev/null | grep -q "^tcp_bbr"; then
             print_success "BBR已启用，跳过配置"
             return 0
         fi
     fi
 
-    # 加载BBR模块
     print_info "加载tcp_bbr模块..."
     if modprobe tcp_bbr 2>/dev/null; then
         print_success "tcp_bbr模块加载成功"
@@ -144,20 +158,21 @@ enable_bbr() {
         return 0
     fi
 
-    # 检查sysctl.conf中是否已有BBR配置
-    local bbr_configured=false
-    if grep -q "net.core.default_qdisc.*=.*fq" /etc/sysctl.conf 2>/dev/null; then
-        print_info "sysctl.conf中已存在fq队列规则"
-        bbr_configured=true
+    # 选择 sysctl 配置文件（Ubuntu/Debian 优先 sysctl.d，CentOS 用 sysctl.conf）
+    local SYSCTL_FILE="/etc/sysctl.conf"
+    if [ "$PKG_TYPE" = "apt" ] && [ -d /etc/sysctl.d ]; then
+        SYSCTL_FILE="/etc/sysctl.d/99-bbr.conf"
     fi
-    if grep -q "net.ipv4.tcp_congestion_control.*=.*bbr" /etc/sysctl.conf 2>/dev/null; then
-        print_info "sysctl.conf中已存在bbr拥塞控制"
-        bbr_configured=true
+
+    local bbr_configured=false
+    if [ -f "$SYSCTL_FILE" ]; then
+        grep -q "net.core.default_qdisc.*=.*fq" "$SYSCTL_FILE" 2>/dev/null && bbr_configured=true
+        grep -q "net.ipv4.tcp_congestion_control.*=.*bbr" "$SYSCTL_FILE" 2>/dev/null && bbr_configured=true
     fi
 
     if [ "$bbr_configured" = false ]; then
-        print_info "配置BBR参数到sysctl.conf..."
-        cat >> /etc/sysctl.conf << 'EOF'
+        print_info "配置BBR参数到 $SYSCTL_FILE ..."
+        cat >> "$SYSCTL_FILE" << 'EOF'
 
 # BBR网络优化配置
 net.core.default_qdisc = fq
@@ -165,15 +180,9 @@ net.ipv4.tcp_congestion_control = bbr
 EOF
     fi
 
-    # 立即生效
     print_info "应用sysctl配置..."
-    if sysctl -p > /dev/null 2>&1; then
-        print_success "sysctl配置已生效"
-    else
-        print_warning "部分sysctl配置应用失败"
-    fi
+    sysctl -p "$SYSCTL_FILE" > /dev/null 2>&1 || sysctl -p > /dev/null 2>&1 || true
 
-    # 验证BBR状态
     local verify_cc=$(sysctl -n net.ipv4.tcp_congestion_control)
     if [ "$verify_cc" = "bbr" ]; then
         print_success "BBR网络优化已启用 (拥塞控制: bbr, 队列规则: fq)"
@@ -193,54 +202,67 @@ configure_firewall() {
 
     print_info "检查防火墙配置..."
 
-    # 检查端口是否被占用
-    if command -v netstat &> /dev/null; then
+    # 检查端口是否被占用（优先用 ss，fallback 到 netstat）
+    if command -v ss &> /dev/null; then
+        if ss -tulpn 2>/dev/null | grep -q ":$PORT "; then
+            print_warning "端口 $PORT 已被占用"
+            local pid=$(ss -tulpn 2>/dev/null | grep ":$PORT " | grep -oP 'pid=\K[0-9]+' | head -1)
+            if [ -n "$pid" ]; then
+                print_info "占用进程PID: $pid"
+                ps -p $pid -o pid,cmd --no-headers 2>/dev/null || true
+            fi
+        fi
+    elif command -v netstat &> /dev/null; then
         if netstat -tulpn 2>/dev/null | grep -q ":$PORT "; then
             print_warning "端口 $PORT 已被占用"
-            # 检查占用端口的进程
             local pid=$(netstat -tulpn 2>/dev/null | grep ":$PORT " | awk '{print $7}' | cut -d'/' -f1)
             if [ -n "$pid" ]; then
                 print_info "占用进程PID: $pid"
-                ps -p $pid -o pid,cmd 2>/dev/null || true
+                ps -p $pid -o pid,cmd --no-headers 2>/dev/null || true
             fi
         fi
     fi
 
-    # 配置防火墙（Ubuntu使用ufw，CentOS使用firewall-cmd）
-    if [[ "$DISTRO_ID" == "ubuntu" ]]; then
-        # 检查ufw状态
-        if command -v ufw &> /dev/null; then
-            if ufw status | grep -q "Status: active"; then
-                print_info "UFW防火墙已启用，检查端口 $PORT 规则"
-                if ! ufw status | grep -q "$PORT"; then
-                    print_info "添加UFW端口规则: $PORT"
-                    ufw allow $PORT/tcp
-                    ufw reload
-                    print_success "防火墙端口 $PORT 已开放"
-                else
-                    print_info "端口 $PORT 已在防火墙规则中"
-                fi
+    local firewall_done=false
+
+    # 按系统类型配置防火墙
+    if [ "$PKG_TYPE" = "apt" ]; then
+        if command -v ufw &> /dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+            print_info "UFW防火墙已启用，检查端口 $PORT 规则"
+            if ! ufw status | grep -q "$PORT"; then
+                ufw allow $PORT/tcp
+                ufw reload
+                print_success "UFW 端口 $PORT 已开放"
             else
-                print_info "UFW防火墙未启用，跳过配置"
+                print_info "端口 $PORT 已在 UFW 规则中"
             fi
+            firewall_done=true
         fi
-    elif [[ "$DISTRO_ID" == "centos" ]]; then
-        # 检查firewalld状态
-        if command -v firewall-cmd &> /dev/null; then
-            if systemctl is-active --quiet firewalld; then
-                print_info "Firewalld已启用，检查端口 $PORT 规则"
-                if ! firewall-cmd --list-ports | grep -qw "$PORT/tcp"; then
-                    print_info "添加Firewalld端口规则: $PORT"
-                    firewall-cmd --permanent --add-port=$PORT/tcp
-                    firewall-cmd --reload
-                    print_success "防火墙端口 $PORT 已开放"
-                else
-                    print_info "端口 $PORT 已在防火墙规则中"
-                fi
+    elif [ "$PKG_TYPE" = "yum" ]; then
+        if command -v firewall-cmd &> /dev/null && systemctl is-active --quiet firewalld 2>/dev/null; then
+            print_info "Firewalld已启用，检查端口 $PORT 规则"
+            if ! firewall-cmd --list-ports 2>/dev/null | grep -qw "$PORT/tcp"; then
+                firewall-cmd --permanent --add-port=$PORT/tcp 2>/dev/null
+                firewall-cmd --reload 2>/dev/null
+                print_success "Firewalld 端口 $PORT 已开放"
             else
-                print_info "Firewalld未启用，跳过配置"
+                print_info "端口 $PORT 已在 Firewalld 规则中"
             fi
+            firewall_done=true
         fi
+    fi
+
+    # iptables 兜底：如果上面都没配置，直接用 iptables 开放端口
+    if [ "$firewall_done" = false ] && command -v iptables &> /dev/null; then
+        print_info "使用 iptables 开放端口 $PORT..."
+        if ! iptables -C INPUT -p tcp --dport "$PORT" -j ACCEPT 2>/dev/null; then
+            iptables -I INPUT -p tcp --dport "$PORT" -j ACCEPT
+            print_success "iptables 端口 $PORT 已开放"
+        else
+            print_info "端口 $PORT 已在 iptables 规则中"
+        fi
+    elif [ "$firewall_done" = false ]; then
+        print_warning "未检测到防火墙，手动检查端口 $PORT 是否可达"
     fi
 }
 

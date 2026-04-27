@@ -34,7 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.annotation.Resource;
-import javax.mail.MessagingException;
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
@@ -186,8 +185,8 @@ public class SysRegisterService
             redisCache.setCacheObject(CacheConstants.EMAIL_CAPTCHA_CODE_KEY+emailRegisterDto.getEmail(),emailCode,5, TimeUnit.MINUTES);
             emailSender.sendVerificationEmail(emailRegisterDto.getEmail(),emailRegisterDto.getEmail(),
                     emailCode, EmailConstant.REGISTER,5);
-        } catch (MessagingException e) {
-            throw new RuntimeException("发送邮件失败");
+        } catch (Exception e) {
+            throw new RuntimeException("发送邮件失败", e);
         }
         return Result.success("发送成功");
     }

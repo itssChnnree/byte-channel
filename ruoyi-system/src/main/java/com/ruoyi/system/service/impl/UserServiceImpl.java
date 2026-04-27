@@ -22,7 +22,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import javax.mail.MessagingException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -172,7 +171,7 @@ public class UserServiceImpl implements IUserService {
 
             LogEsUtil.info("重置密码验证码发送成功，邮箱：" + email);
             return Result.success("验证码已发送，请注意查收");
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             LogEsUtil.error("发送重置密码验证码邮件失败，邮箱：" + email, e);
             return Result.fail("发送邮件失败，请稍后重试");
         }

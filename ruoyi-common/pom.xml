@@ -29,13 +29,6 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
-
-        <!-- SpringBoot 邮箱 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-
         <!--thymeleaf依赖-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
