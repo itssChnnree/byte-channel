@@ -82,7 +82,7 @@ token:
   # 令牌自定义标识
   header: Authorization
   # 令牌密钥
-  secret: abcdefghijklmnopqrstuvwxyz
+  secret: ${TOKEN_SECRET}
   # 令牌有效期（默认30分钟）
   expireTime: 30
 
@@ -118,11 +118,6 @@ xss:
   urlPatterns: /system/*,/monitor/*,/tool/*
 
 
-shop:
-  name: ByteChannel
-
-
-
 # 支付平台配置
 pay:
   platform:
@@ -130,21 +125,21 @@ pay:
     version: v1
     # === V1专用配置（小白云OS，version=v1时生效）===
     v1:
-      base-url: https://yikexinrong.com/
-      pid: 1104
-      key: DuuuP9QCpIiiu22bipQ5pZqKcF5M9bqG
-      notify-url: http://81.71.137.39:18080/pay/notify
-      return-url: http://localhost:8080/#/payment/
+      base-url: ${PAY_BASE_URL}
+      pid: ${PAY_PID}
+      key: ${PAY_KEY}
+      notify-url: ${NOTIFY_URL}
+      return-url: ${RETURN_URL}
       wechat-fee-rate: 0.05
       alipay-fee-rate: 0.05
     # === V2专用配置（佳梦云付，version=v2时生效）===
     v2:
-      base-url: https://app.xn--6krw8b915a62m.xn--io0a7i/
-      pid: 87608
-      merchant-private-key: R05m8z9I089MGwrm05g8Lgifyfy8Y90m
+      base-url: ${PAY_BASE_URL}
+      pid: ${PAY_PID}
+      merchant-private-key: ${PAY_KEY}
       platform-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtIj8OGRj+BOkTRWwrHd33NXyZNKWjoaffguOR1sl7yhJ198ObCrASLgXDi0UxsGo47EYQw35jOm9QEjL6E0gqUJWs8KXZuNMpqX10/biWDWoCnCr9Mx2+QOCuy3qtqrhjUImnJ8STulP2na3FKnQSWMUbJ/frBHPBf4zVIfmApFM27oNmqB/NXJAcIH+dv3LB16CX8Z/+AgDoRjM6z/AcQ2rcuuOuiQ3p27HvmnSOHZNIQtSE1jeIMS6yd03wQRW/lWziGMQYAof3oYNhm4DUGcZfqpz80dkWJWVdTHjgy/YlpMBdSlAL/P2gP7RS9tGf3aF1yjattUq/a8/Q659awIDAQAB
-      notify-url: http://81.71.137.39:18080/pay/notify
-      return-url: http://localhost:8081/#/payment/
+      notify-url: ${NOTIFY_URL}
+      return-url: ${RETURN_URL}
       sign-type: RSA
       connect-timeout: 5000
       read-timeout: 10000

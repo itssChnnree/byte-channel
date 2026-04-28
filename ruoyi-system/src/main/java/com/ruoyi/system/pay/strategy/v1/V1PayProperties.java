@@ -29,7 +29,7 @@ public class V1PayProperties implements PayFeeRateConfig {
     private String baseUrl = "https://app.xn--6krw8b915a62m.xn--io0a7i/";
 
     /** 商户ID */
-    private Long pid;
+    private String pid;
 
     /** 商户密钥（用于MD5签名和api.php接口认证） */
     private String key;

@@ -29,7 +29,7 @@ public class V2PayProperties implements PayFeeRateConfig {
     private String baseUrl = "https://pay.avuoo.com";
 
     /** 商户ID */
-    private Integer pid;
+    private String pid;
 
     /** 商户私钥（PEM格式，用于请求签名） */
     private String merchantPrivateKey;

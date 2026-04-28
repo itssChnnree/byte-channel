@@ -19,10 +19,19 @@ LOG_FILE="start.log"
 PROCESS_NAME="java.*ruoyi-admin"
 BACKUP_DIR="logs_backup"
 
-# 敏感配置（运行时由用户输入）
+# ==================== 运行时环境变量（对应配置文件中的 ${...} 占位符） ====================
+# application-prod.yml
 DB_PASSWORD=""
 REDIS_PASSWORD=""
 ES_PASSWORD=""
+# application.yml
+RESEND_KEY=""
+TOKEN_SECRET=""
+PAY_BASE_URL=""
+PAY_PID=""
+PAY_KEY=""
+NOTIFY_URL=""
+RETURN_URL=""
 
 # 创建备份目录
 mkdir -p "$BACKUP_DIR"
@@ -163,39 +172,83 @@ echo -e "Java版本: ${GREEN}$JAVA_VERSION${NC}"
 echo -e "Java路径: $JAVA_CMD"
 echo ""
 
-# 5. 收集运行时敏感配置
-echo -e "${YELLOW}步骤5: 配置数据库/Redis/ES连接参数...${NC}"
-echo -e "${BLUE}以下参数对应 application-prod.yml 中的占位符配置${NC}"
+# 5. 收集运行时配置参数
+echo -e "${YELLOW}步骤5: 配置运行时参数...${NC}"
+echo -e "${BLUE}以下参数对应 application.yml / application-prod.yml 中的 ${...} 占位符${NC}"
 echo ""
 
-# 读取数据库密码（隐藏输入）
+# ---- 数据库密码 (application-prod.yml) ----
+echo -e "${BLUE}--- 数据库密码 (DB_PASSWORD) ---${NC}"
 while [ -z "$DB_PASSWORD" ]; do
-    read -s -p "请输入数据库密码 (DB_PASSWORD): " DB_PASSWORD
-    echo ""
-    if [ -z "$DB_PASSWORD" ]; then
-        echo -e "${RED}数据库密码不能为空，请重新输入${NC}"
-    fi
+    read -s -p "请输入数据库密码: " DB_PASSWORD; echo
+    [ -z "$DB_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
 done
 
-# 读取Redis密码（隐藏输入）
+# ---- Redis 密码 (application-prod.yml) ----
+echo -e "${BLUE}--- Redis 密码 (REDIS_PASSWORD) ---${NC}"
 while [ -z "$REDIS_PASSWORD" ]; do
-    read -s -p "请输入Redis密码 (REDIS_PASSWORD): " REDIS_PASSWORD
-    echo ""
-    if [ -z "$REDIS_PASSWORD" ]; then
-        echo -e "${RED}Redis密码不能为空，请重新输入${NC}"
-    fi
+    read -s -p "请输入 Redis 密码: " REDIS_PASSWORD; echo
+    [ -z "$REDIS_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
 done
 
-# 读取ES密码（隐藏输入）
+# ---- Elasticsearch 密码 (application-prod.yml) ----
+echo -e "${BLUE}--- Elasticsearch 密码 (ES_PASSWORD) ---${NC}"
 while [ -z "$ES_PASSWORD" ]; do
-    read -s -p "请输入Elasticsearch密码 (ES_PASSWORD): " ES_PASSWORD
-    echo ""
-    if [ -z "$ES_PASSWORD" ]; then
-        echo -e "${RED}ES密码不能为空，请重新输入${NC}"
-    fi
+    read -s -p "请输入 ES 密码: " ES_PASSWORD; echo
+    [ -z "$ES_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
 done
 
-echo -e "${GREEN}敏感配置收集完成${NC}"
+# ---- Resend 邮件 API Key (application.yml) ----
+echo -e "${BLUE}--- Resend 邮件 API Key (RESEND_KEY) ---${NC}"
+while [ -z "$RESEND_KEY" ]; do
+    read -s -p "请输入 Resend API Key: " RESEND_KEY; echo
+    [ -z "$RESEND_KEY" ] && echo -e "${RED}不能为空${NC}"
+done
+
+# ---- JWT Token 密钥 (application.yml) ----
+echo -e "${BLUE}--- JWT Token 签名密钥 (TOKEN_SECRET) ---${NC}"
+read -p "请输入 JWT 密钥 (留空自动生成): " INPUT
+if [ -n "$INPUT" ]; then
+    TOKEN_SECRET="$INPUT"
+else
+    TOKEN_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 64)
+    echo -e "  已自动生成: ${GREEN}${TOKEN_SECRET}${NC}"
+fi
+
+# ---- 支付平台 (application.yml) ----
+echo -e "${BLUE}--- 支付平台 V1 ---${NC}"
+while [ -z "$PAY_BASE_URL" ]; do
+    read -p "支付平台地址 (PAY_BASE_URL): " PAY_BASE_URL
+    [ -z "$PAY_BASE_URL" ] && echo -e "${RED}不能为空${NC}"
+done
+while [ -z "$PAY_PID" ]; do
+    read -p "支付商户号 (PAY_PID): " PAY_PID
+    [ -z "$PAY_PID" ] && echo -e "${RED}不能为空${NC}"
+done
+while [ -z "$PAY_KEY" ]; do
+    read -s -p "支付密钥 (PAY_KEY): " PAY_KEY; echo
+    [ -z "$PAY_KEY" ] && echo -e "${RED}不能为空${NC}"
+done
+read -p "支付异步回调地址 (NOTIFY_URL): " NOTIFY_URL
+read -p "支付同步跳转地址 (RETURN_URL): " RETURN_URL
+
+echo ""
+echo -e "${GREEN}所有配置收集完成${NC}"
+echo ""
+
+# 回显关键配置摘要（不含密码/密钥）
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}  配置摘要                         ${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo -e "数据库密码:  ${DB_PASSWORD:0:3}***"
+echo -e "Redis密码:   ${REDIS_PASSWORD:0:3}***"
+echo -e "ES密码:      ${ES_PASSWORD:0:3}***"
+echo -e "Resend Key:  ${RESEND_KEY:0:8}***"
+echo -e "JWT:         ${TOKEN_SECRET:0:8}..."
+echo -e "支付地址:    ${PAY_BASE_URL}"
+echo -e "支付商户号:  ${PAY_PID}"
+echo -e "回调地址:    ${NOTIFY_URL}"
+echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # 6. 启动服务
@@ -237,11 +290,18 @@ else
     ACTIVE_PROFILE=""
 fi
 
-# 构建启动命令
+# 构建启动命令（所有运行时参数通过 -D 传入）
 START_CMD="$JAVA_CMD $JVM_OPTS \
     -DDB_PASSWORD=\"$DB_PASSWORD\" \
     -DREDIS_PASSWORD=\"$REDIS_PASSWORD\" \
     -DES_PASSWORD=\"$ES_PASSWORD\" \
+    -DRESEND_KEY=\"$RESEND_KEY\" \
+    -DTOKEN_SECRET=\"$TOKEN_SECRET\" \
+    -DPAY_BASE_URL=\"$PAY_BASE_URL\" \
+    -DPAY_PID=\"$PAY_PID\" \
+    -DPAY_KEY=\"$PAY_KEY\" \
+    -DNOTIFY_URL=\"$NOTIFY_URL\" \
+    -DRETURN_URL=\"$RETURN_URL\" \
     -jar $JAR_NAME $ACTIVE_PROFILE"
 
 echo -e "${BLUE}启动命令:${NC}"
