@@ -10,6 +10,7 @@ import com.ruoyi.system.domain.entity.WalletBalance;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.PromoCodeRecordsMapper;
 import com.ruoyi.system.mapper.WalletBalanceMapper;
+import com.ruoyi.system.service.impl.ServerResourcesServiceImpl;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -119,6 +120,8 @@ public class SysRegisterService
         PromoCodeRecords promoCodeRecords = new PromoCodeRecords();
         promoCodeRecords.setUserId(sysUser.getUserId().toString());
         promoCodeRecords.setStatus(EntityStatus.NORMAL);
+        String code = ServerResourcesServiceImpl.generateRandomString(10);
+        promoCodeRecords.setPromoCode(code);
         return promoCodeRecords;
     }
 

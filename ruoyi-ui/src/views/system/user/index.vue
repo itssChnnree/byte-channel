@@ -453,6 +453,7 @@ export default {
       const userId = row.userId || this.ids
       getUser(userId).then(response => {
         this.form = response.data
+        delete this.form.admin
         this.postOptions = response.posts
         this.roleOptions = response.roles
         this.$set(this.form, "postIds", response.postIds)

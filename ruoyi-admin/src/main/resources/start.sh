@@ -19,19 +19,31 @@ LOG_FILE="start.log"
 PROCESS_NAME="java.*ruoyi-admin"
 BACKUP_DIR="logs_backup"
 
+# ==================== 加载 .env 文件 ====================
+ENV_FILE="$SCRIPT_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo -e "${GREEN}检测到 .env 文件，加载配置...${NC}"
+    set -a
+    source "$ENV_FILE"
+    set +a
+else
+    echo -e "${YELLOW}未找到 .env 文件，所有参数将手动输入${NC}"
+    echo -e "${YELLOW}可复制 .env.example 为 .env 并填入值以跳过手动输入${NC}"
+fi
+
 # ==================== 运行时环境变量（对应配置文件中的 ${...} 占位符） ====================
 # application-prod.yml
-DB_PASSWORD=""
-REDIS_PASSWORD=""
-ES_PASSWORD=""
+DB_PASSWORD="${DB_PASSWORD:-}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+ES_PASSWORD="${ES_PASSWORD:-}"
 # application.yml
-RESEND_KEY=""
-TOKEN_SECRET=""
-PAY_BASE_URL=""
-PAY_PID=""
-PAY_KEY=""
-NOTIFY_URL=""
-RETURN_URL=""
+RESEND_KEY="${RESEND_KEY:-}"
+TOKEN_SECRET="${TOKEN_SECRET:-}"
+PAY_BASE_URL="${PAY_BASE_URL:-}"
+PAY_PID="${PAY_PID:-}"
+PAY_KEY="${PAY_KEY:-}"
+NOTIFY_URL="${NOTIFY_URL:-}"
+RETURN_URL="${RETURN_URL:-}"
 
 # 创建备份目录
 mkdir -p "$BACKUP_DIR"
@@ -172,65 +184,99 @@ echo -e "Java版本: ${GREEN}$JAVA_VERSION${NC}"
 echo -e "Java路径: $JAVA_CMD"
 echo ""
 
-# 5. 收集运行时配置参数
-echo -e "${YELLOW}步骤5: 配置运行时参数...${NC}"
-echo -e "${BLUE}以下参数对应 application.yml / application-prod.yml 中的 ${...} 占位符${NC}"
-echo ""
+# 5. 收集运行时配置参数（.env 中已设置的值会跳过）
+echo -e "${YELLOW}步骤5: 加载运行时参数...${NC}"
+
+# 统计已从 .env 加载的数量
+_ENV_COUNT=0
+[ -n "$DB_PASSWORD" ] && ((_ENV_COUNT++))
+[ -n "$REDIS_PASSWORD" ] && ((_ENV_COUNT++))
+[ -n "$ES_PASSWORD" ] && ((_ENV_COUNT++))
+[ -n "$RESEND_KEY" ] && ((_ENV_COUNT++))
+[ -n "$TOKEN_SECRET" ] && ((_ENV_COUNT++))
+[ -n "$PAY_BASE_URL" ] && ((_ENV_COUNT++))
+[ -n "$PAY_PID" ] && ((_ENV_COUNT++))
+[ -n "$PAY_KEY" ] && ((_ENV_COUNT++))
+[ -n "$NOTIFY_URL" ] && ((_ENV_COUNT++))
+
+if [ $_ENV_COUNT -gt 0 ]; then
+    echo -e "${GREEN}已从 .env 加载 ${_ENV_COUNT}/10 个参数${NC}"
+fi
 
 # ---- 数据库密码 (application-prod.yml) ----
-echo -e "${BLUE}--- 数据库密码 (DB_PASSWORD) ---${NC}"
-while [ -z "$DB_PASSWORD" ]; do
-    read -s -p "请输入数据库密码: " DB_PASSWORD; echo
-    [ -z "$DB_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
-done
+if [ -z "$DB_PASSWORD" ]; then
+    echo -e "${BLUE}--- 数据库密码 (DB_PASSWORD) ---${NC}"
+    while [ -z "$DB_PASSWORD" ]; do
+        read -s -p "请输入数据库密码: " DB_PASSWORD; echo
+        [ -z "$DB_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
+    done
+fi
 
 # ---- Redis 密码 (application-prod.yml) ----
-echo -e "${BLUE}--- Redis 密码 (REDIS_PASSWORD) ---${NC}"
-while [ -z "$REDIS_PASSWORD" ]; do
-    read -s -p "请输入 Redis 密码: " REDIS_PASSWORD; echo
-    [ -z "$REDIS_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
-done
+if [ -z "$REDIS_PASSWORD" ]; then
+    echo -e "${BLUE}--- Redis 密码 (REDIS_PASSWORD) ---${NC}"
+    while [ -z "$REDIS_PASSWORD" ]; do
+        read -s -p "请输入 Redis 密码: " REDIS_PASSWORD; echo
+        [ -z "$REDIS_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
+    done
+fi
 
 # ---- Elasticsearch 密码 (application-prod.yml) ----
-echo -e "${BLUE}--- Elasticsearch 密码 (ES_PASSWORD) ---${NC}"
-while [ -z "$ES_PASSWORD" ]; do
-    read -s -p "请输入 ES 密码: " ES_PASSWORD; echo
-    [ -z "$ES_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
-done
+if [ -z "$ES_PASSWORD" ]; then
+    echo -e "${BLUE}--- Elasticsearch 密码 (ES_PASSWORD) ---${NC}"
+    while [ -z "$ES_PASSWORD" ]; do
+        read -s -p "请输入 ES 密码: " ES_PASSWORD; echo
+        [ -z "$ES_PASSWORD" ] && echo -e "${RED}不能为空${NC}"
+    done
+fi
 
 # ---- Resend 邮件 API Key (application.yml) ----
-echo -e "${BLUE}--- Resend 邮件 API Key (RESEND_KEY) ---${NC}"
-while [ -z "$RESEND_KEY" ]; do
-    read -s -p "请输入 Resend API Key: " RESEND_KEY; echo
-    [ -z "$RESEND_KEY" ] && echo -e "${RED}不能为空${NC}"
-done
+if [ -z "$RESEND_KEY" ]; then
+    echo -e "${BLUE}--- Resend 邮件 API Key (RESEND_KEY) ---${NC}"
+    while [ -z "$RESEND_KEY" ]; do
+        read -s -p "请输入 Resend API Key: " RESEND_KEY; echo
+        [ -z "$RESEND_KEY" ] && echo -e "${RED}不能为空${NC}"
+    done
+fi
 
 # ---- JWT Token 密钥 (application.yml) ----
-echo -e "${BLUE}--- JWT Token 签名密钥 (TOKEN_SECRET) ---${NC}"
-read -p "请输入 JWT 密钥 (留空自动生成): " INPUT
-if [ -n "$INPUT" ]; then
-    TOKEN_SECRET="$INPUT"
-else
-    TOKEN_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 64)
-    echo -e "  已自动生成: ${GREEN}${TOKEN_SECRET}${NC}"
+if [ -z "$TOKEN_SECRET" ]; then
+    echo -e "${BLUE}--- JWT Token 签名密钥 (TOKEN_SECRET) ---${NC}"
+    read -p "请输入 JWT 密钥 (留空自动生成): " INPUT
+    if [ -n "$INPUT" ]; then
+        TOKEN_SECRET="$INPUT"
+    else
+        TOKEN_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 64)
+        echo -e "  已自动生成: ${GREEN}${TOKEN_SECRET}${NC}"
+    fi
 fi
 
 # ---- 支付平台 (application.yml) ----
-echo -e "${BLUE}--- 支付平台 V1 ---${NC}"
-while [ -z "$PAY_BASE_URL" ]; do
-    read -p "支付平台地址 (PAY_BASE_URL): " PAY_BASE_URL
-    [ -z "$PAY_BASE_URL" ] && echo -e "${RED}不能为空${NC}"
-done
-while [ -z "$PAY_PID" ]; do
-    read -p "支付商户号 (PAY_PID): " PAY_PID
-    [ -z "$PAY_PID" ] && echo -e "${RED}不能为空${NC}"
-done
-while [ -z "$PAY_KEY" ]; do
-    read -s -p "支付密钥 (PAY_KEY): " PAY_KEY; echo
-    [ -z "$PAY_KEY" ] && echo -e "${RED}不能为空${NC}"
-done
-read -p "支付异步回调地址 (NOTIFY_URL): " NOTIFY_URL
-read -p "支付同步跳转地址 (RETURN_URL): " RETURN_URL
+if [ -z "$PAY_BASE_URL" ]; then
+    echo -e "${BLUE}--- 支付平台 ---${NC}"
+    while [ -z "$PAY_BASE_URL" ]; do
+        read -p "支付平台地址 (PAY_BASE_URL): " PAY_BASE_URL
+        [ -z "$PAY_BASE_URL" ] && echo -e "${RED}不能为空${NC}"
+    done
+fi
+if [ -z "$PAY_PID" ]; then
+    while [ -z "$PAY_PID" ]; do
+        read -p "支付商户号 (PAY_PID): " PAY_PID
+        [ -z "$PAY_PID" ] && echo -e "${RED}不能为空${NC}"
+    done
+fi
+if [ -z "$PAY_KEY" ]; then
+    while [ -z "$PAY_KEY" ]; do
+        read -s -p "支付密钥 (PAY_KEY): " PAY_KEY; echo
+        [ -z "$PAY_KEY" ] && echo -e "${RED}不能为空${NC}"
+    done
+fi
+if [ -z "$NOTIFY_URL" ]; then
+    read -p "支付异步回调地址 (NOTIFY_URL): " NOTIFY_URL
+fi
+if [ -z "$RETURN_URL" ]; then
+    read -p "支付同步跳转地址 (RETURN_URL): " RETURN_URL
+fi
 
 echo ""
 echo -e "${GREEN}所有配置收集完成${NC}"
@@ -282,26 +328,20 @@ else
     JVM_OPTS="-server -Xms${XMS} -Xmx${XMX} -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError"
 fi
 
-# 检查是否有应用配置文件
-if [ -f "application.yml" ]; then
-    ACTIVE_PROFILE="--spring.profiles.active=prod"
-    echo -e "检测到配置文件: application.yml"
-else
-    ACTIVE_PROFILE=""
-fi
+ACTIVE_PROFILE="--spring.profiles.active=prod"
 
 # 构建启动命令（所有运行时参数通过 -D 传入）
 START_CMD="$JAVA_CMD $JVM_OPTS \
-    -DDB_PASSWORD=\"$DB_PASSWORD\" \
-    -DREDIS_PASSWORD=\"$REDIS_PASSWORD\" \
-    -DES_PASSWORD=\"$ES_PASSWORD\" \
-    -DRESEND_KEY=\"$RESEND_KEY\" \
-    -DTOKEN_SECRET=\"$TOKEN_SECRET\" \
-    -DPAY_BASE_URL=\"$PAY_BASE_URL\" \
-    -DPAY_PID=\"$PAY_PID\" \
-    -DPAY_KEY=\"$PAY_KEY\" \
-    -DNOTIFY_URL=\"$NOTIFY_URL\" \
-    -DRETURN_URL=\"$RETURN_URL\" \
+    -DDB_PASSWORD=$DB_PASSWORD \
+    -DREDIS_PASSWORD=$REDIS_PASSWORD \
+    -DES_PASSWORD=$ES_PASSWORD \
+    -DRESEND_KEY=$RESEND_KEY \
+    -DTOKEN_SECRET=$TOKEN_SECRET \
+    -DPAY_BASE_URL=$PAY_BASE_URL \
+    -DPAY_PID=$PAY_PID \
+    -DPAY_KEY=$PAY_KEY \
+    -DNOTIFY_URL=$NOTIFY_URL \
+    -DRETURN_URL=$RETURN_URL \
     -jar $JAR_NAME $ACTIVE_PROFILE"
 
 echo -e "${BLUE}启动命令:${NC}"
