@@ -1,10 +1,13 @@
 package com.ruoyi.system.service.impl;
 
 import com.ruoyi.system.constant.BalanceDetailStatus;
+import com.ruoyi.system.constant.OrderTypeConstant;
 import com.ruoyi.system.constant.OrderStatus;
+import com.ruoyi.system.domain.entity.ProfitFlow;
 import com.ruoyi.system.domain.entity.PromoRecords;
 import com.ruoyi.system.mapper.PromoRecordsMapper;
 import com.ruoyi.system.service.IPromoCashbackService;
+import com.ruoyi.system.service.IProfitFlowService;
 import com.ruoyi.system.service.IWalletBalanceService;
 import com.ruoyi.system.util.LogEsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +38,9 @@ public class PromoCashbackServiceImpl implements IPromoCashbackService {
 
     @Resource
     private IWalletBalanceService walletBalanceService;
+
+    @Resource
+    private IProfitFlowService profitFlowService;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -130,6 +136,15 @@ public class PromoCashbackServiceImpl implements IPromoCashbackService {
                 if (!Boolean.TRUE.equals(added)) {
                     throw new RuntimeException("增加返现余额失败，记录id：" + recordId + "，用户id：" + userId);
                 }
+
+                // 4.1 增加负利润流水（推广返现冲减利润）
+                ProfitFlow profitFlow = new ProfitFlow();
+                profitFlow.setProfitAmount(cashbackAmount.negate());
+                profitFlow.setSourceType(OrderTypeConstant.CASHBACK);
+                profitFlow.setSourceId(lockedRecord.getId());
+                profitFlow.setSourceDesc("推广返现扣减");
+                profitFlowService.add(profitFlow);
+
 
                 // 5. 更新状态为已返现
                 lockedRecord.setStatus(OrderStatus.RETURN_CASH);

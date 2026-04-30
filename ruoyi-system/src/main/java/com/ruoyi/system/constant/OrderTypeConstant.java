@@ -17,5 +17,10 @@ public interface OrderTypeConstant {
 
     //手动新增
     String MANUAL = "manual";
+
+    //推广返现
+    String CASHBACK = "cashback";
+
+
 }
 

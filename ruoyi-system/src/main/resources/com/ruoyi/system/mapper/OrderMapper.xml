@@ -67,6 +67,9 @@
             <if test="dto.id != null and dto.id != ''">
                 and o.id = #{dto.id}
             </if>
+            <if test="userId != null and userId != ''">
+                and o.user_id = #{userId}
+            </if>
             <if test="dto.userName != null and dto.userName != ''">
                 and su.user_name like concat('%', #{dto.userName}, '%')
             </if>

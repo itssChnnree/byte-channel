@@ -433,7 +433,7 @@ public class OrderServiceImpl implements IOrderService {
     @Override
     public Result pageQueryService(OrderDto orderDto) {
         PageHelper.startPage(orderDto);
-        List<OrderVo> orderVoIPage = orderMapper.queryPage(orderDto, orderDto.getUserId());
+        List<OrderVo> orderVoIPage = orderMapper.queryPage(orderDto, null);
         return Result.success(new PageInfo<>(orderVoIPage));
     }
 

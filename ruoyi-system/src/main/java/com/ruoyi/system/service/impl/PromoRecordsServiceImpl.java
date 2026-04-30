@@ -44,6 +44,8 @@ public class PromoRecordsServiceImpl  implements IPromoRecordsService {
     public Result getReturnCash() {
         BigDecimal returnCashByUserId = promoRecordsMapper.getReturnCashByUserId(SecurityUtils.getStrUserId(), OrderStatus.RETURN_CASH);
         //将返现金额转为字符串，保留两位小数
+        if (returnCashByUserId == null) {
+            return Result.success("成功","0");        }
         String returnCash = returnCashByUserId.setScale(2, BigDecimal.ROUND_HALF_UP).toString();
         return Result.success("成功",returnCash);
     }

@@ -190,8 +190,10 @@ public class RefundProcessJob {
                 orderMapper.updateStatusById(orderId, OrderStatus.REFUND_SUCCESS);
                 // 更新时间线
                 orderStatusTimelineService.setRefundedSuccessTime(orderId);
-                //扣减利润流水
-                reduceProfitFlow(lockedOrder);
+                //扣减利润流水（退款到余额时不扣减）
+                if (!Boolean.TRUE.equals(request.getRefundToBalance())) {
+                    reduceProfitFlow(lockedOrder);
+                }
                 LogEsUtil.info("订单退款成功，订单id: " + orderId +
                         ", 退款金额: " + result.getTotalRefundAmount());
             } else {

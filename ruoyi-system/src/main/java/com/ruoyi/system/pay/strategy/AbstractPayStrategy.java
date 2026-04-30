@@ -126,10 +126,12 @@ public abstract class AbstractPayStrategy implements PayStrategy {
             Order order, OrderPayType orderPayType, String paymentType,
             BigDecimal refundAmount, Boolean refundToBalance) {
         List<RefundResultVo.ChannelRefundResult> results = new ArrayList<>();
-        if (orderPayType != null && StrUtil.isNotBlank(orderPayType.getWxOrderId())) {
+        if (OrderStatus.WECHAT_PAY.equals(paymentType)
+                && orderPayType != null && StrUtil.isNotBlank(orderPayType.getWxOrderId())) {
             results.add(refundWechat(order, orderPayType.getWxOrderId(), paymentType, refundAmount, refundToBalance));
         }
-        if (orderPayType != null && StrUtil.isNotBlank(orderPayType.getAlipayOrderId())) {
+        if (OrderStatus.ALIPAY_PAY.equals(paymentType)
+                && orderPayType != null && StrUtil.isNotBlank(orderPayType.getAlipayOrderId())) {
             results.add(refundAlipay(order, orderPayType.getAlipayOrderId(), paymentType, refundAmount, refundToBalance));
         }
         if (OrderStatus.BALANCE_PAY.equals(paymentType)) {

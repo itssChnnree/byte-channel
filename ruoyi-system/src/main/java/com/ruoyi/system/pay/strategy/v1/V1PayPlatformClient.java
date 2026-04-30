@@ -37,7 +37,7 @@ public class V1PayPlatformClient {
 
     /** 统一下单 - POST /mapi.php（需MD5签名） */
     public Map<String, Object> createOrder(Map<String, String> params) {
-        return postWithSign("/mapi.php", params);
+        return postWithSign("mapi.php", params);
     }
 
     /** 页面跳转 - GET /submit.php（需MD5签名） */
