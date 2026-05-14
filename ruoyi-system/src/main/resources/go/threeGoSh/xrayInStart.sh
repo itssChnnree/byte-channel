@@ -626,12 +626,38 @@ print_result() {
     # 查询链接
     echo -e "  ${CYAN}配置查询链接${NC}"
     if [ -n "$PASSWORD" ]; then
-        echo -e "  ${CYAN}${QUERY_BASE_URL}/${PASSWORD}${NC}"
+        local full_url="${QUERY_BASE_URL}/${PASSWORD}"
+        echo -e "  ${CYAN}${full_url}${NC}"
+        echo ""
+        print_qrcode "$full_url"
     else
         echo -e "  ${RED}上报失败，未获取查询链接${NC}"
     fi
     echo ""
     echo -e "${GREEN}════════════════════════════════════════════${NC}"
+}
+
+print_qrcode() {
+    local url="$1"
+
+    if command -v qrencode &> /dev/null; then
+        echo -e "  ${CYAN}二维码:${NC}"
+        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
+            echo "  $line"
+        done
+        return 0
+    fi
+
+    install_if_missing "qrencode" "qrencode" || true
+
+    if command -v qrencode &> /dev/null; then
+        echo -e "  ${CYAN}二维码:${NC}"
+        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
+            echo "  $line"
+        done
+    else
+        print_warning "未安装 qrencode，跳过二维码生成 (apt/yum install qrencode)"
+    fi
 }
 
 # ===================== 主流程 =====================
