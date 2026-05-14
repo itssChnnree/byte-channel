@@ -628,7 +628,7 @@ print_result() {
     echo ""
 
     # 查询链接
-    echo -e "  ${CYAN}配置查询链接${NC}"
+    echo -e "  ${CYAN}请复制以下链接在浏览器中打开查询链接信息${NC}"
     if [ -n "$PASSWORD" ]; then
         local full_url="${QUERY_BASE_URL}/${PASSWORD}"
         echo -e "  ${CYAN}${full_url}${NC}"
@@ -645,7 +645,7 @@ print_qrcode() {
     local url="$1"
 
     if command -v qrencode &> /dev/null; then
-        echo -e "  ${CYAN}扫码查看链接信息:${NC}"
+        echo -e "  ${CYAN}请用微信扫码后在浏览器中打开查询链接信息${NC}"
         qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
             echo "  $line"
         done

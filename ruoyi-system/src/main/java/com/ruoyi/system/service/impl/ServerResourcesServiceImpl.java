@@ -178,7 +178,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResources.setAvailableStatus(AvailableStatus.AVAILABLE_STATUS_DOWN);
         serverResources.setCommodityId("");
         serverResources.setIsDeleted(2);
-        serverResources.setPassword(generateSecureRandomString(10));
+        serverResources.setPassword(generateRandomString(10));
 
         int insert = serverResourcesMapper.insert(serverResources);
         if (insert > 0) {
@@ -193,7 +193,6 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
                 .collect(Collectors.toList());
         return collect.stream().map(String::valueOf).collect(Collectors.joining());
     }
-
     /**
      * [处理节点上报资源]
      *
