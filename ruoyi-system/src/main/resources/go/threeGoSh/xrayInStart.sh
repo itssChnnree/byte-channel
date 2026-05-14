@@ -337,15 +337,16 @@ generate_keys() {
     local key_output
     key_output=$("$XRAY_BIN" x25519 2>&1) || {
         print_error "x25519 密钥生成失败"
-        print_error "$key_output"
         exit 1
     }
 
-    PRIVATE_KEY=$(echo "$key_output" | grep 'PrivateKey:' | awk '{print $NF}')
-    PUBLIC_KEY=$(echo "$key_output"  | grep '(PublicKey)' | awk '{print $NF}')
+    PRIVATE_KEY=$(printf '%s' "$key_output" | sed -n 's/.*PrivateKey: *//p' | head -1)
+    PUBLIC_KEY=$(printf '%s' "$key_output"  | sed -n 's/.*(PublicKey): *//p' | head -1)
 
     if [ -z "$PRIVATE_KEY" ] || [ -z "$PUBLIC_KEY" ]; then
-        print_error "解析公私钥失败: $key_output"
+        print_error "解析公私钥失败"
+        echo "Raw output:"
+        printf '%s\n' "$key_output"
         exit 1
     fi
 
