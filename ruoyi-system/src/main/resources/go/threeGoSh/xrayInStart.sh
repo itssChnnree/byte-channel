@@ -642,7 +642,7 @@ print_qrcode() {
     local url="$1"
 
     if command -v qrencode &> /dev/null; then
-        echo -e "  ${CYAN}二维码:${NC}"
+        echo -e "  ${CYAN}扫码查看链接信息:${NC}"
         qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
             echo "  $line"
         done
