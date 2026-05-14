@@ -656,7 +656,7 @@ print_qrcode() {
             echo "  $line"
         done
     else
-        print_warning "未安装 qrencode，跳过二维码生成 (apt/yum install qrencode)"
+        return 0
     fi
 }
 
