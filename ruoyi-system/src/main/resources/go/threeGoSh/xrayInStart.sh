@@ -646,19 +646,11 @@ print_qrcode() {
         qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
             echo "  $line"
         done
-        return 0
     fi
+}
 
+install_qrencode() {
     install_if_missing "qrencode" "qrencode" || true
-
-    if command -v qrencode &> /dev/null; then
-        echo -e "  ${CYAN}二维码:${NC}"
-        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
-            echo "  $line"
-        done
-    else
-        return 0
-    fi
 }
 
 # ===================== 主流程 =====================
@@ -688,7 +680,7 @@ main() {
     echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
     echo ""
 
-    echo -e "${CYAN}[Step 1/6]${NC} 安装依赖"
+    echo -e "${CYAN}[Step 1/7]${NC} 安装依赖"
     ensure_deps
 
     if [ -z "$SERVER_IP" ]; then
@@ -699,15 +691,15 @@ main() {
     print_info "服务器IP: $SERVER_IP"
 
     echo ""
-    echo -e "${CYAN}[Step 2/6]${NC} 开启 BBR 加速"
+    echo -e "${CYAN}[Step 2/7]${NC} 开启 BBR 加速"
     enable_bbr
 
     echo ""
-    echo -e "${CYAN}[Step 3/6]${NC} 配置防火墙"
+    echo -e "${CYAN}[Step 3/7]${NC} 配置防火墙"
     configure_firewall
 
     echo ""
-    echo -e "${CYAN}[Step 4/6]${NC} 生成密钥 & 配置"
+    echo -e "${CYAN}[Step 4/7]${NC} 生成密钥 & 配置"
     check_xray
     generate_keys
     generate_uuid
@@ -716,12 +708,16 @@ main() {
     write_config
 
     echo ""
-    echo -e "${CYAN}[Step 5/6]${NC} 重启 Xray"
+    echo -e "${CYAN}[Step 5/7]${NC} 重启 Xray"
     restart_xray
 
     echo ""
-    echo -e "${CYAN}[Step 6/6]${NC} 上报配置"
+    echo -e "${CYAN}[Step 6/7]${NC} 上报配置"
     upload_config || true
+
+    echo ""
+    echo -e "${CYAN}[Step 7/7]${NC} 安装二维码依赖"
+    install_qrencode
 
     echo ""
     print_result
