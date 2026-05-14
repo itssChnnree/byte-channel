@@ -1,6 +1,7 @@
 package com.ruoyi.system.job;
 
 import com.ruoyi.system.config.TraceIdContext;
+import com.ruoyi.system.constant.ResourcesStatus;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.ServerResourcesMapper;
@@ -64,7 +65,7 @@ public class ResourceErrorRecoveryJob {
 
         try {
             // 查询所有状态为ERROR的资源
-            List<ServerResources> errorResources = serverResourcesMapper.findByResourcesStatus("ERROR");
+            List<ServerResources> errorResources = serverResourcesMapper.findByResourcesStatus(ResourcesStatus.ERROR, ResourcesStatus.WAIT_CHECK);
 
             if (CollectionUtils.isEmpty(errorResources)) {
                 LogEsUtil.info("资源故障自愈任务：没有查询到状态为ERROR的资源");

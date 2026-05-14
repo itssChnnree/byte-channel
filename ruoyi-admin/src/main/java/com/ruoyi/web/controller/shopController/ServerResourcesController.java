@@ -1,36 +1,22 @@
 package com.ruoyi.web.controller.shopController;
 
 import cn.hutool.core.util.StrUtil;
-import com.github.pagehelper.Page;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.common.utils.uuid.UUID;
 import com.ruoyi.framework.web.service.PermissionService;
 import com.ruoyi.system.domain.dto.*;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.vo.ServerResourcesDetailVo;
-import com.ruoyi.system.domain.vo.ServerResourcesVo;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.service.IServerResourcesService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import lombok.Cleanup;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 /**
  * [˵��/����]
@@ -234,6 +220,12 @@ public class ServerResourcesController{
     @ApiOperation("获取导入链接")
     public Result getImportUrl(String resourcesId){
         return serverResourcesService.getImportUrl(resourcesId, SecurityUtils.hasPermi());
+    }
+
+    @GetMapping("/getImportUrlByPassWord")
+    @ApiOperation("通过密码获取导入链接")
+    public Result getImportUrlByPassWord(String password){
+        return serverResourcesService.getImportUrlByPassWord(password);
     }
 
 

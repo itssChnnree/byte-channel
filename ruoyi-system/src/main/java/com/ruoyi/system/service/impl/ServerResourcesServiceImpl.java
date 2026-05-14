@@ -153,6 +153,40 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         }
     }
 
+    /**
+     * [第三方上传资源]
+     * 直接将第三方提供的vless配置存入server_resources表
+     *
+     * @param dto 第三方上传参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/5/10
+     **/
+    @Override
+    @Transactional
+    public Result insertThree(ServerResourcesThreeDto dto) {
+        ServerResources serverResources = new ServerResources();
+        serverResources.setResourcesIp(dto.getResourcesIp());
+        serverResources.setPublicBrokerKey(dto.getPublicBrokerKey());
+        serverResources.setSni(dto.getSni());
+        serverResources.setShortId(dto.getShortId());
+        serverResources.setUserId(dto.getUserId());
+        serverResources.setNodePort(dto.getNodePort());
+        serverResources.setResourcesPort("");
+        serverResources.setResourcesUserName("");
+        serverResources.setResourcesStatus(ResourcesStatus.WAIT_CHECK);
+        serverResources.setSalesStatus(SalesStatus.NOT_SALE);
+        serverResources.setAvailableStatus(AvailableStatus.AVAILABLE_STATUS_DOWN);
+        serverResources.setCommodityId("");
+        serverResources.setIsDeleted(2);
+        serverResources.setPassword(generateSecureRandomString(10));
+
+        int insert = serverResourcesMapper.insert(serverResources);
+        if (insert > 0) {
+            return Result.success(serverResources.getPassword());
+        }
+        return Result.fail("新增失败");
+    }
+
     public static String generateRandomString(int length) {
         List<Character> collect = random.ints(length, 0, CHARACTERS.length())
                 .mapToObj(CHARACTERS::charAt)
@@ -308,7 +342,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         serverResources.setPublicBrokerKey(xrayRestartVo.getPublicKey());
         serverResources.setSni(commodity.getServerNames());
         serverResources.setShortId(xrayRestartVo.getShortId());
-        serverResources.setPassword(generateSecureRandomString(20));
+        serverResources.setPassword(generateSecureRandomString(10));
         serverResources.setUserId(userId);
         serverResources.setCommodityId(commodity.getId());
         return serverResources;
@@ -406,6 +440,26 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         return Result.success(resourcesImportVo);
     }
 
+
+    /**
+     * [通过密码获取导入连接]
+     *
+     * @param password 密码
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/5/13
+     **/
+    @Override
+    public Result getImportUrlByPassWord(String password) {
+        ServerResources serverResources = serverResourcesMapper.selectByPassword(password);
+        if (ObjectUtils.isEmpty(serverResources)){
+            throw new BaseException("资源不存在");
+        }
+        ResourcesImportVo resourcesImportVo = new ResourcesImportVo();
+        String clashDownloadUrl1 = getClashDownloadUrl(serverResources);
+        resourcesImportVo.setClashDownloadUrl(clashDownloadUrl1);
+        resourcesImportVo.setVlessUrl(getVlessUrl(serverResources));
+        return Result.success(resourcesImportVo);
+    }
 
     private String getClashDownloadUrl(ServerResources serverResources) {
         return clashDownloadUrl+"?password="+serverResources.getPassword();
@@ -900,6 +954,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
                 .append("&headerType=none");
         String commodityNameByResourcesId = commodityMapper.findCommodityNameByResourcesId(serverResources.getId());
         // 添加备注（URL 编码）
+        if (StrUtil.isBlank(commodityNameByResourcesId)){
+            commodityNameByResourcesId = "甘果云自建节点";
+        }
         if (StrUtil.isNotEmpty(commodityNameByResourcesId)) {
             url.append("#").append(encode(commodityNameByResourcesId));
         }
@@ -919,6 +976,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     //替换模板
     private String replaceTemplate(String template, ServerResources serverResources) {
         String commodityNameByResourcesId = commodityMapper.findCommodityNameByResourcesId(serverResources.getId());
+        if (StrUtil.isBlank(commodityNameByResourcesId)){
+            commodityNameByResourcesId = "甘果云自建节点";
+        }
         List<String> split = StrUtil.split(serverResources.getSni(), ",");
         // 创建参数字典
         Dict params = Dict.create()

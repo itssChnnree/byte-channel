@@ -108,4 +108,9 @@ public class CreatePayOrderRequest {
      * 公众号AppId（仅JSAPI支付需要）
      */
     private String subAppid;
+
+    /**
+     * 订单类型
+     */
+    private String orderType;
 }

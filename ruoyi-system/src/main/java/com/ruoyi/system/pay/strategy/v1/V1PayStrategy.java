@@ -54,7 +54,7 @@ public class V1PayStrategy extends AbstractPayStrategy {
         params.put("money", request.getMoney().toString());
         params.put("clientip", request.getClientIp());
         params.put("notify_url", v1PayProperties.getNotifyUrl());
-        params.put("return_url", v1PayProperties.getReturnUrl() + request.getRealOutTradeNo());
+        params.put("return_url", v1PayProperties.getReturnUrl() +request.getOrderType()+"/"+request.getRealOutTradeNo());
 
         Map<String, Object> response = v1PayPlatformClient.createOrder(params);
 
@@ -173,6 +173,7 @@ public class V1PayStrategy extends AbstractPayStrategy {
         request.setName(order.getDescription() != null ? order.getDescription() : "订单支付");
         request.setMoney(order.getAmount());
         request.setClientIp(getClientIp());
+        request.setOrderType(order.getOrderType());
         return createOrder(request);
     }
 

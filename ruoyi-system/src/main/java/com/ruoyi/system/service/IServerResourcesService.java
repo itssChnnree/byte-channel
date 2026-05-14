@@ -3,6 +3,7 @@ package com.ruoyi.system.service;
 
 import com.ruoyi.system.domain.dto.ResourceProcessingDto;
 import com.ruoyi.system.domain.dto.ServerResourcesPageDto;
+import com.ruoyi.system.domain.dto.ServerResourcesThreeDto;
 import com.ruoyi.system.domain.dto.ServerUpdateDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.domain.dto.ServerResourcesDto;
@@ -248,4 +249,20 @@ public interface IServerResourcesService{
      * @return java.util.Date 扣减后的到期时间
      **/
     Date deductLeaseExpirationTime(String resourceId, String paymentPeriod);
+
+    /**
+     * [第三方上传资源]
+     * @param dto 第三方上传参数
+     * @return com.ruoyi.system.http.Result
+     * @author 陈湘岳 2026/5/10
+     **/
+    Result insertThree(ServerResourcesThreeDto dto);
+
+    /**
+     * [通过密码获取导入连接]
+     * @author 陈湘岳 2026/5/13
+     * @param password 密码
+     * @return com.ruoyi.system.http.Result
+     **/
+    Result getImportUrlByPassWord(String password);
 }

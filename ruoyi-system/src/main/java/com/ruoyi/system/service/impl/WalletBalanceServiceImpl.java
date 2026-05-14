@@ -105,7 +105,7 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
             LogEsUtil.warn("查询用户余额错误,用户id："+userId);
             throw new RuntimeException("查询用户余额错误，请联系管理员");
         }
-        if (walletBalanceByUserId.getBalance().compareTo(bigDecimal) <= 0){
+        if (walletBalanceByUserId.getBalance().compareTo(bigDecimal) < 0){
             LogEsUtil.info("用户余额不足,用户余额："+walletBalanceByUserId.getBalance()+",用户id："+userId);
             return false;
         }
@@ -210,7 +210,13 @@ public class WalletBalanceServiceImpl implements IWalletBalanceService {
             order.setPaymentId(yiPayResponse.getPayId());
             orderBaseService.addProfit(order,"余额充值");
             LogEsUtil.info("订单已使用聚合支付，支付id["+orderId+"],支付方式为["+order.getPaymentType()+"]");
+            orderStatusTimelineService.setUserPayAndWaitAllocationTime(orderId);
             addBalance( order.getAmount(), BalanceDetailStatus.RECHARGE,SecurityUtils.getStrUserId());
+            //将订单置为已完成状态
+            order.setStatus(OrderStatus.COMPLETED);
+            orderMapper.updateById(order);
+            //订单时间线
+            orderStatusTimelineService.setCompletedTime(orderId);
             return Result.success(order);
         }else {
             return Result.fail("未检测到支付信息，请稍后再试");

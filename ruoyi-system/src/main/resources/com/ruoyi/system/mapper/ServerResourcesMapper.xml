@@ -391,7 +391,7 @@
 
     <select id="findByResourcesStatus" resultType="com.ruoyi.system.domain.entity.ServerResources">
         select * from server_resources where is_deleted = 0
-        and resources_status = #{resourcesStatus}
+        and resources_status = #{resourcesStatus} or resources_status = #{resourcesStatus2}
     </select>
 
     <select id="selectByIdForUpdate" resultType="com.ruoyi.system.domain.entity.ServerResources">
@@ -486,6 +486,5 @@
         where is_deleted = 0
           and sales_status = 'SALE'
     </select>
-
 </mapper>
 

@@ -2,6 +2,7 @@ package com.ruoyi.system.pay.interfaces.listener;
 
 import com.ruoyi.system.pay.application.service.PayOrderApplicationService;
 import com.ruoyi.system.pay.application.vo.PayNotifyVo;
+import com.ruoyi.system.util.LogEsUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +35,7 @@ public class PayNotifyListener {
      */
     @PostMapping("/notify")
     public void handleAsyncNotify(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        log.info("收到支付异步通知");
+        LogEsUtil.info("收到支付异步通知");
 
         Map<String, String> params = new HashMap<>();
         request.getParameterMap().forEach((k, v) -> {
@@ -43,7 +44,8 @@ public class PayNotifyListener {
             }
         });
 
-        log.debug("Notify params: {}", params);
+        LogEsUtil.info("请求入参如下"+params);
+        LogEsUtil.info("request如下"+request);
 
         boolean verified = payOrderApplicationService.verifyNotifySign(params);
         if (!verified) {

@@ -248,7 +248,8 @@ public interface ServerResourcesMapper extends BaseMapper<ServerResources> {
      * @param resourcesStatus 资源状态
      * @return java.util.List<com.ruoyi.system.domain.entity.ServerResources>
      **/
-    List<ServerResources> findByResourcesStatus(@Param("resourcesStatus") String resourcesStatus);
+    List<ServerResources> findByResourcesStatus(@Param("resourcesStatus") String resourcesStatus,
+                                                @Param("resourcesStatus2")String resourcesStatus2);
 
     /**
      * [查询商品，上锁]
