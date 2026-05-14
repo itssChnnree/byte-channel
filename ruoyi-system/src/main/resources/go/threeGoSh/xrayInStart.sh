@@ -646,6 +646,7 @@ print_qrcode() {
 
     if command -v qrencode &> /dev/null; then
         echo -e "  ${CYAN}请用微信扫码后在浏览器中打开查询链接信息${NC}"
+        echo -e "  ${CYAN}因微信浏览器内核版本过低，会出现查询失败情况${NC}"
         qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
             echo "  $line"
         done
