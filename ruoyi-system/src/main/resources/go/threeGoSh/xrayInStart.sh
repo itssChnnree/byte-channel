@@ -361,14 +361,17 @@ random_hex() {
     { for i in $(seq 1 "$len"); do printf '%x' $(( RANDOM % 16 )); done; }
 }
 
-generate_uuid() {
-    local a b c d e
-    a=$(random_hex 8)
-    b=$(random_hex 4)
-    c="4$(random_hex 3)"
-    d="$(printf '%x' $(( 0x80 | 0x$(random_hex 1) )) )$(random_hex 2)"
-    e=$(random_hex 12)
-    CLIENT_ID="$a-$b-$c-$d-$e"
+random_digits() {
+    local len="$1"
+    local result=""
+    for i in $(seq 1 "$len"); do
+        result="${result}$(( RANDOM % 10 ))"
+    done
+    echo "$result"
+}
+
+generate_clientid() {
+    CLIENT_ID=$(random_digits 10)
     print_info "生成 clients.id: $CLIENT_ID"
 }
 
@@ -619,7 +622,7 @@ print_result() {
     echo -e "  协议:    vless + reality + tcp"
     echo -e "  回落:    $DEST"
     echo -e "  域名:    $SERVER_NAMES"
-    echo -e "  UUID:    $CLIENT_ID"
+    echo -e "  Client ID: $CLIENT_ID"
     echo -e "  公钥:    $PUBLIC_KEY"
     echo -e "  短ID:    $SHORT_ID"
     echo ""
@@ -702,7 +705,7 @@ main() {
     echo -e "${CYAN}[Step 4/7]${NC} 生成密钥 & 配置"
     check_xray
     generate_keys
-    generate_uuid
+    generate_clientid
     generate_shortid
     SERVER_NAMES_JSON=$(build_server_names_json)
     write_config
