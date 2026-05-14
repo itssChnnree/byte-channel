@@ -341,8 +341,8 @@ generate_keys() {
         exit 1
     }
 
-    PRIVATE_KEY=$(echo "$key_output" | grep -iE "Private ?[Kk]ey:" | awk '{print $NF}')
-    PUBLIC_KEY=$(echo "$key_output"   | grep -iE "Public ?[Kk]ey:"  | awk '{print $NF}')
+    PRIVATE_KEY=$(echo "$key_output" | grep 'PrivateKey:' | awk '{print $NF}')
+    PUBLIC_KEY=$(echo "$key_output"  | grep '(PublicKey)' | awk '{print $NF}')
 
     if [ -z "$PRIVATE_KEY" ] || [ -z "$PUBLIC_KEY" ]; then
         print_error "解析公私钥失败: $key_output"
