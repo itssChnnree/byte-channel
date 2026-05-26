@@ -1,0 +1,79 @@
+{
+  "log": {
+    "access": "",
+    "error": "",
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "socks",
+      "port": 46657,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ],
+        "routeOnly": false
+      },
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "allowTransparent": false
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "socks",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "216.167.72.187",
+            "port": 56790,
+            "users": [
+              {
+                "id": "d6f7a3c3-75a3-4ab6-8d98-f680a9b9e9b3",
+                "alterId": 0,
+                "email": "t@t.tt",
+                "security": "auto",
+                "encryption": "none",
+                "flow": "xtls-rprx-vision"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "serverName": "lacity.gov",
+          "fingerprint": "chrome",
+          "show": false,
+          "publicKey": "2SAAzbmdk-NefjdsbD2qhEqq5Ubxzd3j3tJUO-nCBS8",
+          "shortId": "5689902540",
+          "spiderX": "/"
+        }
+      },
+      "mux": {
+        "enabled": false,
+        "concurrency": -1
+      }
+    }
+  ],
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {
+        "type": "field",
+        "inboundTag": "socks",
+        "outboundTag": "socks",
+        "enabled": true
+      }
+    ]
+  }
+}

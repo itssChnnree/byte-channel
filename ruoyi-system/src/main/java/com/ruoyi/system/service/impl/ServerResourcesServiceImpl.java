@@ -451,7 +451,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     public Result getImportUrlByPassWord(String password) {
         ServerResources serverResources = serverResourcesMapper.selectByPassword(password);
         if (ObjectUtils.isEmpty(serverResources)){
-            throw new BaseException("资源不存在");
+            return Result.fail("未查询到您的节点信息");
         }
         ResourcesImportVo resourcesImportVo = new ResourcesImportVo();
         String clashDownloadUrl1 = getClashDownloadUrl(serverResources);
