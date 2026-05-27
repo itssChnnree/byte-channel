@@ -235,7 +235,8 @@ close_port() {
             firewall-cmd --reload 2>/dev/null || true
             ;;
         iptables)
-            iptables -D INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
+            # 循环删除所有匹配该端口的 ACCEPT 规则
+            while iptables -D INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null; do :; done
             ;;
         none)
             return 0
@@ -282,7 +283,9 @@ open_port() {
             firewall-cmd --reload 2>/dev/null || true
             ;;
         iptables)
-            iptables -I INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
+            # 先删除所有现有规则，再插入一条（避免重复）
+            while iptables -D INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null; do :; done
+            iptables -I INPUT -p tcp --dport "$port" -j ACCEPT
             ;;
         none)
             print_warning "未检测到防火墙，请手动开放端口 $port"
