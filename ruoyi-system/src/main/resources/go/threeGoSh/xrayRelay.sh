@@ -212,15 +212,18 @@ detect_firewall() {
     print_info "防火墙类型: $FW_TYPE"
 }
 
-get_old_port() {
-    if [ -f "$XRAY_CONFIG_FILE" ]; then
-        grep -o '"port"[[:space:]]*:[[:space:]]*[0-9]*' "$XRAY_CONFIG_FILE" 2>/dev/null | grep -o '[0-9]*$' | head -1
+# 获取配置文件中的所有入站端口（空格分隔）
+get_all_inbound_ports() {
+    if [ ! -f "$XRAY_CONFIG_FILE" ]; then
+        echo ""
+        return
     fi
+    jq -r '.inbounds[]?.port | select(. != null)' "$XRAY_CONFIG_FILE" 2>/dev/null | tr '\n' ' '
 }
 
 close_port() {
     local port="$1"
-    print_info "关闭旧端口 $port ..."
+    print_info "关闭端口 $port ..."
 
     case "$FW_TYPE" in
         ufw)
@@ -241,9 +244,9 @@ close_port() {
 
     sleep 1
     if check_port_open "$port" "$FW_TYPE"; then
-        print_warning "旧端口 $port 关闭失败，请手动检查"
+        print_warning "端口 $port 关闭失败，请手动检查"
     else
-        print_success "旧端口 $port 已关闭"
+        print_success "端口 $port 已关闭"
     fi
 }
 
@@ -296,19 +299,6 @@ open_port() {
         print_warning "端口 $port 开放验证失败，请手动检查"
         FW_PORT_OK=false
     fi
-}
-
-configure_firewall() {
-    detect_firewall
-
-    local old_port
-    old_port=$(get_old_port)
-    if [ -n "$old_port" ] && [ "$old_port" != "$PORT" ] && [ "$MODE" = "full" ]; then
-        print_info "检测到旧端口 $old_port → 新端口 $PORT，清理旧端口..."
-        close_port "$old_port"
-    fi
-
-    open_port "$PORT"
 }
 
 XRAY_INSTALL_CMD="bash -c \"\$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install"
@@ -404,9 +394,14 @@ build_server_names_json() {
     done
 }
 
-# 全量模式：完全覆盖配置文件
+# 全量模式：返回旧的所有入站端口列表（空格分隔）
 write_config_full() {
     print_info "全量模式：覆盖写入配置文件..."
+
+    # 获取旧的所有入站端口
+    local old_ports
+    old_ports=$(get_all_inbound_ports)
+    
     mkdir -p "$XRAY_CONFIG_DIR"
 
     cat > "$XRAY_CONFIG_FILE" << XRAYEOF
@@ -504,12 +499,18 @@ XRAYEOF
 
     chmod 644 "$XRAY_CONFIG_FILE"
     print_success "配置文件已写入: $XRAY_CONFIG_FILE"
+    
+    # 返回旧端口列表
+    echo "$old_ports"
 }
 
-# 增量模式：若上游已存在，则删除其整套配置（出站+关联入站+路由规则）后再新增；否则直接新增
+# 增量模式：返回被删除的入站端口列表（空格分隔）
 write_config_incremental() {
-    print_info "增量模式：检查上游是否存在，若存在则删除整套旧配置，再新增..."
+    print_info "增量模式：更新/添加配置到现有文件..."
     mkdir -p "$XRAY_CONFIG_DIR"
+
+    # 记录将被删除的端口
+    local deleted_ports=""
 
     # 如果配置文件不存在或不是合法JSON，创建空骨架
     if [ ! -f "$XRAY_CONFIG_FILE" ] || ! jq empty "$XRAY_CONFIG_FILE" 2>/dev/null; then
@@ -635,9 +636,14 @@ EOF
             "$XRAY_CONFIG_FILE")
         print_info "需要删除的入站标签列表: $inbound_tags_to_delete"
 
-        # 删除这些 inboundTag 对应的入站配置
+        # 记录这些入站对应的端口，以便稍后关闭防火墙
         if [ "$inbound_tags_to_delete" != "[]" ] && [ -n "$inbound_tags_to_delete" ]; then
             for tag in $(echo "$inbound_tags_to_delete" | jq -r '.[]'); do
+                local port
+                port=$(jq -r --arg t "$tag" '.inbounds[] | select(.tag == $t) | .port' "$XRAY_CONFIG_FILE" 2>/dev/null)
+                if [ -n "$port" ] && [ "$port" != "null" ]; then
+                    deleted_ports="$deleted_ports $port"
+                fi
                 print_info "删除入站 tag=$tag"
                 jq --arg t "$tag" '.inbounds = [.inbounds[] | select(.tag != $t)]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
                 mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
@@ -660,7 +666,7 @@ EOF
     fi
 
     # 2. 添加新的入站、出站和路由规则
-    # 先检查入站端口是否已被其他配置占用（理论上已删除旧配置，但可能端口冲突）
+    # 先检查入站端口是否已被其他配置占用
     local inbound_exists
     inbound_exists=$(jq --argjson port "$PORT" '.inbounds | map(.port == $port) | any' "$XRAY_CONFIG_FILE")
     if [ "$inbound_exists" = "true" ]; then
@@ -692,6 +698,29 @@ EOF
     mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
 
     print_success "增量配置更新完成: $XRAY_CONFIG_FILE"
+    
+    # 返回被删除的端口列表（去除首尾空格）
+    echo "$deleted_ports" | xargs
+}
+
+# 配置防火墙：关闭指定端口列表，开放新端口
+configure_firewall() {
+    local close_ports="$1"   # 空格分隔的端口列表
+    local new_port="$2"
+    
+    detect_firewall
+    
+    # 关闭旧端口
+    if [ -n "$close_ports" ]; then
+        for port in $close_ports; do
+            if [ -n "$port" ] && [ "$port" != "$new_port" ]; then
+                close_port "$port"
+            fi
+        done
+    fi
+    
+    # 开放新端口
+    open_port "$new_port"
 }
 
 restart_xray() {
@@ -936,22 +965,24 @@ main() {
     enable_bbr
 
     echo ""
-    echo -e "${CYAN}[Step 3/7]${NC} 配置防火墙"
-    configure_firewall
-
-    echo ""
-    echo -e "${CYAN}[Step 4/7]${NC} 生成密钥 & 配置"
+    echo -e "${CYAN}[Step 3/7]${NC} 生成密钥 & 配置"
     check_xray
     generate_keys
     generate_clientid
     generate_shortid
     SERVER_NAMES_JSON=$(build_server_names_json)
 
+    # 根据模式生成配置，并获取需要关闭的端口列表
+    local close_ports=""
     if [ "$MODE" = "full" ]; then
-        write_config_full
+        close_ports=$(write_config_full)
     else
-        write_config_incremental
+        close_ports=$(write_config_incremental)
     fi
+
+    echo ""
+    echo -e "${CYAN}[Step 4/7]${NC} 配置防火墙"
+    configure_firewall "$close_ports" "$PORT"
 
     echo ""
     echo -e "${CYAN}[Step 5/7]${NC} 重启 Xray"
