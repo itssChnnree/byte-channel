@@ -58,7 +58,7 @@ usage() {
     echo "用法: $0 [选项]"
     echo ""
     echo "入站参数 (和入口节点一样):"
-    echo "  -p, --port PORT           监听端口 (必填, 1-65535)"
+    echo "  -p, --port PORT           监听端口 (可选, 不指定则自动选择 20000-65535 中的未使用端口)"
     echo "  -i, --ip IP               服务器公网IP (不指定则自动检测)"
     echo "  -d, --dest DEST           回落目标 (默认: lacity.gov:443)"
     echo "  -s, --server-names NAMES  可用域名, 逗号分隔 (默认: lacity.gov,www.lacity.gov)"
@@ -81,8 +81,8 @@ usage() {
     echo "示例:"
     echo "  # 全量配置（覆盖已有）"
     echo "  $0 -m full -p 45673 -u 137.175.93.245 -r 56790 -n 'd6f7a3c3-...' -k '2SAAzbmdk...' -t '5689902540'"
-    echo "  # 增量添加/删除旧配置后新增"
-    echo "  $0 -m incremental -p 45673 -u 137.175.93.245 -r 56790 -n 'd6f7a3c3-...' -k '2SAAzbmdk...' -t '5689902540'"
+    echo "  # 增量添加/删除旧配置后新增（自动选择端口）"
+    echo "  $0 -m incremental -u 137.175.93.245 -r 56790 -n 'd6f7a3c3-...' -k '2SAAzbmdk...' -t '5689902540'"
     exit 0
 }
 
@@ -211,6 +211,39 @@ detect_firewall() {
         FW_TYPE="none"
     fi
     print_info "防火墙类型: $FW_TYPE"
+}
+
+# 检查端口是否被监听（有进程占用）
+is_port_listening() {
+    local port="$1"
+    ss -tlnp 2>/dev/null | grep -q ":$port " && return 0
+    netstat -tlnp 2>/dev/null | grep -q ":$port " && return 0
+    return 1
+}
+
+# 检查端口是否在现有配置文件中作为入站端口存在
+is_port_in_config() {
+    local port="$1"
+    [ ! -f "$XRAY_CONFIG_FILE" ] && return 1
+    jq -e --argjson port "$port" '.inbounds[] | select(.port == $port)' "$XRAY_CONFIG_FILE" >/dev/null 2>&1
+}
+
+# 随机获取一个未被使用的端口（范围 20000-65535）
+get_unused_port() {
+    local min_port=20000
+    local max_port=65535
+    local max_attempts=50
+    local attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        local rand_port=$(( RANDOM % (max_port - min_port + 1) + min_port ))
+        if ! is_port_listening "$rand_port" && ! is_port_in_config "$rand_port"; then
+            echo "$rand_port"
+            return 0
+        fi
+        ((attempt++))
+    done
+    print_error "无法在 $max_attempts 次尝试内找到可用的随机端口（20000-65535）"
+    exit 1
 }
 
 # 获取配置文件中的所有入站端口（空格分隔）
@@ -916,7 +949,18 @@ main() {
         esac
     done
 
-    [ -z "$PORT" ] && { print_error "必须指定端口号 (-p/--port)"; usage; }
+    # 如果未指定端口，自动选择
+    if [ -z "$PORT" ]; then
+        print_info "未指定端口，将自动选择未使用的端口（20000-65535）..."
+        # 确保 jq 已安装（增量模式需要，全量模式也可能需要读取配置文件）
+        if [ "$MODE" = "incremental" ] || [ ! -f "$XRAY_CONFIG_FILE" ]; then
+            install_if_missing "jq" "jq"
+        fi
+        PORT=$(get_unused_port)
+        print_info "自动选择的端口: $PORT"
+    fi
+
+    # 端口号校验
     [[ "$PORT" =~ ^[0-9]+$ ]] && [ "$PORT" -ge 1 ] && [ "$PORT" -le 65535 ] || {
         print_error "端口号必须是 1-65535 之间的整数"; exit 1;
     }
