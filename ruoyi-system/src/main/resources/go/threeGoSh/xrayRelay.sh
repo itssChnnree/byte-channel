@@ -48,10 +48,11 @@ XRAY_RUNNING=false
 # 操作模式：full 或 incremental
 MODE="full"
 
-print_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
-print_success() { echo -e "${GREEN}[OK]${NC}  $1"; }
-print_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-print_error()   { echo -e "${RED}[ERR]${NC} $1"; }
+# 所有输出函数重定向到 stderr，避免干扰 $( ) 捕获返回值
+print_info()    { echo -e "${BLUE}[INFO]${NC} $1" >&2; }
+print_success() { echo -e "${GREEN}[OK]${NC}  $1" >&2; }
+print_warning() { echo -e "${YELLOW}[WARN]${NC} $1" >&2; }
+print_error()   { echo -e "${RED}[ERR]${NC} $1" >&2; }
 
 usage() {
     echo "用法: $0 [选项]"
@@ -881,7 +882,6 @@ print_result() {
         local full_url="${QUERY_BASE_URL}/${PASSWORD}"
         echo -e "  ${CYAN}${full_url}${NC}"
         echo ""
-        print_qrcode "$full_url"
     else
         echo -e "  ${RED}上报失败，未获取查询链接${NC}"
     fi
@@ -889,20 +889,9 @@ print_result() {
     echo -e "${GREEN}════════════════════════════════════════════${NC}"
 }
 
-print_qrcode() {
-    local url="$1"
-
-    if command -v qrencode &> /dev/null; then
-        echo -e "  ${CYAN}请用微信扫码后在浏览器中打开查询链接信息${NC}"
-        echo -e "  ${CYAN}因微信浏览器内核版本过低，会出现查询失败情况${NC}"
-        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
-            echo "  $line"
-        done
-    fi
-}
-
 install_qrencode() {
-    install_if_missing "qrencode" "qrencode" || true
+    # 二维码功能已移除，此函数为空，仅保留以兼容调用
+    :
 }
 
 main() {
@@ -996,7 +985,7 @@ main() {
     upload_config || true
 
     echo ""
-    echo -e "${CYAN}[Step 7/7]${NC} 安装二维码依赖"
+    echo -e "${CYAN}[Step 7/7]${NC} 安装二维码依赖（已禁用二维码显示）"
     install_qrencode
 
     echo ""
