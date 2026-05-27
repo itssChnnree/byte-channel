@@ -2,6 +2,9 @@
 # xrayRelay.sh - Xray 中转节点 reality+vless 配置生成与上报脚本
 # 兼容 CentOS 7/8/9, Ubuntu 18/20/22/24, Debian 10/11/12 等主流 Linux 发行版
 # 功能：BBR优化 → 防火墙开放端口 → x25519生成密钥 → 随机UUID/shortId → 写入config.json(出站指向上游) → 重启xray → 上报API
+# 模式：
+#   full        全量覆盖配置文件（仅保留当前 inbound/outbound/rules）
+#   incremental 增量：若上游已存在，则删除其整套配置（出站+关联入站+路由规则）后再新增；否则直接新增
 
 set -e
 
@@ -42,6 +45,9 @@ FW_PORT_OK=false
 BBR_ENABLED=false
 XRAY_RUNNING=false
 
+# 操作模式：full 或 incremental
+MODE="full"
+
 print_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
 print_success() { echo -e "${GREEN}[OK]${NC}  $1"; }
 print_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -63,12 +69,19 @@ usage() {
     echo "  -k, --upstream-pbk KEY    上游入口节点publicKey (必填)"
     echo "  -t, --upstream-sid ID     上游入口节点shortId (必填)"
     echo "  -w, --upstream-sni SNI    上游TLS SNI (默认: 本节点server-names第一个域名)"
+    echo ""
+    echo "模式参数:"
+    echo "  -m, --mode {full|incremental}  配置模式: full=全量覆盖(默认), incremental=增量添加/更新"
+    echo ""
     echo "  -h, --help                显示帮助"
     echo ""
     echo "支持系统: CentOS 7/8/9, Ubuntu 18/20/22/24, Debian 10/11/12"
     echo ""
     echo "示例:"
-    echo "  $0 -p 45673 -u 137.175.93.245 -r 56790 -n 'd6f7a3c3-...' -k '2SAAzbmdk...' -t '5689902540'"
+    echo "  # 全量配置（覆盖已有）"
+    echo "  $0 -m full -p 45673 -u 137.175.93.245 -r 56790 -n 'd6f7a3c3-...' -k '2SAAzbmdk...' -t '5689902540'"
+    echo "  # 增量添加/删除旧配置后新增"
+    echo "  $0 -m incremental -p 45673 -u 137.175.93.245 -r 56790 -n 'd6f7a3c3-...' -k '2SAAzbmdk...' -t '5689902540'"
     exit 0
 }
 
@@ -118,6 +131,9 @@ install_if_missing() {
 ensure_deps() {
     detect_pkg_manager
     install_if_missing "curl" "curl"
+    if [ "$MODE" = "incremental" ]; then
+        install_if_missing "jq" "jq"
+    fi
 }
 
 detect_public_ip() {
@@ -287,7 +303,7 @@ configure_firewall() {
 
     local old_port
     old_port=$(get_old_port)
-    if [ -n "$old_port" ] && [ "$old_port" != "$PORT" ]; then
+    if [ -n "$old_port" ] && [ "$old_port" != "$PORT" ] && [ "$MODE" = "full" ]; then
         print_info "检测到旧端口 $old_port → 新端口 $PORT，清理旧端口..."
         close_port "$old_port"
     fi
@@ -371,8 +387,26 @@ generate_shortid() {
     print_info "生成 shortId:    $SHORT_ID"
 }
 
-write_config() {
-    print_info "写入配置文件..."
+build_server_names_json() {
+    IFS=',' read -ra NAMES <<< "$SERVER_NAMES"
+    local lines=()
+    for name in "${NAMES[@]}"; do
+        name=$(echo "$name" | xargs)
+        [ -n "$name" ] && lines+=("            \"$name\"")
+    done
+    local last_idx=$((${#lines[@]} - 1))
+    for i in "${!lines[@]}"; do
+        if [ "$i" -lt "$last_idx" ]; then
+            echo "${lines[$i]},"
+        else
+            echo "${lines[$i]}"
+        fi
+    done
+}
+
+# 全量模式：完全覆盖配置文件
+write_config_full() {
+    print_info "全量模式：覆盖写入配置文件..."
     mkdir -p "$XRAY_CONFIG_DIR"
 
     cat > "$XRAY_CONFIG_FILE" << XRAYEOF
@@ -472,21 +506,192 @@ XRAYEOF
     print_success "配置文件已写入: $XRAY_CONFIG_FILE"
 }
 
-build_server_names_json() {
-    IFS=',' read -ra NAMES <<< "$SERVER_NAMES"
-    local lines=()
-    for name in "${NAMES[@]}"; do
-        name=$(echo "$name" | xargs)
-        [ -n "$name" ] && lines+=("            \"$name\"")
-    done
-    local last_idx=$((${#lines[@]} - 1))
-    for i in "${!lines[@]}"; do
-        if [ "$i" -lt "$last_idx" ]; then
-            echo "${lines[$i]},"
-        else
-            echo "${lines[$i]}"
+# 增量模式：若上游已存在，则删除其整套配置（出站+关联入站+路由规则）后再新增；否则直接新增
+write_config_incremental() {
+    print_info "增量模式：检查上游是否存在，若存在则删除整套旧配置，再新增..."
+    mkdir -p "$XRAY_CONFIG_DIR"
+
+    # 如果配置文件不存在或不是合法JSON，创建空骨架
+    if [ ! -f "$XRAY_CONFIG_FILE" ] || ! jq empty "$XRAY_CONFIG_FILE" 2>/dev/null; then
+        print_info "配置文件不存在或无效，初始化空配置..."
+        cat > "$XRAY_CONFIG_FILE" << EOF
+{
+  "log": {"loglevel": "warning"},
+  "inbounds": [],
+  "outbounds": [],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": []
+  }
+}
+EOF
+    fi
+
+    # 定义新入站 tag 和新出站 tag
+    local inbound_tag="inbound-${PORT}"
+    local outbound_tag="out-${UPSTREAM_ADDRESS}-${UPSTREAM_PORT}"
+
+    # 生成 serverNames 数组（纯JSON数组）
+    local server_names_array
+    server_names_array=$(echo "$SERVER_NAMES" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | jq -R . | jq -s .)
+
+    # 构建新 inbound 对象（JSON）
+    local new_inbound
+    new_inbound=$(jq -n \
+        --arg port "$PORT" \
+        --arg client_id "$CLIENT_ID" \
+        --arg dest "$DEST" \
+        --arg private_key "$PRIVATE_KEY" \
+        --arg short_id "$SHORT_ID" \
+        --arg inbound_tag "$inbound_tag" \
+        --argjson server_names "$server_names_array" \
+        '{
+            port: ($port | tonumber),
+            protocol: "vless",
+            settings: {
+                clients: [{ id: $client_id, flow: "xtls-rprx-vision" }],
+                decryption: "none"
+            },
+            streamSettings: {
+                network: "tcp",
+                security: "reality",
+                realitySettings: {
+                    show: false,
+                    dest: $dest,
+                    xver: 0,
+                    serverNames: $server_names,
+                    privateKey: $private_key,
+                    shortIds: [$short_id],
+                    fingerprint: "chrome"
+                }
+            },
+            sniffing: {
+                enabled: true,
+                destOverride: ["http", "tls"]
+            },
+            tag: $inbound_tag
+        }')
+
+    # 构建新 outbound 对象（JSON）
+    local new_outbound
+    new_outbound=$(jq -n \
+        --arg address "$UPSTREAM_ADDRESS" \
+        --arg port "$UPSTREAM_PORT" \
+        --arg upstream_id "$UPSTREAM_ID" \
+        --arg upstream_sni "$UPSTREAM_SNI" \
+        --arg upstream_pbk "$UPSTREAM_PBK" \
+        --arg upstream_sid "$UPSTREAM_SID" \
+        --arg outbound_tag "$outbound_tag" \
+        '{
+            tag: $outbound_tag,
+            protocol: "vless",
+            settings: {
+                vnext: [{
+                    address: $address,
+                    port: ($port | tonumber),
+                    users: [{
+                        id: $upstream_id,
+                        flow: "xtls-rprx-vision",
+                        encryption: "none"
+                    }]
+                }]
+            },
+            streamSettings: {
+                network: "tcp",
+                security: "reality",
+                realitySettings: {
+                    serverName: $upstream_sni,
+                    fingerprint: "chrome",
+                    show: false,
+                    publicKey: $upstream_pbk,
+                    shortId: $upstream_sid,
+                    spiderX: "/"
+                }
+            }
+        }')
+
+    # 1. 检查是否已存在相同上游（address+port）的出站
+    local outbound_idx
+    outbound_idx=$(jq --arg addr "$UPSTREAM_ADDRESS" --argjson port "$UPSTREAM_PORT" \
+        '.outbounds | map(.settings.vnext[0].address == $addr and .settings.vnext[0].port == $port) | index(true)' \
+        "$XRAY_CONFIG_FILE")
+
+    if [ "$outbound_idx" != "null" ] && [ -n "$outbound_idx" ]; then
+        # 上游已存在，需要删除整套旧配置
+        print_info "检测到已存在上游 $UPSTREAM_ADDRESS:$UPSTREAM_PORT，将删除其整套配置（出站+关联入站+路由规则）后重新添加。"
+
+        # 获取该出站的 tag
+        local old_outbound_tag
+        old_outbound_tag=$(jq -r --argjson idx "$outbound_idx" '.outbounds[$idx].tag' "$XRAY_CONFIG_FILE")
+        if [ -z "$old_outbound_tag" ] || [ "$old_outbound_tag" = "null" ]; then
+            old_outbound_tag="$outbound_tag"
         fi
-    done
+        print_info "旧出站 tag: $old_outbound_tag"
+
+        # 查找所有 outboundTag == old_outbound_tag 的规则，提取其 inboundTag 数组（需要删除的入站标签）
+        local inbound_tags_to_delete
+        inbound_tags_to_delete=$(jq -c --arg tag "$old_outbound_tag" \
+            '[.routing.rules[] | select(.outboundTag == $tag) | .inboundTag[]] | unique' \
+            "$XRAY_CONFIG_FILE")
+        print_info "需要删除的入站标签列表: $inbound_tags_to_delete"
+
+        # 删除这些 inboundTag 对应的入站配置
+        if [ "$inbound_tags_to_delete" != "[]" ] && [ -n "$inbound_tags_to_delete" ]; then
+            for tag in $(echo "$inbound_tags_to_delete" | jq -r '.[]'); do
+                print_info "删除入站 tag=$tag"
+                jq --arg t "$tag" '.inbounds = [.inbounds[] | select(.tag != $t)]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+                mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+            done
+        fi
+
+        # 删除该出站
+        print_info "删除出站 tag=$old_outbound_tag"
+        jq --arg t "$old_outbound_tag" '.outbounds = [.outbounds[] | select(.tag != $t)]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+        mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+
+        # 删除所有 outboundTag == old_outbound_tag 的路由规则
+        print_info "删除所有 outboundTag=$old_outbound_tag 的路由规则"
+        jq --arg t "$old_outbound_tag" '.routing.rules = [.routing.rules[] | select(.outboundTag != $t)]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+        mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+
+        print_success "旧配置已删除，现在添加新配置..."
+    else
+        print_info "未找到上游 $UPSTREAM_ADDRESS:$UPSTREAM_PORT，将直接新增配置。"
+    fi
+
+    # 2. 添加新的入站、出站和路由规则
+    # 先检查入站端口是否已被其他配置占用（理论上已删除旧配置，但可能端口冲突）
+    local inbound_exists
+    inbound_exists=$(jq --argjson port "$PORT" '.inbounds | map(.port == $port) | any' "$XRAY_CONFIG_FILE")
+    if [ "$inbound_exists" = "true" ]; then
+        print_warning "端口 $PORT 已被其他入站使用（不属于当前上游），将覆盖更新该入站。"
+        local inbound_idx
+        inbound_idx=$(jq --argjson port "$PORT" '.inbounds | map(.port == $port) | index(true)' "$XRAY_CONFIG_FILE")
+        jq --argjson idx "$inbound_idx" --argjson new_in "$new_inbound" \
+            '.inbounds[$idx] = $new_in' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+        mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+    else
+        jq --argjson new_in "$new_inbound" '.inbounds += [$new_in]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+        mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+    fi
+
+    # 添加新出站
+    jq --argjson new_out "$new_outbound" '.outbounds += [$new_out]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+    mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+
+    # 添加新路由规则（确保不重复）
+    jq --arg out_tag "$outbound_tag" \
+        '.routing.rules = [.routing.rules[] | select(.outboundTag != $out_tag)]' \
+        "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+    mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+
+    local new_rule
+    new_rule=$(jq -n --arg out_tag "$outbound_tag" --arg in_tag "$inbound_tag" \
+        '{type: "field", inboundTag: [$in_tag], outboundTag: $out_tag}')
+    jq --argjson new_rule "$new_rule" '.routing.rules += [$new_rule]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+    mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+
+    print_success "增量配置更新完成: $XRAY_CONFIG_FILE"
 }
 
 restart_xray() {
@@ -684,6 +889,7 @@ main() {
             -k|--upstream-pbk)       UPSTREAM_PBK="$2"; shift 2 ;;
             -t|--upstream-sid)       UPSTREAM_SID="$2"; shift 2 ;;
             -w|--upstream-sni)       UPSTREAM_SNI="$2"; shift 2 ;;
+            -m|--mode)               MODE="$2"; shift 2 ;;
             -h|--help)               usage ;;
             *) print_error "未知参数: $1"; usage ;;
         esac
@@ -699,6 +905,11 @@ main() {
     [ -z "$UPSTREAM_ID" ] && { print_error "必须指定上游入口节点UUID (-n/--upstream-id)"; usage; }
     [ -z "$UPSTREAM_PBK" ] && { print_error "必须指定上游入口节点publicKey (-k/--upstream-pbk)"; usage; }
     [ -z "$UPSTREAM_SID" ] && { print_error "必须指定上游入口节点shortId (-t/--upstream-sid)"; usage; }
+
+    if [ "$MODE" != "full" ] && [ "$MODE" != "incremental" ]; then
+        print_error "模式必须是 full 或 incremental"
+        usage
+    fi
 
     if [ -z "$UPSTREAM_SNI" ]; then
         UPSTREAM_SNI="${SERVER_NAMES%%,*}"
@@ -735,7 +946,12 @@ main() {
     generate_clientid
     generate_shortid
     SERVER_NAMES_JSON=$(build_server_names_json)
-    write_config
+
+    if [ "$MODE" = "full" ]; then
+        write_config_full
+    else
+        write_config_incremental
+    fi
 
     echo ""
     echo -e "${CYAN}[Step 5/7]${NC} 重启 Xray"
