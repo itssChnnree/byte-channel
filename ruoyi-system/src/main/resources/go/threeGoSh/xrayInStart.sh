@@ -2,6 +2,7 @@
 # xray_config.sh - Xray reality+vless 配置生成与上报脚本
 # 兼容 CentOS 7/8/9, Ubuntu 18/20/22/24, Debian 10/11/12 等主流 Linux 发行版
 # 功能：BBR优化 → 防火墙开放端口 → x25519生成密钥 → 随机UUID/shortId → 写入config.json → 重启xray → 上报API
+# 二维码控制：默认显示二维码，使用 -close 参数可关闭二维码显示和依赖安装
 
 set -e
 
@@ -35,6 +36,9 @@ FW_PORT_OK=false
 BBR_ENABLED=false
 XRAY_RUNNING=false
 
+# 二维码开关：默认开启（true），传入 -close 后变为 false
+QR_ENABLED=true
+
 print_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
 print_success() { echo -e "${GREEN}[OK]${NC}  $1"; }
 print_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -48,6 +52,7 @@ usage() {
     echo "  -i, --ip IP               服务器公网IP (不指定则自动检测)"
     echo "  -d, --dest DEST           回落目标 (默认: lacity.gov:443)"
     echo "  -s, --server-names NAMES  可用域名, 逗号分隔 (默认: lacity.gov,www.lacity.gov)"
+    echo "  -close                    关闭二维码显示（默认显示二维码）"
     echo "  -h, --help                显示帮助"
     echo ""
     echo "支持系统: CentOS 7/8/9, Ubuntu 18/20/22/24, Debian 10/11/12"
@@ -56,6 +61,7 @@ usage() {
     echo "  $0 -p 45673"
     echo "  $0 -p 45673 -i 137.175.93.245"
     echo "  $0 -p 45673 -i 137.175.93.245 -d 'www.microsoft.com:443' -s 'microsoft.com,www.microsoft.com'"
+    echo "  $0 -p 45673 -close          # 不显示二维码"
     exit 0
 }
 
@@ -633,11 +639,38 @@ print_result() {
         local full_url="${QUERY_BASE_URL}/${PASSWORD}"
         echo -e "  ${CYAN}${full_url}${NC}"
         echo ""
+        # 仅在开启二维码时显示二维码
+        if [ "$QR_ENABLED" = "true" ]; then
+            print_qrcode "$full_url"
+        fi
     else
         echo -e "  ${RED}上报失败，未获取查询链接${NC}"
     fi
     echo ""
     echo -e "${GREEN}════════════════════════════════════════════${NC}"
+}
+
+print_qrcode() {
+    local url="$1"
+
+    if command -v qrencode &> /dev/null; then
+        echo -e "  ${CYAN}请用微信扫码后在浏览器中打开查询链接信息${NC}"
+        echo -e "  ${CYAN}因微信浏览器内核版本过低，会出现查询失败情况${NC}"
+        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
+            echo "  $line"
+        done
+    else
+        print_warning "qrencode 未安装，无法显示二维码"
+    fi
+}
+
+install_qrencode() {
+    # 仅在二维码开启时安装依赖
+    if [ "$QR_ENABLED" = "true" ]; then
+        install_if_missing "qrencode" "qrencode" || true
+    else
+        print_info "二维码已关闭，跳过安装 qrencode"
+    fi
 }
 
 # ===================== 主流程 =====================
@@ -652,6 +685,7 @@ main() {
             -i|--ip)             SERVER_IP="$2"; shift 2 ;;
             -d|--dest)           DEST="$2"; shift 2 ;;
             -s|--server-names)   SERVER_NAMES="$2"; shift 2 ;;
+            -close)              QR_ENABLED=false; shift ;;
             -h|--help)           usage ;;
             *) print_error "未知参数: $1"; usage ;;
         esac
@@ -703,8 +737,8 @@ main() {
     upload_config || true
 
     echo ""
-    echo -e "${CYAN}[Step 7/7]${NC} 完成"
-    # 原来安装二维码的步骤已删除
+    echo -e "${CYAN}[Step 7/7]${NC} 安装二维码依赖"
+    install_qrencode
 
     echo ""
     print_result
