@@ -633,28 +633,11 @@ print_result() {
         local full_url="${QUERY_BASE_URL}/${PASSWORD}"
         echo -e "  ${CYAN}${full_url}${NC}"
         echo ""
-        print_qrcode "$full_url"
     else
         echo -e "  ${RED}上报失败，未获取查询链接${NC}"
     fi
     echo ""
     echo -e "${GREEN}════════════════════════════════════════════${NC}"
-}
-
-print_qrcode() {
-    local url="$1"
-
-    if command -v qrencode &> /dev/null; then
-        echo -e "  ${CYAN}请用微信扫码后在浏览器中打开查询链接信息${NC}"
-        echo -e "  ${CYAN}因微信浏览器内核版本过低，会出现查询失败情况${NC}"
-        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
-            echo "  $line"
-        done
-    fi
-}
-
-install_qrencode() {
-    install_if_missing "qrencode" "qrencode" || true
 }
 
 # ===================== 主流程 =====================
@@ -720,8 +703,8 @@ main() {
     upload_config || true
 
     echo ""
-    echo -e "${CYAN}[Step 7/7]${NC} 安装二维码依赖"
-    install_qrencode
+    echo -e "${CYAN}[Step 7/7]${NC} 完成"
+    # 原来安装二维码的步骤已删除
 
     echo ""
     print_result
