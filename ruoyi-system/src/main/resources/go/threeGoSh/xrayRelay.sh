@@ -139,10 +139,10 @@ ensure_deps() {
 
 detect_public_ip() {
     local ip
-    ip=$(curl -s --connect-timeout 5 --max-time 10 ifconfig.me 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 ipinfo.io/ip 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 icanhazip.com 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 api.ipify.org 2>/dev/null)
+    ip=$(curl -4 -s --connect-timeout 5 --max-time 10 ifconfig.me 2>/dev/null) || \
+    ip=$(curl -4 -s --connect-timeout 5 --max-time 10 ipinfo.io/ip 2>/dev/null) || \
+    ip=$(curl -4 -s --connect-timeout 5 --max-time 10 icanhazip.com 2>/dev/null) || \
+    ip=$(curl -4 -s --connect-timeout 5 --max-time 10 api.ipify.org 2>/dev/null)
     echo "$ip"
 }
 
@@ -262,7 +262,6 @@ close_port() {
     case "$FW_TYPE" in
         ufw)
             ufw delete allow "$port"/tcp 2>/dev/null || true
-            ufw reload 2>/dev/null || true
             ;;
         firewalld)
             firewall-cmd --permanent --remove-port="${port}/tcp" 2>/dev/null || true
@@ -310,7 +309,6 @@ open_port() {
     case "$FW_TYPE" in
         ufw)
             ufw allow "$port"/tcp 2>/dev/null
-            ufw reload 2>/dev/null || true
             ;;
         firewalld)
             firewall-cmd --permanent --add-port="${port}/tcp" 2>/dev/null
@@ -487,6 +485,11 @@ ${SERVER_NAMES_JSON}
     }
   ],
   "outbounds": [
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {}
+    },
     {
       "tag": "proxy",
       "protocol": "vless",
@@ -743,6 +746,16 @@ EOF
         jq --argjson new_in "$new_inbound" '.inbounds += [$new_in]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
         mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
     fi
+
+    # ★★★ 修复 REALITY 回落 Bug：确保 direct (freedom) 出站存在且位于首位 ★★★
+    local direct_outbound='{"tag":"direct","protocol":"freedom","settings":{}}'
+    # 先过滤掉可能存在的旧 direct 规则，然后将新的 direct 插入到数组最前面（索引 0）
+    jq --argjson direct "$direct_outbound" \
+        '.outbounds = [.outbounds[] | select(.tag != "direct")] | .outbounds = [$direct] + .outbounds' \
+        "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+    mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+    print_success "已确保 direct (freedom) 出站位于首位，以支持 REALITY 协议回落"
+    # ★★★ 修复 REALITY 回落 Bug 结束 ★★★
 
     # 添加新出站
     jq --argjson new_out "$new_outbound" '.outbounds += [$new_out]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
