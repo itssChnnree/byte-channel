@@ -710,6 +710,32 @@ EOF
         print_warning "端口 $PORT 已被其他入站使用（不属于当前上游），将覆盖更新该入站。"
         local inbound_idx
         inbound_idx=$(jq --argjson port "$PORT" '.inbounds | map(.port == $port) | index(true)' "$XRAY_CONFIG_FILE")
+
+        # ★★★ 场景C修复：获取旧入站 tag，删除路由中引用该旧 tag 的规则 ★★★
+        local old_inbound_tag
+        old_inbound_tag=$(jq -r --argjson idx "$inbound_idx" '.inbounds[$idx].tag' "$XRAY_CONFIG_FILE")
+
+        if [ -n "$old_inbound_tag" ] && [ "$old_inbound_tag" != "null" ]; then
+            print_info "旧入站 tag: $old_inbound_tag，清理其关联的路由规则..."
+
+            # 删除路由规则中 inboundTag 数组包含旧 tag 的规则
+            local rules_before rules_after
+            rules_before=$(jq '.routing.rules | length' "$XRAY_CONFIG_FILE")
+
+            jq --arg old_tag "$old_inbound_tag" \
+                '.routing.rules = [.routing.rules[] | select((.inboundTag // []) | index($old_tag) | not)]' \
+                "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+            mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+
+            rules_after=$(jq '.routing.rules | length' "$XRAY_CONFIG_FILE")
+            local rules_removed=$(( rules_before - rules_after ))
+            print_success "已删除 $rules_removed 条引用旧入站 tag=$old_inbound_tag 的路由规则"
+        else
+            print_warning "旧入站无 tag，跳过路由规则清理"
+        fi
+        # ★★★ 场景C修复结束 ★★★
+
+        # 覆盖替换入站
         jq --argjson idx "$inbound_idx" --argjson new_in "$new_inbound" \
             '.inbounds[$idx] = $new_in' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
         mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
