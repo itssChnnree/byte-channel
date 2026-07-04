@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ruoyi.system.domain.dto.Socks5ResourcesDto;
 import com.ruoyi.system.domain.dto.Socks5ResourcesInsertDto;
 import com.ruoyi.system.domain.entity.Socks5Resources;
+import com.ruoyi.system.domain.vo.ResourcesImportVo;
 import com.ruoyi.system.domain.vo.Socks5ResourcesVo;
 import com.ruoyi.system.http.Result;
 
@@ -24,5 +25,13 @@ public interface ISocks5ResourcesService {
      * @author chenxiangyue 2026/7/4
      */
     Result insertSocks5(Socks5ResourcesInsertDto dto);
+
+    /**
+     * [通过密码查询socks5配置]
+     * @param password 查询密码
+     * @return socks5配置信息
+     * @author chenxiangyue 2026/7/4
+     */
+    Result getByPassword(String password);
 
 }

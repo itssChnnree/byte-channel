@@ -113,7 +113,8 @@ public class SecurityConfig
                 // 对于登录login 注册register 验证码captchaImage 允许匿名访问
                 requests.antMatchers("/login", "/register", "/captchaImage","/getEmailCode","/order/download",
                                 "/resourceAllocationTemporaryStorage/add","/serverResources/download","/serverResources/getImportUrlByPassWord",
-                                "/ssh","/selfDeploy/execute","/user/getResetPwdEmailCode","/user/resetPassword","/pay/notify","/serverResourcesThree/insert").permitAll()
+                                "/ssh","/selfDeploy/execute","/user/getResetPwdEmailCode","/user/resetPassword","/pay/notify",
+                                "/serverResourcesThree/insert","/socks5Resources/insert","/socks5Resources/queryByPassword","/selfDeploySocks5/execute").permitAll()
                     // 静态资源，可匿名访问
                     .antMatchers(HttpMethod.GET, "/", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/profile/**").permitAll()
                     .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/*/api-docs", "/druid/**").permitAll()

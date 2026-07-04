@@ -7,6 +7,7 @@ import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.Socks5ResourcesMapper;
 import com.ruoyi.system.service.ISocks5ResourcesService;
 import com.ruoyi.system.domain.entity.Socks5Resources;
+import com.ruoyi.system.domain.vo.ResourcesImportVo;
 import com.ruoyi.system.domain.vo.Socks5ResourcesVo;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,8 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+
+import org.springframework.util.ObjectUtils;
 
 /**
  * socks5资源记录(Socks5Resources)
@@ -52,6 +55,20 @@ public class Socks5ResourcesServiceImpl implements ISocks5ResourcesService {
                 .mapToObj(CHARACTERS::charAt)
                 .collect(Collectors.toList());
         return collect.stream().map(String::valueOf).collect(Collectors.joining());
+    }
+
+    @Override
+    public Result getByPassword(String password) {
+        Socks5Resources socks5 = socks5ResourcesMapper.selectByPassword(password);
+        if (ObjectUtils.isEmpty(socks5)) {
+            return Result.fail("未查询到您的SOCKS5节点信息");
+        }
+        ResourcesImportVo vo = new ResourcesImportVo();
+        vo.setSocks5Ip(socks5.getResourcesIp());
+        vo.setSocks5Port(socks5.getSocks5Port());
+        vo.setSocks5UserName(socks5.getSocks5UserName());
+        vo.setSocks5Password(socks5.getSocks5Password());
+        return Result.success(vo);
     }
 
 }
