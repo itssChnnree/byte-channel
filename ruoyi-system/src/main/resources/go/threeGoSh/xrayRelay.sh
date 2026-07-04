@@ -139,10 +139,10 @@ ensure_deps() {
 
 detect_public_ip() {
     local ip
-    ip=$(curl -s --connect-timeout 5 --max-time 10 ifconfig.me 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 ipinfo.io/ip 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 icanhazip.com 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 api.ipify.org 2>/dev/null)
+    ip=$(curl -4 -s --connect-timeout 5 --max-time 10 ifconfig.me 2>/dev/null) || \
+    ip=$(curl -4 -s --connect-timeout 5 --max-time 10 ipinfo.io/ip 2>/dev/null) || \
+    ip=$(curl -4 -s --connect-timeout 5 --max-time 10 icanhazip.com 2>/dev/null) || \
+    ip=$(curl -4 -s --connect-timeout 5 --max-time 10 api.ipify.org 2>/dev/null)
     echo "$ip"
 }
 
@@ -262,7 +262,6 @@ close_port() {
     case "$FW_TYPE" in
         ufw)
             ufw delete allow "$port"/tcp 2>/dev/null || true
-            ufw reload 2>/dev/null || true
             ;;
         firewalld)
             firewall-cmd --permanent --remove-port="${port}/tcp" 2>/dev/null || true
@@ -310,7 +309,6 @@ open_port() {
     case "$FW_TYPE" in
         ufw)
             ufw allow "$port"/tcp 2>/dev/null
-            ufw reload 2>/dev/null || true
             ;;
         firewalld)
             firewall-cmd --permanent --add-port="${port}/tcp" 2>/dev/null
@@ -487,6 +485,11 @@ ${SERVER_NAMES_JSON}
     }
   ],
   "outbounds": [
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {}
+    },
     {
       "tag": "proxy",
       "protocol": "vless",
@@ -710,6 +713,32 @@ EOF
         print_warning "端口 $PORT 已被其他入站使用（不属于当前上游），将覆盖更新该入站。"
         local inbound_idx
         inbound_idx=$(jq --argjson port "$PORT" '.inbounds | map(.port == $port) | index(true)' "$XRAY_CONFIG_FILE")
+
+        # ★★★ 场景C修复：获取旧入站 tag，删除路由中引用该旧 tag 的规则 ★★★
+        local old_inbound_tag
+        old_inbound_tag=$(jq -r --argjson idx "$inbound_idx" '.inbounds[$idx].tag' "$XRAY_CONFIG_FILE")
+
+        if [ -n "$old_inbound_tag" ] && [ "$old_inbound_tag" != "null" ]; then
+            print_info "旧入站 tag: $old_inbound_tag，清理其关联的路由规则..."
+
+            # 删除路由规则中 inboundTag 数组包含旧 tag 的规则
+            local rules_before rules_after
+            rules_before=$(jq '.routing.rules | length' "$XRAY_CONFIG_FILE")
+
+            jq --arg old_tag "$old_inbound_tag" \
+                '.routing.rules = [.routing.rules[] | select((.inboundTag // []) | index($old_tag) | not)]' \
+                "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+            mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+
+            rules_after=$(jq '.routing.rules | length' "$XRAY_CONFIG_FILE")
+            local rules_removed=$(( rules_before - rules_after ))
+            print_success "已删除 $rules_removed 条引用旧入站 tag=$old_inbound_tag 的路由规则"
+        else
+            print_warning "旧入站无 tag，跳过路由规则清理"
+        fi
+        # ★★★ 场景C修复结束 ★★★
+
+        # 覆盖替换入站
         jq --argjson idx "$inbound_idx" --argjson new_in "$new_inbound" \
             '.inbounds[$idx] = $new_in' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
         mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
@@ -717,6 +746,16 @@ EOF
         jq --argjson new_in "$new_inbound" '.inbounds += [$new_in]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
         mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
     fi
+
+    # ★★★ 修复 REALITY 回落 Bug：确保 direct (freedom) 出站存在且位于首位 ★★★
+    local direct_outbound='{"tag":"direct","protocol":"freedom","settings":{}}'
+    # 先过滤掉可能存在的旧 direct 规则，然后将新的 direct 插入到数组最前面（索引 0）
+    jq --argjson direct "$direct_outbound" \
+        '.outbounds = [.outbounds[] | select(.tag != "direct")] | .outbounds = [$direct] + .outbounds' \
+        "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
+    mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
+    print_success "已确保 direct (freedom) 出站位于首位，以支持 REALITY 协议回落"
+    # ★★★ 修复 REALITY 回落 Bug 结束 ★★★
 
     # 添加新出站
     jq --argjson new_out "$new_outbound" '.outbounds += [$new_out]' "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
