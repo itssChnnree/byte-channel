@@ -106,6 +106,9 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     private ResourceAllocationTemporaryStorageMapper resourceAllocationTemporaryStorageMapper;
 
     @Resource
+    private Socks5ResourcesMapper socks5ResourcesMapper;
+
+    @Resource
     private ServerResourceAlarmMapper serverResourceAlarmMapper;
 
     @Resource(name = "resourceDetectionExecutor")
@@ -449,15 +452,28 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
      **/
     @Override
     public Result getImportUrlByPassWord(String password) {
+        // 先查 VLESS 表
         ServerResources serverResources = serverResourcesMapper.selectByPassword(password);
-        if (ObjectUtils.isEmpty(serverResources)){
-            return Result.fail("未查询到您的节点信息");
+        if (ObjectUtils.isNotEmpty(serverResources)){
+            ResourcesImportVo resourcesImportVo = new ResourcesImportVo();
+            String clashDownloadUrl1 = getClashDownloadUrl(serverResources);
+            resourcesImportVo.setClashDownloadUrl(clashDownloadUrl1);
+            resourcesImportVo.setVlessUrl(getVlessUrl(serverResources));
+            return Result.success(resourcesImportVo);
         }
-        ResourcesImportVo resourcesImportVo = new ResourcesImportVo();
-        String clashDownloadUrl1 = getClashDownloadUrl(serverResources);
-        resourcesImportVo.setClashDownloadUrl(clashDownloadUrl1);
-        resourcesImportVo.setVlessUrl(getVlessUrl(serverResources));
-        return Result.success(resourcesImportVo);
+
+        // 再查 SOCKS5 表
+        Socks5Resources socks5 = socks5ResourcesMapper.selectByPassword(password);
+        if (ObjectUtils.isNotEmpty(socks5)){
+            ResourcesImportVo resourcesImportVo = new ResourcesImportVo();
+            resourcesImportVo.setSocks5Ip(socks5.getResourcesIp());
+            resourcesImportVo.setSocks5Port(socks5.getSocks5Port());
+            resourcesImportVo.setSocks5UserName(socks5.getSocks5UserName());
+            resourcesImportVo.setSocks5Password(socks5.getSocks5Password());
+            return Result.success(resourcesImportVo);
+        }
+
+        return Result.fail("未查询到您的节点信息");
     }
 
     private String getClashDownloadUrl(ServerResources serverResources) {

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.RelayNodeMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.RelayNode" id="RelayNodeMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="nodeName" column="node_name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="serverNames" column="server_names" jdbcType="VARCHAR"/>
+        <result property="dest" column="dest" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.RelayNodeVo" id="RelayNodeVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="nodeName" column="node_name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="serverNames" column="server_names" jdbcType="VARCHAR"/>
+        <result property="dest" column="dest" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.RelayNodePageVo" id="RelayNodePageVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="nodeName" column="node_name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="resourceCount" column="resource_count" jdbcType="INTEGER"/>
+        <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <update id="toggleAvailableStatus">
+        update relay_node
+        set available_status = case when available_status = 1 then 0 else 1 end
+        where id = #{id}
+    </update>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="RelayNodeVOMap">
+        select id,
+               node_name,
+               description,
+               server_names,
+               dest,
+               is_deleted,
+               create_user,
+               update_user,
+               create_time,
+               update_time,
+               status,
+               available_status
+        from relay_node
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="RelayNodeVOMap">
+        select
+        id, node_name, description, server_names, dest, is_deleted, create_user, update_user, create_time, update_time,
+        status, available_status
+        from relay_node
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="nodeName != null and nodeName != ''">
+                and node_name = #{nodeName}
+            </if>
+            <if test="description != null and description != ''">
+                and description = #{description}
+            </if>
+            <if test="serverNames != null and serverNames != ''">
+                and server_names = #{serverNames}
+            </if>
+            <if test="dest != null and dest != ''">
+                and dest = #{dest}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryPageVo" resultMap="RelayNodePageVOMap">
+        select rn.id,
+               rn.node_name,
+               rn.description,
+               rn.available_status,
+               rn.create_time,
+               (select count(1) from relay_resource rr where rr.node_id = rn.id and rr.is_deleted = 0) as resource_count
+        from relay_node rn
+        <where>
+            rn.is_deleted = 0
+            <if test="dto.nodeNameLike != null and dto.nodeNameLike != ''">
+                and rn.node_name like concat('%', #{dto.nodeNameLike}, '%')
+            </if>
+        </where>
+        order by rn.create_time desc
+    </select>
+
+    <select id="queryListVo" resultMap="RelayNodePageVOMap">
+        select rn.id,
+               rn.node_name,
+               rn.description,
+               rn.available_status,
+               rn.create_time,
+               (select count(1) from relay_resource rr where rr.node_id = rn.id and rr.is_deleted = 0) as resource_count
+        from relay_node rn
+        where rn.is_deleted = 0
+        order by rn.create_time desc
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="RelayNodeVOMap">
+        select
+        id, node_name, description, server_names, dest, is_deleted, create_user, update_user, create_time, update_time,
+        status
+        from relay_node
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.nodeName != null and dto.nodeName != ''">
+                and node_name = #{dto.nodeName}
+            </if>
+            <if test="dto.description != null and dto.description != ''">
+                and description = #{dto.description}
+            </if>
+            <if test="dto.serverNames != null and dto.serverNames != ''">
+                and server_names = #{dto.serverNames}
+            </if>
+            <if test="dto.dest != null and dto.dest != ''">
+                and dest = #{dto.dest}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="RelayNodeVOMap">
+        select
+        id, node_name, description, server_names, dest, is_deleted, create_user, update_user, create_time, update_time,
+        status
+        from relay_node
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.nodeNameLike != null and dto.nodeNameLike != ''">
+                and node_name like concat('%', #{dto.nodeNameLike}, '%')
+            </if>
+        </where>
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_node(id, node_name, description, server_names, dest, is_deleted, create_user, update_user,
+                               create_time, update_time, status)
+        values (#{id}, #{nodeName}, #{description}, #{serverNames}, #{dest}, #{isDeleted}, #{createUser},
+                #{updateUser}, #{createTime}, #{updateTime}, #{status})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_node(id,node_name, description, server_names, dest, is_deleted, create_user, update_user,
+        create_time, update_time, status)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.nodeName}, #{entity.description}, #{entity.serverNames}, #{entity.dest},
+            #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime},
+            #{entity.status})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_node(id,node_name, description, server_names, dest, is_deleted, create_user, update_user,
+        create_time, update_time, status)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.nodeName}, #{entity.description}, #{entity.serverNames}, #{entity.dest},
+            #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser}, #{entity.createTime}, #{entity.updateTime},
+            #{entity.status})
+        </foreach>
+        on duplicate key update
+        node_name = values(node_name),
+        description = values(description),
+        server_names = values(server_names),
+        dest = values(dest),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time),
+        status = values(status)
+    </insert>
+
+</mapper>
+

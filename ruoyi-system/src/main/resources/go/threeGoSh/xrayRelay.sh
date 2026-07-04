@@ -438,7 +438,7 @@ write_config_full() {
     # 获取旧的所有入站端口
     local old_ports
     old_ports=$(get_all_inbound_ports)
-    
+
     mkdir -p "$XRAY_CONFIG_DIR"
 
     cat > "$XRAY_CONFIG_FILE" << XRAYEOF
@@ -536,7 +536,7 @@ XRAYEOF
 
     chmod 644 "$XRAY_CONFIG_FILE"
     print_success "配置文件已写入: $XRAY_CONFIG_FILE"
-    
+
     # 返回旧端口列表
     echo "$old_ports"
 }
@@ -735,7 +735,7 @@ EOF
     mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
 
     print_success "增量配置更新完成: $XRAY_CONFIG_FILE"
-    
+
     # 返回被删除的端口列表（去除首尾空格）
     echo "$deleted_ports" | xargs
 }
@@ -744,9 +744,9 @@ EOF
 configure_firewall() {
     local close_ports="$1"   # 空格分隔的端口列表
     local new_port="$2"
-    
+
     detect_firewall
-    
+
     # 关闭旧端口
     if [ -n "$close_ports" ]; then
         for port in $close_ports; do
@@ -755,7 +755,7 @@ configure_firewall() {
             fi
         done
     fi
-    
+
     # 开放新端口
     open_port "$new_port"
 }

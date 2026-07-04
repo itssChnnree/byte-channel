@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.RelayResourceMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.RelayResource" id="RelayResourceMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="nodeId" column="node_id" jdbcType="VARCHAR"/>
+        <result property="vendorAccountId" column="vendor_account_id" jdbcType="VARCHAR"/>
+        <result property="resourceIp" column="resource_ip" jdbcType="VARCHAR"/>
+        <result property="resourcePort" column="resource_port" jdbcType="VARCHAR"/>
+        <result property="resourceUserName" column="resource_user_name" jdbcType="VARCHAR"/>
+        <result property="resourcePassword" column="resource_password" jdbcType="VARCHAR"/>
+        <result property="transferableQuantity" column="transferable_quantity" jdbcType="INTEGER"/>
+        <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.RelayResourceVo" id="RelayResourceVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="nodeId" column="node_id" jdbcType="VARCHAR"/>
+        <result property="vendorAccountId" column="vendor_account_id" jdbcType="VARCHAR"/>
+        <result property="resourceIp" column="resource_ip" jdbcType="VARCHAR"/>
+        <result property="resourcePort" column="resource_port" jdbcType="VARCHAR"/>
+        <result property="resourceUserName" column="resource_user_name" jdbcType="VARCHAR"/>
+        <result property="resourcePassword" column="resource_password" jdbcType="VARCHAR"/>
+        <result property="transferableQuantity" column="transferable_quantity" jdbcType="INTEGER"/>
+        <result property="availableStatus" column="available_status" jdbcType="INTEGER"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="RelayResourceVOMap">
+        select id,
+               node_id,
+               vendor_account_id,
+               resource_ip,
+               resource_port,
+               resource_user_name,
+               resource_password,
+               transferable_quantity,
+               available_status,
+               is_deleted,
+               create_user,
+               update_user,
+               create_time,
+               update_time,
+               status
+        from relay_resource
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="RelayResourceVOMap">
+        select
+        id, node_id, vendor_account_id, resource_ip, resource_port, resource_user_name, resource_password,
+        transferable_quantity, available_status, is_deleted, create_user, update_user, create_time, update_time, status
+        from relay_resource
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="nodeId != null and nodeId != ''">
+                and node_id = #{nodeId}
+            </if>
+            <if test="vendorAccountId != null and vendorAccountId != ''">
+                and vendor_account_id = #{vendorAccountId}
+            </if>
+            <if test="resourceIp != null and resourceIp != ''">
+                and resource_ip = #{resourceIp}
+            </if>
+            <if test="resourcePort != null and resourcePort != ''">
+                and resource_port = #{resourcePort}
+            </if>
+            <if test="resourceUserName != null and resourceUserName != ''">
+                and resource_user_name = #{resourceUserName}
+            </if>
+            <if test="resourcePassword != null and resourcePassword != ''">
+                and resource_password = #{resourcePassword}
+            </if>
+            <if test="transferableQuantity != null">
+                and transferable_quantity = #{transferableQuantity}
+            </if>
+            <if test="availableStatus != null">
+                and available_status = #{availableStatus}
+            </if>
+        </where>
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="RelayResourceVOMap">
+        select
+        id, node_id, vendor_account_id, resource_ip, resource_port, resource_user_name, resource_password,
+        transferable_quantity, available_status, is_deleted, create_user, update_user, create_time, update_time, status
+        from relay_resource
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.nodeId != null and dto.nodeId != ''">
+                and node_id = #{dto.nodeId}
+            </if>
+            <if test="dto.vendorAccountId != null and dto.vendorAccountId != ''">
+                and vendor_account_id = #{dto.vendorAccountId}
+            </if>
+            <if test="dto.resourceIp != null and dto.resourceIp != ''">
+                and resource_ip = #{dto.resourceIp}
+            </if>
+            <if test="dto.resourcePort != null and dto.resourcePort != ''">
+                and resource_port = #{dto.resourcePort}
+            </if>
+            <if test="dto.resourceUserName != null and dto.resourceUserName != ''">
+                and resource_user_name = #{dto.resourceUserName}
+            </if>
+            <if test="dto.resourcePassword != null and dto.resourcePassword != ''">
+                and resource_password = #{dto.resourcePassword}
+            </if>
+            <if test="dto.transferableQuantity != null">
+                and transferable_quantity = #{dto.transferableQuantity}
+            </if>
+            <if test="dto.availableStatus != null">
+                and available_status = #{dto.availableStatus}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="RelayResourceVOMap">
+        select rr.*, rn.node_name as nodeName
+        from relay_resource rr
+        left join relay_node rn on rr.node_id = rn.id and rn.is_deleted = 0
+        <where>
+            rr.is_deleted = 0
+            <if test="dto.resourceIpLike != null and dto.resourceIpLike != ''">
+                and rr.resource_ip like concat('%', #{dto.resourceIpLike}, '%')
+            </if>
+            <if test="dto.nodeId != null and dto.nodeId != ''">
+                and rr.node_id = #{dto.nodeId}
+            </if>
+            <if test="dto.availableStatus != null">
+                and rr.available_status = #{dto.availableStatus}
+            </if>
+        </where>
+        order by rr.create_time desc
+    </select>
+
+    <update id="toggleAvailableStatus">
+        update relay_resource
+        set available_status = case when available_status = 1 then 0 else 1 end
+        where id = #{id}
+    </update>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_resource(id, node_id, vendor_account_id, resource_ip, resource_port, resource_user_name,
+                                   resource_password, transferable_quantity, available_status, is_deleted, create_user,
+                                   update_user, create_time, update_time, status)
+        values (#{id}, #{nodeId}, #{vendorAccountId}, #{resourceIp}, #{resourcePort}, #{resourceUserName},
+                #{resourcePassword}, #{transferableQuantity}, #{availableStatus}, #{isDeleted}, #{createUser},
+                #{updateUser}, #{createTime}, #{updateTime}, #{status})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_resource(id,node_id, vendor_account_id, resource_ip, resource_port, resource_user_name,
+        resource_password, transferable_quantity, available_status, is_deleted, create_user, update_user, create_time,
+        update_time, status)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.nodeId}, #{entity.vendorAccountId}, #{entity.resourceIp}, #{entity.resourcePort},
+            #{entity.resourceUserName}, #{entity.resourcePassword}, #{entity.transferableQuantity},
+            #{entity.availableStatus}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser},
+            #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_resource(id,node_id, vendor_account_id, resource_ip, resource_port, resource_user_name,
+        resource_password, transferable_quantity, available_status, is_deleted, create_user, update_user, create_time,
+        update_time, status)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.nodeId}, #{entity.vendorAccountId}, #{entity.resourceIp}, #{entity.resourcePort},
+            #{entity.resourceUserName}, #{entity.resourcePassword}, #{entity.transferableQuantity},
+            #{entity.availableStatus}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser},
+            #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+        </foreach>
+        on duplicate key update
+        node_id = values(node_id),
+        vendor_account_id = values(vendor_account_id),
+        resource_ip = values(resource_ip),
+        resource_port = values(resource_port),
+        resource_user_name = values(resource_user_name),
+        resource_password = values(resource_password),
+        transferable_quantity = values(transferable_quantity),
+        available_status = values(available_status),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time),
+        status = values(status)
+    </insert>
+
+</mapper>
+

@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.RelayPortMapper">
+
+    <resultMap type="com.ruoyi.system.domain.entity.RelayPort" id="RelayPortMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="relayResourceId" column="relay_resource_id" jdbcType="VARCHAR"/>
+        <result property="targetResourceId" column="target_resource_id" jdbcType="VARCHAR"/>
+        <result property="port" column="port" jdbcType="VARCHAR"/>
+        <result property="protocol" column="protocol" jdbcType="VARCHAR"/>
+        <result property="transport" column="transport" jdbcType="VARCHAR"/>
+        <result property="path" column="path" jdbcType="VARCHAR"/>
+        <result property="security" column="security" jdbcType="VARCHAR"/>
+        <result property="publicKey" column="public_key" jdbcType="VARCHAR"/>
+        <result property="sni" column="sni" jdbcType="VARCHAR"/>
+        <result property="shortId" column="short_id" jdbcType="VARCHAR"/>
+        <result property="nodePort" column="node_port" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="nodeName" column="nodeName" jdbcType="VARCHAR"/>
+        <result property="resourceIp" column="resourceIp" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.system.domain.vo.RelayPortVo" id="RelayPortVOMap">
+        <result property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="relayResourceId" column="relay_resource_id" jdbcType="VARCHAR"/>
+        <result property="targetResourceId" column="target_resource_id" jdbcType="VARCHAR"/>
+        <result property="port" column="port" jdbcType="VARCHAR"/>
+        <result property="protocol" column="protocol" jdbcType="VARCHAR"/>
+        <result property="transport" column="transport" jdbcType="VARCHAR"/>
+        <result property="path" column="path" jdbcType="VARCHAR"/>
+        <result property="security" column="security" jdbcType="VARCHAR"/>
+        <result property="publicKey" column="public_key" jdbcType="VARCHAR"/>
+        <result property="sni" column="sni" jdbcType="VARCHAR"/>
+        <result property="shortId" column="short_id" jdbcType="VARCHAR"/>
+        <result property="nodePort" column="node_port" jdbcType="VARCHAR"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="INTEGER"/>
+        <result property="createUser" column="create_user" jdbcType="VARCHAR"/>
+        <result property="updateUser" column="update_user" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--��ѯ����-->
+    <select id="queryById" resultMap="RelayPortVOMap">
+        select id,
+               relay_resource_id,
+               target_resource_id,
+               port,
+               protocol,
+               transport,
+               path,
+               security,
+               public_key,
+               sni,
+               short_id,
+               node_port,
+               is_deleted,
+               create_user,
+               update_user,
+               create_time,
+               update_time,
+               status
+        from relay_port
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryList" resultMap="RelayPortVOMap">
+        select
+        id, relay_resource_id, target_resource_id, port, protocol, transport, path, security, public_key, sni, short_id,
+        node_port, is_deleted, create_user, update_user, create_time, update_time, status
+        from relay_port
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="id != null and id != ''">
+                and id = #{id}
+            </if>
+            <if test="relayResourceId != null and relayResourceId != ''">
+                and relay_resource_id = #{relayResourceId}
+            </if>
+            <if test="targetResourceId != null and targetResourceId != ''">
+                and target_resource_id = #{targetResourceId}
+            </if>
+            <if test="port != null and port != ''">
+                and port = #{port}
+            </if>
+            <if test="protocol != null and protocol != ''">
+                and protocol = #{protocol}
+            </if>
+            <if test="transport != null and transport != ''">
+                and transport = #{transport}
+            </if>
+            <if test="path != null and path != ''">
+                and path = #{path}
+            </if>
+            <if test="security != null and security != ''">
+                and security = #{security}
+            </if>
+            <if test="publicKey != null and publicKey != ''">
+                and public_key = #{publicKey}
+            </if>
+            <if test="sni != null and sni != ''">
+                and sni = #{sni}
+            </if>
+            <if test="shortId != null and shortId != ''">
+                and short_id = #{shortId}
+            </if>
+            <if test="nodePort != null and nodePort != ''">
+                and node_port = #{nodePort}
+            </if>
+        </where>
+    </select>
+
+    <!--��ѯָ��������-->
+    <select id="queryListLimit" resultMap="RelayPortVOMap">
+        select
+        id, relay_resource_id, target_resource_id, port, protocol, transport, path, security, public_key, sni, short_id,
+        node_port, is_deleted, create_user, update_user, create_time, update_time, status
+        from relay_port
+        <where>
+            1 = 1 and is_deleted = 0
+            <if test="dto.id != null and dto.id != ''">
+                and id = #{dto.id}
+            </if>
+            <if test="dto.relayResourceId != null and dto.relayResourceId != ''">
+                and relay_resource_id = #{dto.relayResourceId}
+            </if>
+            <if test="dto.targetResourceId != null and dto.targetResourceId != ''">
+                and target_resource_id = #{dto.targetResourceId}
+            </if>
+            <if test="dto.port != null and dto.port != ''">
+                and port = #{dto.port}
+            </if>
+            <if test="dto.protocol != null and dto.protocol != ''">
+                and protocol = #{dto.protocol}
+            </if>
+            <if test="dto.transport != null and dto.transport != ''">
+                and transport = #{dto.transport}
+            </if>
+            <if test="dto.path != null and dto.path != ''">
+                and path = #{dto.path}
+            </if>
+            <if test="dto.security != null and dto.security != ''">
+                and security = #{dto.security}
+            </if>
+            <if test="dto.publicKey != null and dto.publicKey != ''">
+                and public_key = #{dto.publicKey}
+            </if>
+            <if test="dto.sni != null and dto.sni != ''">
+                and sni = #{dto.sni}
+            </if>
+            <if test="dto.shortId != null and dto.shortId != ''">
+                and short_id = #{dto.shortId}
+            </if>
+            <if test="dto.nodePort != null and dto.nodePort != ''">
+                and node_port = #{dto.nodePort}
+            </if>
+        </where>
+        limit #{limit}
+    </select>
+
+    <!--��ѯ��ҳ����-->
+    <select id="queryPage" resultMap="RelayPortVOMap">
+        select rp.*, rr.resource_ip as resourceIp, rn.node_name as nodeName
+        from relay_port rp
+        left join relay_resource rr on rp.relay_resource_id = rr.id and rr.is_deleted = 0
+        left join relay_node rn on rr.node_id = rn.id and rn.is_deleted = 0
+        <where>
+            rp.is_deleted = 0
+            <if test="dto.keyword != null and dto.keyword != ''">
+                and rp.port like concat('%', #{dto.keyword}, '%')
+            </if>
+            <if test="dto.nodeId != null and dto.nodeId != ''">
+                and rr.node_id = #{dto.nodeId}
+            </if>
+            <if test="dto.resourceIp != null and dto.resourceIp != ''">
+                and rr.resource_ip like concat('%', #{dto.resourceIp}, '%')
+            </if>
+            <if test="dto.protocol != null and dto.protocol != ''">
+                and rp.protocol = #{dto.protocol}
+            </if>
+        </where>
+        order by rp.create_time desc
+    </select>
+
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_port(id, relay_resource_id, target_resource_id, port, protocol, transport, path, security,
+                               public_key, sni, short_id, node_port, is_deleted, create_user, update_user, create_time,
+                               update_time, status)
+        values (#{id}, #{relayResourceId}, #{targetResourceId}, #{port}, #{protocol}, #{transport}, #{path},
+                #{security}, #{publicKey}, #{sni}, #{shortId}, #{nodePort}, #{isDeleted}, #{createUser}, #{updateUser},
+                #{createTime}, #{updateTime}, #{status})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_port(id,relay_resource_id, target_resource_id, port, protocol, transport, path, security,
+        public_key, sni, short_id, node_port, is_deleted, create_user, update_user, create_time, update_time, status)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.relayResourceId}, #{entity.targetResourceId}, #{entity.port}, #{entity.protocol},
+            #{entity.transport}, #{entity.path}, #{entity.security}, #{entity.publicKey}, #{entity.sni},
+            #{entity.shortId}, #{entity.nodePort}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser},
+            #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into relay_port(id,relay_resource_id, target_resource_id, port, protocol, transport, path, security,
+        public_key, sni, short_id, node_port, is_deleted, create_user, update_user, create_time, update_time, status)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.id},#{entity.relayResourceId}, #{entity.targetResourceId}, #{entity.port}, #{entity.protocol},
+            #{entity.transport}, #{entity.path}, #{entity.security}, #{entity.publicKey}, #{entity.sni},
+            #{entity.shortId}, #{entity.nodePort}, #{entity.isDeleted}, #{entity.createUser}, #{entity.updateUser},
+            #{entity.createTime}, #{entity.updateTime}, #{entity.status})
+        </foreach>
+        on duplicate key update
+        relay_resource_id = values(relay_resource_id),
+        target_resource_id = values(target_resource_id),
+        port = values(port),
+        protocol = values(protocol),
+        transport = values(transport),
+        path = values(path),
+        security = values(security),
+        public_key = values(public_key),
+        sni = values(sni),
+        short_id = values(short_id),
+        node_port = values(node_port),
+        is_deleted = values(is_deleted),
+        create_user = values(create_user),
+        update_user = values(update_user),
+        create_time = values(create_time),
+        update_time = values(update_time),
+        status = values(status)
+    </insert>
+
+</mapper>
+

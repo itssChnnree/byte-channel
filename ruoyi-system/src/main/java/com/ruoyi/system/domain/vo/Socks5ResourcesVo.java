@@ -1,32 +1,30 @@
 package com.ruoyi.system.domain.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Date;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import io.swagger.annotations.ApiModelProperty;
+
 
 /**
- * [资源导入数据]
+ * socks5资源记录(Socks5Resources)
  *
- * @author 陈湘岳
+ * @author chenxiangyue
  * @version v1.0.0
- * @date 2025/9/22
+ * @date 2026-06-29 22:23:01
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResourcesImportVo {
+public class Socks5ResourcesVo {
 
-    private String resourcesId;
+    @ApiModelProperty("主键id")
+    private String id;
 
-    @ApiModelProperty("vless链接")
-    private String vlessUrl;
-
-    @ApiModelProperty("clash下载链接")
-    private String clashDownloadUrl;
-
-    @ApiModelProperty("socks5服务器IP")
-    private String socks5Ip;
+    @ApiModelProperty("服务器ip")
+    private String resourcesIp;
 
     @ApiModelProperty("socks5端口")
     private String socks5Port;
@@ -36,4 +34,7 @@ public class ResourcesImportVo {
 
     @ApiModelProperty("socks5密码")
     private String socks5Password;
+
+    @ApiModelProperty(" 查询密码")
+    private String password;
 }
