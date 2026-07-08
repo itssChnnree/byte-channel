@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Dante SOCKS5 全量一键脚本 (CentOS 兼容增强版)
+# Dante SOCKS5 全量一键脚本 (CentOS 禁用版)
 # 用法： bash startSocket5.sh [-p PORT] [-u USER] [-pw PASSWORD] [-h]
 # 特点：系统认证（无 userlist），兼容 Ubuntu/Debian/CentOS，防锁防火墙
-# 修复：CentOS 自动回退至 RPM 包安装；强制 PAM 配置；拦截 root 用户名
+# 修改：CentOS 系统直接拒绝执行
 # ============================================================
 set -e
 
@@ -28,8 +28,12 @@ detect_pkg_manager() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         case "$ID" in
+            centos)
+                echo -e "${RED}[ERR]${NC} 当前系统为 CentOS，本脚本不支持 CentOS 系统，请使用其他操作系统。"
+                exit 1
+                ;;
             ubuntu|debian) PKG_MANAGER="apt" ;;
-            centos|rhel|fedora|rocky|almalinux) PKG_MANAGER="yum" ;;
+            rhel|fedora|rocky|almalinux) PKG_MANAGER="yum" ;;
             *) 
                 if command -v apt-get &> /dev/null; then PKG_MANAGER="apt"
                 elif command -v dnf &> /dev/null; then PKG_MANAGER="dnf"
