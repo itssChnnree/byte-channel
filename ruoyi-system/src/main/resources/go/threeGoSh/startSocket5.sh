@@ -1,8 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Dante SOCKS5 全量一键脚本 (最终修复版)
+# Dante SOCKS5 全量一键脚本 (修复版)
 # 用法： bash startSocket5.sh [-p PORT] [-u USER] [-pw PASSWORD] [-h]
 # 特点：系统认证（无 userlist），兼容 Ubuntu/Debian/CentOS，防锁防火墙
+# 修复：CentOS9 自动启用EPEL；强制创建PAM文件防CPU爆满
 # ============================================================
 set -e
 
@@ -61,7 +62,8 @@ install_if_missing() {
             DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$pkg"
             ;;
         dnf|yum)
-            $PKG_MANAGER install -y -q "$pkg" 2>/dev/null || true
+            # 添加超时，防止网络问题永久挂起
+            timeout 60 $PKG_MANAGER install -y -q "$pkg" 2>/dev/null || true
             ;;
     esac
 }
@@ -228,13 +230,33 @@ install_dante() {
     fi
 
     echo -e "${YELLOW}[WARN]${NC} 未找到 sockd/danted，尝试安装 dante-server..."
+
+    # ---------- 修复：自动启用 EPEL (CentOS/RHEL 8+) ----------
+    case "$PKG_MANAGER" in
+        dnf|yum)
+            # 检查并安装 EPEL（CentOS 9 默认没有 dante-server）
+            if ! rpm -q epel-release &>/dev/null; then
+                echo -e "${BLUE}[INFO]${NC} 正在安装 EPEL 仓库..."
+                timeout 60 $PKG_MANAGER install -y epel-release || {
+                    echo -e "${RED}[ERR]${NC} EPEL 安装失败，请手动安装后重试"
+                    exit 1
+                }
+            fi
+            ;;
+    esac
+    # ---------------------------------------------------------
+
     case "$PKG_MANAGER" in
         apt)
             apt-get update -qq
             DEBIAN_FRONTEND=noninteractive apt-get install --reinstall -y dante-server || true
             ;;
         dnf|yum)
-            $PKG_MANAGER reinstall -y dante-server 2>/dev/null || $PKG_MANAGER install -y dante-server
+            # 增加超时，避免永久卡死
+            timeout 120 $PKG_MANAGER install -y dante-server || {
+                echo -e "${RED}[ERR]${NC} dante-server 安装失败，请检查网络或手动安装"
+                exit 1
+            }
             ;;
     esac
 
@@ -251,6 +273,31 @@ install_dante() {
     echo -e "${RED}[ERR]${NC} 无法安装或找到 sockd/danted"
     echo "  请手动执行: apt-get install --reinstall dante-server"
     exit 1
+}
+
+# ===================== PAM 认证配置强制创建 =====================
+ensure_pam_config() {
+    echo -e "${BLUE}[INFO]${NC} 检查并创建 PAM 认证配置..."
+    # 这两个文件缺失会导致 Dante 认证疯狂重试，CPU 100%
+    if [ ! -f /etc/pam.d/sockd ]; then
+        cat > /etc/pam.d/sockd << 'EOF'
+auth    required    pam_unix.so
+account required    pam_unix.so
+EOF
+        echo -e "${GREEN}[OK]${NC} 已创建 /etc/pam.d/sockd"
+    else
+        echo -e "${GREEN}[OK]${NC} /etc/pam.d/sockd 已存在"
+    fi
+
+    if [ ! -f /etc/pam.d/danted ]; then
+        cat > /etc/pam.d/danted << 'EOF'
+auth    required    pam_unix.so
+account required    pam_unix.so
+EOF
+        echo -e "${GREEN}[OK]${NC} 已创建 /etc/pam.d/danted"
+    else
+        echo -e "${GREEN}[OK]${NC} /etc/pam.d/danted 已存在"
+    fi
 }
 
 # ===================== 配置 (使用系统用户认证) =====================
@@ -292,6 +339,9 @@ socks pass {
 }
 EOF
     echo -e "${GREEN}[OK]${NC} 配置文件已写入 (系统用户认证)"
+
+    # 确保 PAM 配置存在，防止 CPU 爆满
+    ensure_pam_config
 }
 
 restart_dante() {
