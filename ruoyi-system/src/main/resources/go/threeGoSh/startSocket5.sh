@@ -1,9 +1,8 @@
 #!/bin/bash
 # ============================================================
-# Dante SOCKS5 全量一键脚本 (CentOS 禁用版)
+# Xray SOCKS5 全量一键脚本 (基于原 Dante 脚本改造)
 # 用法： bash startSocket5.sh [-p PORT] [-u USER] [-pw PASSWORD] [-h]
-# 特点：系统认证（无 userlist），兼容 Ubuntu/Debian/CentOS，防锁防火墙
-# 修改：CentOS 系统直接拒绝执行
+# 特点：内置账户认证，兼容 Ubuntu/Debian/CentOS，自动防火墙
 # ============================================================
 set -e
 
@@ -18,7 +17,6 @@ PKG_MANAGER=""
 FW_TYPE="none"
 FW_PORT_OK=false
 BBR_ENABLED=false
-DANTE_BIN=""
 API_URL="https://api.ganguo168.com/socks5Resources/insert"
 QUERY_BASE_URL="https://www.ganguo168.com/#/query-config/socks5"
 PASSWORD=""
@@ -28,12 +26,8 @@ detect_pkg_manager() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         case "$ID" in
-            centos)
-                echo -e "${RED}[ERR]${NC} 当前系统为 CentOS，本脚本不支持 CentOS 系统，请使用其他操作系统。"
-                exit 1
-                ;;
             ubuntu|debian) PKG_MANAGER="apt" ;;
-            rhel|fedora|rocky|almalinux) PKG_MANAGER="yum" ;;
+            centos|rhel|fedora|rocky|almalinux) PKG_MANAGER="yum" ;;
             *) 
                 if command -v apt-get &> /dev/null; then PKG_MANAGER="apt"
                 elif command -v dnf &> /dev/null; then PKG_MANAGER="dnf"
@@ -157,7 +151,10 @@ open_port() {
 }
 
 get_old_port() {
-    [ -f /etc/danted.conf ] && grep -oP 'internal:\s+[\d.]+ port = \K\d+' /etc/danted.conf 2>/dev/null | head -1
+    # 尝试从旧 Xray 配置中提取端口（如果存在）
+    if [ -f /usr/local/etc/xray/config.json ]; then
+        grep -oP '"port"\s*:\s*\K\d+' /usr/local/etc/xray/config.json 2>/dev/null | head -1
+    fi
 }
 
 configure_firewall() {
@@ -167,105 +164,31 @@ configure_firewall() {
     open_port "$SOCKS_PORT"
 }
 
-# ===================== Dante 安装 (CentOS 网络降级) =====================
-install_dante() {
-    echo -e "${CYAN}[Dante]${NC} 安装/检查 Dante ..."
+# ===================== Xray 安装 =====================
+install_xray() {
+    echo -e "${CYAN}[Xray]${NC} 安装/检查 Xray ..."
+    if command -v xray &> /dev/null; then
+        echo -e "${GREEN}[OK]${NC} 检测到 xray"
+        return
+    fi
 
-    # 查找已有二进制
-    for bin in sockd danted; do
-        if command -v $bin &> /dev/null; then
-            DANTE_BIN="$bin"
-            echo -e "${GREEN}[OK]${NC} 检测到 $bin"
-            return
-        fi
-    done
-    for path in /usr/sbin/sockd /usr/bin/sockd /usr/local/sbin/sockd /usr/local/bin/sockd \
-                /usr/sbin/danted /usr/bin/danted /usr/local/sbin/danted /usr/local/bin/danted; do
-        [ -f "$path" ] && { DANTE_BIN=$(basename "$path"); export PATH="$PATH:$(dirname "$path")"; echo -e "${GREEN}[OK]${NC} 找到 $path"; return; }
-    done
-    local found=$(find /usr -type f \( -name sockd -o -name danted \) 2>/dev/null | head -1)
-    [ -n "$found" ] && { DANTE_BIN=$(basename "$found"); export PATH="$PATH:$(dirname "$found")"; echo -e "${GREEN}[OK]${NC} 找到 $found"; return; }
+    echo -e "${YELLOW}[WARN]${NC} 未找到 xray，通过官方脚本安装..."
+    # 使用官方安装脚本（自动识别系统架构）
+    if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install; then
+        echo -e "${RED}[ERR]${NC} Xray 安装失败，请检查网络后重试"
+        exit 1
+    fi
 
-    echo -e "${YELLOW}[WARN]${NC} 未找到 sockd/danted，开始安装..."
-
-    case "$PKG_MANAGER" in
-        apt)
-            apt-get update -qq
-            DEBIAN_FRONTEND=noninteractive apt-get install --reinstall -y dante-server || true
-            ;;
-        dnf|yum)
-            # 尝试通过包管理器安装（设置超时）
-            echo -e "${BLUE}[INFO]${NC} 尝试通过 $PKG_MANAGER 安装 dante-server..."
-            if ! timeout 30 $PKG_MANAGER install -y dante-server 2>/dev/null; then
-                echo -e "${YELLOW}[WARN]${NC} 包管理器安装失败，切换至 RPM 包直装..."
-
-                # 自动下载 EPEL 和 dante-server + miniupnpc
-                install_rpm_pkg() {
-                    local url="$1"
-                    local name="$2"
-                    local tmp="/tmp/${name}.rpm"
-                    curl -fsSL --connect-timeout 10 --max-time 30 "$url" -o "$tmp" || return 1
-                    rpm -ivh --nodeps "$tmp" || return 1
-                    rm -f "$tmp"
-                }
-
-                # 根据 CentOS 版本选择 EPEL URL（9/8）
-                local epel_url=""
-                if grep -q 'release 9' /etc/redhat-release 2>/dev/null; then
-                    epel_url="https://dl.fedoraproject.org/pub/epel/9/Everything/x86_64/Packages"
-                else
-                    epel_url="https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages"
-                fi
-
-                # 安装 EPEL 标识（非必须，但可提供仓库元数据）
-                install_rpm_pkg "$epel_url/e/epel-release-9-2.el9.noarch.rpm" "epel-release" 2>/dev/null || true
-
-                # 下载并安装 dante-server (自动抓取最新版本)
-                local dante_rpm_url=$(curl -s "$epel_url/d/" | grep -oP 'href="dante-server-[^"]+\.x86_64\.rpm"' | tail -1 | sed 's/href="//;s/"//')
-                [ -z "$dante_rpm_url" ] && { echo -e "${RED}[ERR]${NC} 获取 dante-server RPM 失败"; exit 1; }
-                echo -e "${BLUE}[INFO]${NC} 下载 dante-server: $dante_rpm_url"
-                install_rpm_pkg "$epel_url/d/$dante_rpm_url" "dante-server" || { echo -e "${RED}[ERR]${NC} dante-server RPM 安装失败"; exit 1; }
-
-                # 下载并安装 miniupnpc（防止运行缺少 .so 文件）
-                local miniupnpc_rpm_url=$(curl -s "$epel_url/m/" | grep -oP 'href="miniupnpc-[0-9][^"]+\.x86_64\.rpm"' | grep -v devel | tail -1 | sed 's/href="//;s/"//')
-                if [ -n "$miniupnpc_rpm_url" ]; then
-                    echo -e "${BLUE}[INFO]${NC} 下载 miniupnpc: $miniupnpc_rpm_url"
-                    install_rpm_pkg "$epel_url/m/$miniupnpc_rpm_url" "miniupnpc" || true
-                fi
-
-                ldconfig
-            fi
-            ;;
-    esac
-
-    # 再次查找二进制
-    for bin in sockd danted; do command -v $bin &> /dev/null && { DANTE_BIN="$bin"; echo -e "${GREEN}[OK]${NC} 安装后找到 $bin"; return; }; done
-    found=$(find /usr -type f \( -name sockd -o -name danted \) 2>/dev/null | head -1)
-    [ -n "$found" ] && { DANTE_BIN=$(basename "$found"); export PATH="$PATH:$(dirname "$found")"; echo -e "${GREEN}[OK]${NC} 找到 $found"; return; }
-
-    echo -e "${RED}[ERR]${NC} 安装失败，无法找到 sockd/danted"
-    exit 1
+    if ! command -v xray &> /dev/null; then
+        echo -e "${RED}[ERR]${NC} 安装后仍找不到 xray 命令"
+        exit 1
+    fi
+    echo -e "${GREEN}[OK]${NC} Xray 安装完成"
 }
 
-# ===================== PAM 认证配置 =====================
-ensure_pam_config() {
-    echo -e "${BLUE}[INFO]${NC} 检查并创建 PAM 认证配置..."
-    for pamfile in sockd danted; do
-        if [ ! -f /etc/pam.d/$pamfile ]; then
-            cat > /etc/pam.d/$pamfile << 'EOF'
-auth    required    pam_unix.so
-account required    pam_unix.so
-EOF
-            echo -e "${GREEN}[OK]${NC} 已创建 /etc/pam.d/$pamfile"
-        else
-            echo -e "${GREEN}[OK]${NC} /etc/pam.d/$pamfile 已存在"
-        fi
-    done
-}
-
-# ===================== 配置 (系统用户认证) =====================
+# ===================== 生成 Xray 配置 =====================
 write_config() {
-    mkdir -p /etc/danted
+    mkdir -p /usr/local/etc/xray
 
     # 用户名保护：禁止使用 root
     if [ "$SOCKS_USER" = "root" ]; then
@@ -276,74 +199,52 @@ write_config() {
     [ -z "$SOCKS_USER" ] && SOCKS_USER="user$(tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
     [ -z "$SOCKS_PASS" ] && SOCKS_PASS="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)"
 
-    # 创建系统用户
-    useradd -r -s /bin/false "$SOCKS_USER" 2>/dev/null || true
-    echo "${SOCKS_USER}:${SOCKS_PASS}" | chpasswd
-
-    # 获取外部 IP，失败则改用默认路由接口名
-    EXTERNAL_IP=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || \
-                  curl -s --connect-timeout 5 ip.sb 2>/dev/null || \
-                  curl -s --connect-timeout 5 icanhazip.com 2>/dev/null || \
-                  curl -s --connect-timeout 5 api.ipify.org 2>/dev/null || echo "")
-    if [ -z "$EXTERNAL_IP" ] || [ "$EXTERNAL_IP" = "0.0.0.0" ]; then
-        # 获取默认网卡接口名
-        EXTERNAL_IP=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
-        [ -z "$EXTERNAL_IP" ] && EXTERNAL_IP="eth0"
-        echo -e "${YELLOW}[WARN]${NC} 无法获取外网 IP，使用接口名: $EXTERNAL_IP"
-    fi
-
-    cat > /etc/danted.conf << EOF
-logoutput: syslog
-internal: 0.0.0.0 port = ${SOCKS_PORT}
-external: ${EXTERNAL_IP}
-socksmethod: username
-user.privileged: root
-user.unprivileged: nobody
-user.libwrap: nobody
-client pass {
-    from: 0.0.0.0/0 to: 0.0.0.0/0
-    log: connect disconnect error
-}
-socks pass {
-    from: 0.0.0.0/0 to: 0.0.0.0/0
-    log: connect disconnect error
-    socksmethod: username
+    # 生成 Xray 配置文件（带认证的 SOCKS5 入站）
+    cat > /usr/local/etc/xray/config.json << EOF
+{
+  "inbounds": [
+    {
+      "port": ${SOCKS_PORT},
+      "protocol": "socks",
+      "settings": {
+        "auth": "password",
+        "accounts": [
+          {
+            "user": "${SOCKS_USER}",
+            "pass": "${SOCKS_PASS}"
+          }
+        ],
+        "udp": true
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "settings": {}
+    }
+  ]
 }
 EOF
-    echo -e "${GREEN}[OK]${NC} 配置文件已写入"
-
-    ensure_pam_config
+    echo -e "${GREEN}[OK]${NC} Xray 配置文件已写入"
 }
 
-restart_dante() {
-    echo -e "${CYAN}[Dante]${NC} 启动/重启 Dante ($DANTE_BIN)..."
-    # 尝试 systemd
-    if systemctl is-active --quiet danted 2>/dev/null; then
-        systemctl restart danted
-    elif systemctl is-active --quiet sockd 2>/dev/null; then
-        systemctl restart sockd
-    else
-        systemctl start danted 2>/dev/null || systemctl start sockd 2>/dev/null || {
-            echo -e "${YELLOW}[WARN]${NC} systemd 启动失败，直接运行 $DANTE_BIN"
-            pkill "$DANTE_BIN" 2>/dev/null || true
-            # 前台验证启动（快速失败）
-            $DANTE_BIN -f /etc/danted.conf -d 1 &
-            sleep 2
-            if ! pgrep -f "$DANTE_BIN" > /dev/null; then
-                # 查看最后一次错误
-                journalctl -xe --no-pager | grep -i "$DANTE_BIN" | tail -5 || true
-                echo -e "${RED}[ERR]${NC} Dante 启动失败，请检查外网 IP 配置（/etc/danted.conf）或手动运行 sockd -d 1 排查"
-                exit 1
-            fi
-            kill %1 2>/dev/null || true
-            # 后台正式启动
-            nohup "$DANTE_BIN" -f /etc/danted.conf > /var/log/danted.log 2>&1 &
-            sleep 1
-            pgrep -f "$DANTE_BIN" > /dev/null && echo -e "${GREEN}[OK]${NC} Dante 进程已启动" || { echo -e "${RED}[ERR]${NC} 守护进程启动失败"; exit 1; }
-        }
-    fi
-    systemctl enable danted 2>/dev/null || systemctl enable sockd 2>/dev/null || true
-    echo -e "${GREEN}[OK]${NC} Dante 已启动并设为开机自启"
+restart_xray() {
+    echo -e "${CYAN}[Xray]${NC} 启动/重启 Xray 服务..."
+    systemctl restart xray || {
+        echo -e "${YELLOW}[WARN]${NC} systemd 重启失败，尝试手动启动 xray..."
+        pkill xray 2>/dev/null || true
+        nohup /usr/local/bin/xray run -config /usr/local/etc/xray/config.json > /var/log/xray.log 2>&1 &
+        sleep 2
+        if pgrep -f "xray" > /dev/null; then
+            echo -e "${GREEN}[OK]${NC} Xray 进程已启动"
+        else
+            echo -e "${RED}[ERR]${NC} Xray 启动失败，请检查配置"
+            exit 1
+        fi
+    }
+    systemctl enable xray 2>/dev/null || true
+    echo -e "${GREEN}[OK]${NC} Xray 已启动并设为开机自启"
 }
 
 # ===================== 输出和上报 =====================
@@ -354,14 +255,14 @@ print_result() {
                curl -s --connect-timeout 5 api.ipify.org 2>/dev/null || echo "未知")
     echo ""
     echo -e "${GREEN}╔════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║       Dante SOCKS5 全量部署完成            ║${NC}"
+    echo -e "${GREEN}║       Xray SOCKS5 全量部署完成             ║${NC}"
     echo -e "${GREEN}╚════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "  服务器 IP : ${CYAN}${ip}${NC}"
     echo -e "  端口      : ${CYAN}${SOCKS_PORT}${NC}"
     echo -e "  用户名    : ${CYAN}${SOCKS_USER}${NC}"
     echo -e "  密码      : ${CYAN}${SOCKS_PASS}${NC}"
-    echo -e "  认证方式  : 用户名/密码 (系统用户)"
+    echo -e "  认证方式  : 用户名/密码 (内置)"
     echo -e "  防火墙    : ${FW_TYPE}"
     [ -n "$PASSWORD" ] && echo -e "  查询链接  : ${CYAN}${QUERY_BASE_URL}/${PASSWORD}${NC}"
     echo ""
@@ -409,7 +310,7 @@ main() {
     [[ "$SOCKS_PORT" =~ ^[0-9]+$ ]] && [ "$SOCKS_PORT" -ge 1 ] && [ "$SOCKS_PORT" -le 65535 ] || { echo -e "${RED}[ERR]${NC} 端口号非法"; exit 1; }
 
     echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║        Dante SOCKS5 全量一键脚本           ║${NC}"
+    echo -e "${BLUE}║        Xray SOCKS5 全量一键脚本            ║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
     echo ""
 
@@ -419,9 +320,9 @@ main() {
 
     enable_bbr
     configure_firewall
-    install_dante
+    install_xray
     write_config
-    restart_dante
+    restart_xray
     upload_config || true
     print_result
 }
