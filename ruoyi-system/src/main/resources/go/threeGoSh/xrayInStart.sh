@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Xray Reality+VLESS 一键脚本 (多配置文件版 - 最终双重检查)
+# Xray Reality+VLESS 一键脚本 (多配置文件版 - 最终修复)
 # 用法： bash xray_vless.sh [-p PORT] [-i IP] [-d DEST] [-s NAMES] [-close]
 # 特点：reality+vless，confdir模式，端口管理，防火墙后置，二维码
-# 修复：系统+配置文件双重端口冲突检测，避免漏报
+# 修复：系统+配置文件双重端口冲突检测；清理 systemd drop-in
 # ============================================================
 set -e
 
@@ -24,7 +24,7 @@ QUERY_BASE_URL="https://www.ganguo168.com/#/query-config"
 XRAY_DIR="/usr/local/etc/xray"
 CONF_FILE="${XRAY_DIR}/vlessConfig.json"
 PORT_RECORD_FILE="/usr/local/etc/firewalld.json"
-CURRENT_KEY="vlessConfig.json"   # 用于端口记录
+CURRENT_KEY="vlessConfig.json"
 
 OLD_PORTS=""
 
@@ -476,19 +476,30 @@ EOF
     fi
 }
 
+# ===================== 重启 Xray（清理 drop-in） =====================
 restart_xray() {
     echo -e "${CYAN}[Xray]${NC} 启动/重启 Xray 服务（confdir 模式）..."
+
     local xray_bin="xray"
     [ -x "/usr/local/bin/xray" ] && xray_bin="/usr/local/bin/xray"
+
     local service_file=$(systemctl show -p FragmentPath xray 2>/dev/null | cut -d= -f2)
     if [ -n "$service_file" ] && [ -f "$service_file" ]; then
-        echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务，修改为 confdir 启动..."
+        echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务文件: $service_file"
+
+        local dropin_dir="${service_file}.d"
+        if [ -d "$dropin_dir" ]; then
+            echo -e "${YELLOW}[WARN]${NC} 发现 drop-in 目录 $dropin_dir，将清空以避免干扰"
+            rm -rf "$dropin_dir"
+        fi
+
         cp "$service_file" "${service_file}.bak.$(date +%s)"
         sed -i "s|^ExecStart=.*|ExecStart=${xray_bin} -confdir ${XRAY_DIR}|" "$service_file"
+
         systemctl daemon-reload
         systemctl restart xray
         systemctl enable xray 2>/dev/null || true
-        echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启"
+        echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启（已清理 drop-in）"
     else
         echo -e "${YELLOW}[WARN]${NC} 未找到 systemd 服务，手动启动..."
         pkill -f "xray.*-confdir.*${XRAY_DIR}" 2>/dev/null || true
@@ -505,6 +516,7 @@ restart_xray() {
     echo -e "${GREEN}[OK]${NC} Xray 已成功运行"
 }
 
+# ===================== 上报与输出 =====================
 upload_config() {
     local ip=$SERVER_IP
     [ -z "$ip" ] && ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo "0.0.0.0")
