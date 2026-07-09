@@ -1,8 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Xray Reality+VLESS 一键脚本 (多配置文件版)
+# Xray Reality+VLESS 一键脚本 (多配置文件版 - 最终双重检查)
 # 用法： bash xray_vless.sh [-p PORT] [-i IP] [-d DEST] [-s NAMES] [-close]
 # 特点：reality+vless，confdir模式，端口管理，防火墙后置，二维码
+# 修复：系统+配置文件双重端口冲突检测，避免漏报
 # ============================================================
 set -e
 
@@ -20,15 +21,13 @@ BBR_ENABLED=false
 API_URL="https://api.ganguo168.com/serverResourcesThree/insert"
 QUERY_BASE_URL="https://www.ganguo168.com/#/query-config"
 
-# 固定路径
 XRAY_DIR="/usr/local/etc/xray"
 CONF_FILE="${XRAY_DIR}/vlessConfig.json"
 PORT_RECORD_FILE="/usr/local/etc/firewalld.json"
+CURRENT_KEY="vlessConfig.json"   # 用于端口记录
 
-# 保存旧端口（用于防火墙清理）
 OLD_PORTS=""
 
-# 用户参数
 PORT=""
 SERVER_IP=""
 DEST="lacity.gov:443"
@@ -40,7 +39,6 @@ SHORT_ID=""
 PASSWORD=""
 SERVER_NAMES_JSON=""
 
-# 二维码开关
 QR_ENABLED=true
 
 # ===================== 系统识别 =====================
@@ -97,14 +95,12 @@ enable_bbr() {
         BBR_ENABLED=false
         return
     fi
-
     local cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "")
     if [ "$cc" = "bbr" ]; then
         echo -e "${GREEN}[OK]${NC} BBR 已启用"
         BBR_ENABLED=true
         return
     fi
-
     modprobe tcp_bbr 2>/dev/null || true
     local sysctl_file="/etc/sysctl.d/99-bbr.conf"
     [ ! -d /etc/sysctl.d ] && sysctl_file="/etc/sysctl.conf"
@@ -198,19 +194,16 @@ open_port() {
     [ "$ok" = true ] && echo -e "${GREEN}[OK]${NC} 端口 $port 已开放" || echo -e "${YELLOW}[WARN]${NC} 端口 $port 开放验证失败"
 }
 
-# 提前收集旧端口（在写入新配置前调用）
 save_old_ports() {
     OLD_PORTS=""
-    local key="vlessConfig.json"
-    # 1. 从 firewalld.json 获取历史端口
     if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
         local recorded=$(python3 -c "
 import json
 try:
     with open('$PORT_RECORD_FILE') as f:
         data = json.load(f)
-    if isinstance(data, dict) and '$key' in data:
-        print(' '.join(map(str, data['$key'])))
+    if isinstance(data, dict) and '$CURRENT_KEY' in data:
+        print(' '.join(map(str, data['$CURRENT_KEY'])))
 except:
     pass
 " 2>/dev/null)
@@ -218,7 +211,6 @@ except:
             OLD_PORTS="$recorded"
         fi
     fi
-    # 2. 从当前 vlessConfig.json 提取端口
     if [ -f "$CONF_FILE" ]; then
         local cur_port=$(grep -oP '"port"\s*:\s*\K\d+' "$CONF_FILE" 2>/dev/null | head -1)
         if [ -n "$cur_port" ]; then
@@ -233,11 +225,9 @@ except:
     fi
 }
 
-# 最后执行防火墙配置（Xray 启动成功后）
 finalize_firewall() {
     detect_firewall
     echo -e "${CYAN}[Firewall]${NC} 开始配置防火墙..."
-    # 1. 关闭旧端口（排除当前新端口）
     if [ -n "$OLD_PORTS" ]; then
         for port in $OLD_PORTS; do
             if [ "$port" != "$PORT" ]; then
@@ -245,23 +235,20 @@ finalize_firewall() {
             fi
         done
     fi
-    # 2. 放行新端口
     open_port "$PORT"
     echo -e "${GREEN}[OK]${NC} 防火墙规则已更新"
 }
 
-# ===================== 端口冲突检查 =====================
+# ===================== 端口冲突检查（双重验证） =====================
 check_port_conflict() {
     local new_port="$1"
-    local key="vlessConfig.json"
+    local current_key="${2:-}"
 
-    # 方法1：优先使用 fuser（不会卡死）
+    # 系统级检测
     local listening_info=""
     if command -v fuser &>/dev/null; then
         listening_info=$(fuser -n tcp "$new_port" 2>&1 || true)
     fi
-
-    # 方法2：fuser不可用时，使用 timeout + ss，并过滤掉标题行
     if [ -z "$listening_info" ] && command -v timeout &>/dev/null; then
         listening_info=$(timeout 3 ss -tlnp "sport = :${new_port}" 2>/dev/null | tail -n +2)
         if [ -z "$listening_info" ]; then
@@ -269,41 +256,54 @@ check_port_conflict() {
         fi
     fi
 
-    if [ -z "$listening_info" ]; then
-        echo -e "${GREEN}[INFO]${NC} 端口 $new_port 未被占用，可以继续"
-        return 0
-    fi
-
-    echo -e "${YELLOW}[WARN]${NC} 端口 $new_port 已被占用，详细信息:"
-    echo "$listening_info" | head -3
-
-    # 检查 firewalld.json 中是否记录了该端口（属于本脚本的 vlessConfig 历史）
-    if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
-        local in_record=$(python3 -c "
+    if [ -n "$listening_info" ]; then
+        echo -e "${YELLOW}[WARN]${NC} 端口 $new_port 已被系统进程占用，详细信息:"
+        echo "$listening_info" | head -3
+        if [ -n "$current_key" ] && [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
+            local in_record=$(python3 -c "
 import json
 try:
     with open('$PORT_RECORD_FILE') as f:
         data = json.load(f)
-    if isinstance(data, dict) and '$key' in data:
-        ports = data['$key']
+    if isinstance(data, dict) and '$current_key' in data:
+        ports = data['$current_key']
         if $new_port in ports:
             print('yes')
 except:
     pass
 " 2>/dev/null)
-        if [ "$in_record" = "yes" ]; then
-            echo -e "${GREEN}[INFO]${NC} 端口 $new_port 属于本脚本历史记录，允许覆盖"
-            return 0
+            if [ "$in_record" = "yes" ]; then
+                echo -e "${GREEN}[INFO]${NC} 端口 $new_port 属于本脚本历史记录，允许覆盖"
+            else
+                echo -e "${RED}[ERR]${NC} 端口被其他服务占用，且非本脚本历史端口。"
+                echo -e "${YELLOW}       请更换端口或停止占用该端口的服务后重试。${NC}"
+                exit 1
+            fi
+        else
+            echo -e "${RED}[ERR]${NC} 端口被占用，且无法验证历史记录（python3/记录文件缺失）"
+            echo -e "${YELLOW}       请手动检查或更换端口后重试。${NC}"
+            exit 1
         fi
     else
-        echo -e "${RED}[ERR]${NC} 端口被占用，且无法验证是否为脚本历史端口（python3 或记录文件缺失）"
-        echo -e "${YELLOW}       请手动检查或更换端口后重试。${NC}"
+        echo -e "${GREEN}[INFO]${NC} 端口 $new_port 未被系统占用"
+    fi
+
+    # 配置文件级检测
+    local conflict_files=""
+    for f in "$XRAY_DIR"/*.json; do
+        [ ! -f "$f" ] && continue
+        [ "$f" = "$CONF_FILE" ] && continue
+        if grep -qE "\"port\"[[:space:]]*:[[:space:]]*${new_port}" "$f" 2>/dev/null; then
+            conflict_files="$conflict_files\n  - $(basename "$f")"
+        fi
+    done
+    if [ -n "$conflict_files" ]; then
+        echo -e "${RED}[ERR]${NC} 端口 $new_port 已被以下配置文件占用（即使未监听也会冲突）:$conflict_files"
+        echo -e "${YELLOW}       请更换端口，或先修改上述配置文件中的端口。${NC}"
         exit 1
     fi
 
-    echo -e "${RED}[ERR]${NC} 端口 $new_port 被其他服务占用，无法继续。"
-    echo -e "${YELLOW}       请更换端口后重试，或先停止占用该端口的服务。${NC}"
-    exit 1
+    echo -e "${GREEN}[OK]${NC} 端口 $new_port 双重检查通过，可以继续"
 }
 
 # ===================== Xray 安装 =====================
@@ -313,13 +313,11 @@ install_xray() {
         echo -e "${GREEN}[OK]${NC} 检测到 xray"
         return
     fi
-
     echo -e "${YELLOW}[WARN]${NC} 未找到 xray，通过官方脚本安装..."
     if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install; then
         echo -e "${RED}[ERR]${NC} Xray 安装失败，请检查网络后重试"
         exit 1
     fi
-
     if ! command -v xray &> /dev/null; then
         echo -e "${RED}[ERR]${NC} 安装后仍找不到 xray 命令"
         exit 1
@@ -327,39 +325,27 @@ install_xray() {
     echo -e "${GREEN}[OK]${NC} Xray 安装完成"
 }
 
-# ===================== 密钥生成 =====================
 generate_keys() {
     echo -e "${CYAN}[Key]${NC} 生成 x25519 公私钥..."
     local xray_bin="xray"
-    if [ -x "/usr/local/bin/xray" ]; then
-        xray_bin="/usr/local/bin/xray"
-    fi
-
-    local key_output
-    key_output=$("$xray_bin" x25519 2>&1) || {
+    [ -x "/usr/local/bin/xray" ] && xray_bin="/usr/local/bin/xray"
+    local key_output=$("$xray_bin" x25519 2>&1) || {
         echo -e "${RED}[ERR]${NC} x25519 密钥生成失败"
         exit 1
     }
-
     PRIVATE_KEY=$(echo "$key_output" | sed -n 's/.*PrivateKey: *//p' | head -1)
     PUBLIC_KEY=$(echo "$key_output"  | sed -n 's/.*(PublicKey): *//p' | head -1)
-
-    if [ -z "$PRIVATE_KEY" ] || [ -z "$PUBLIC_KEY" ]; then
+    [ -z "$PRIVATE_KEY" ] || [ -z "$PUBLIC_KEY" ] && {
         echo -e "${RED}[ERR]${NC} 解析公私钥失败"
-        echo "Raw output:"
-        echo "$key_output"
         exit 1
-    fi
-
+    }
     echo -e "${GREEN}[OK]${NC} Private key: $PRIVATE_KEY"
     echo -e "${GREEN}[OK]${NC} Public key:  $PUBLIC_KEY"
 }
 
 generate_clientid() {
     CLIENT_ID=""
-    for i in $(seq 1 10); do
-        CLIENT_ID="${CLIENT_ID}$(( RANDOM % 10 ))"
-    done
+    for i in $(seq 1 10); do CLIENT_ID="${CLIENT_ID}$(( RANDOM % 10 ))"; done
     echo -e "${BLUE}[INFO]${NC} 生成 clients.id: $CLIENT_ID"
 }
 
@@ -387,17 +373,11 @@ build_server_names_json() {
     done
 }
 
-# ===================== 生成配置 =====================
 write_config() {
     echo -e "${BLUE}[INFO]${NC} 写入配置文件..."
     mkdir -p "$XRAY_DIR"
-
-    # 端口冲突检查
-    check_port_conflict "$PORT"
-
-    # 生成 serverNames JSON 行
+    check_port_conflict "$PORT" "$CURRENT_KEY"
     SERVER_NAMES_JSON=$(build_server_names_json)
-
     cat > "$CONF_FILE" << EOF
 {
   "log": {
@@ -462,18 +442,15 @@ EOF
     echo -e "${GREEN}[OK]${NC} 配置文件 $CONF_FILE 已写入"
 }
 
-# ===================== 更新 firewalld.json =====================
 update_port_record() {
-    local key="vlessConfig.json"
+    local key="$CURRENT_KEY"
     local port=$PORT
-
     if command -v python3 &>/dev/null; then
         python3 -c "
 import json, sys, os
 record_file = '$PORT_RECORD_FILE'
 key = '$key'
 new_port = $port
-
 data = {}
 if os.path.exists(record_file):
     try:
@@ -481,12 +458,9 @@ if os.path.exists(record_file):
             data = json.load(f)
     except:
         data = {}
-
 if not isinstance(data, dict):
     data = {}
-
 data[key] = [new_port]
-
 with open(record_file, 'w') as f:
     json.dump(data, f, indent=2)
     f.write('\n')
@@ -502,16 +476,10 @@ EOF
     fi
 }
 
-# ===================== 启动 Xray（confdir 模式） =====================
 restart_xray() {
     echo -e "${CYAN}[Xray]${NC} 启动/重启 Xray 服务（confdir 模式）..."
-
     local xray_bin="xray"
-    if [ -x "/usr/local/bin/xray" ]; then
-        xray_bin="/usr/local/bin/xray"
-    fi
-
-    # 优先使用 systemd 服务管理
+    [ -x "/usr/local/bin/xray" ] && xray_bin="/usr/local/bin/xray"
     local service_file=$(systemctl show -p FragmentPath xray 2>/dev/null | cut -d= -f2)
     if [ -n "$service_file" ] && [ -f "$service_file" ]; then
         echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务，修改为 confdir 启动..."
@@ -537,7 +505,6 @@ restart_xray() {
     echo -e "${GREEN}[OK]${NC} Xray 已成功运行"
 }
 
-# ===================== 上报 =====================
 upload_config() {
     local ip=$SERVER_IP
     [ -z "$ip" ] && ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo "0.0.0.0")
@@ -553,8 +520,7 @@ upload_config() {
 }
 EOF
 )
-    local response
-    response=$(curl -s --connect-timeout 10 --max-time 30 -X POST -H "Content-Type: application/json" -d "$request_body" "$API_URL" 2>&1) || {
+    local response=$(curl -s --connect-timeout 10 --max-time 30 -X POST -H "Content-Type: application/json" -d "$request_body" "$API_URL" 2>&1) || {
         echo -e "${RED}[ERR]${NC} API 请求失败"; return 1
     }
     local code=$(echo "$response" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
@@ -568,19 +534,12 @@ EOF
     return 0
 }
 
-# ===================== 输出 =====================
-status_icon() {
-    [ "$1" = "true" ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}"
-}
-
 print_qrcode() {
     local url="$1"
     if command -v qrencode &> /dev/null; then
         echo -e "  ${CYAN}请用微信扫码后在浏览器中打开查询链接信息${NC}"
         echo -e "  ${CYAN}因微信浏览器内核版本过低，会出现查询失败情况${NC}"
-        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
-            echo "  $line"
-        done
+        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do echo "  $line"; done
     else
         echo -e "${YELLOW}[WARN]${NC} qrencode 未安装，无法显示二维码"
     fi
@@ -615,28 +574,18 @@ print_result() {
     echo -e "${GREEN}════════════════════════════════════════════${NC}"
 }
 
-# ===================== 主流程 =====================
 usage() {
     echo "用法: $0 [选项]"
-    echo ""
-    echo "选项:"
     echo "  -p, --port PORT           监听端口 (必填, 1-65535)"
-    echo "  -i, --ip IP               服务器公网IP (不指定则自动检测)"
+    echo "  -i, --ip IP               服务器公网IP"
     echo "  -d, --dest DEST           回落目标 (默认: lacity.gov:443)"
-    echo "  -s, --server-names NAMES  可用域名, 逗号分隔 (默认: lacity.gov,www.lacity.gov)"
-    echo "  -close                    关闭二维码显示（默认显示二维码）"
+    echo "  -s, --server-names NAMES  域名, 逗号分隔"
+    echo "  -close                    关闭二维码显示"
     echo "  -h, --help                显示帮助"
-    echo ""
-    echo "示例:"
-    echo "  $0 -p 45673"
-    echo "  $0 -p 45673 -i 137.175.93.245"
-    echo "  $0 -p 45673 -close"
     exit 0
 }
 
 main() {
-    PORT=""
-    SERVER_IP=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -p|--port)           PORT="$2"; shift 2 ;;
@@ -649,7 +598,7 @@ main() {
         esac
     done
 
-    [ -z "$PORT" ] && { echo -e "${RED}[ERR]${NC} 必须指定端口号 (-p/--port)"; usage; }
+    [ -z "$PORT" ] && { echo -e "${RED}[ERR]${NC} 必须指定端口号"; usage; }
     [[ "$PORT" =~ ^[0-9]+$ ]] && [ "$PORT" -ge 1 ] && [ "$PORT" -le 65535 ] || {
         echo -e "${RED}[ERR]${NC} 端口号必须是 1-65535 之间的整数"; exit 1;
     }
@@ -664,17 +613,11 @@ main() {
     install_if_missing "ss" "iproute2"
     install_if_missing "python3" "python3"
     install_if_missing "fuser" "psmisc"
-    if [ "$QR_ENABLED" = "true" ]; then
-        install_if_missing "qrencode" "qrencode" || true
-    fi
+    [ "$QR_ENABLED" = "true" ] && install_if_missing "qrencode" "qrencode" || true
 
-    # 自动检测IP
     if [ -z "$SERVER_IP" ]; then
         echo -e "${BLUE}[INFO]${NC} 未指定IP，自动检测公网IP..."
-        SERVER_IP=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || \
-                    curl -s --connect-timeout 5 ip.sb 2>/dev/null || \
-                    curl -s --connect-timeout 5 icanhazip.com 2>/dev/null || \
-                    curl -s --connect-timeout 5 api.ipify.org 2>/dev/null || echo "0.0.0.0")
+        SERVER_IP=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo "0.0.0.0")
         [ "$SERVER_IP" = "0.0.0.0" ] && { echo -e "${RED}[ERR]${NC} 自动检测IP失败，请用 -i 指定"; exit 1; }
     fi
     echo -e "${BLUE}[INFO]${NC} 服务器IP: $SERVER_IP"
@@ -684,11 +627,11 @@ main() {
     generate_keys
     generate_clientid
     generate_shortid
-    save_old_ports         # ❶ 收集旧端口
-    write_config           # ❷ 写入配置（含端口冲突检查）
-    update_port_record     # ❸ 更新记录为新端口
-    restart_xray           # ❹ 启动 Xray
-    finalize_firewall      # ❺ 启动成功后配置防火墙
+    save_old_ports
+    write_config
+    update_port_record
+    restart_xray
+    finalize_firewall
     upload_config || true
     print_result
 }
