@@ -1,9 +1,9 @@
 #!/bin/bash
-# xray_config.sh - Xray reality+vless 配置生成与上报脚本
-# 兼容 CentOS 7/8/9, Ubuntu 18/20/22/24, Debian 10/11/12 等主流 Linux 发行版
-# 功能：BBR优化 → 防火墙开放端口 → x25519生成密钥 → 随机UUID/shortId → 写入config.json → 重启xray → 上报API
-# 二维码控制：默认显示二维码，使用 -close 参数可关闭二维码显示和依赖安装
-
+# ============================================================
+# Xray Reality+VLESS 一键脚本 (多配置文件版)
+# 用法： bash xray_vless.sh [-p PORT] [-i IP] [-d DEST] [-s NAMES] [-close]
+# 特点：reality+vless，confdir模式，端口管理，防火墙后置，二维码
+# ============================================================
 set -e
 
 RED='\033[0;31m'
@@ -13,13 +13,22 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-XRAY_BIN="/usr/local/bin/xray"
-XRAY_CONFIG_DIR="/usr/local/etc/xray"
-XRAY_CONFIG_FILE="$XRAY_CONFIG_DIR/config.json"
+PKG_MANAGER=""
+FW_TYPE="none"
+FW_PORT_OK=false
+BBR_ENABLED=false
 API_URL="https://api.ganguo168.com/serverResourcesThree/insert"
 QUERY_BASE_URL="https://www.ganguo168.com/#/query-config"
 
-PKG_MANAGER=""
+# 固定路径
+XRAY_DIR="/usr/local/etc/xray"
+CONF_FILE="${XRAY_DIR}/vlessConfig.json"
+PORT_RECORD_FILE="/usr/local/etc/firewalld.json"
+
+# 保存旧端口（用于防火墙清理）
+OLD_PORTS=""
+
+# 用户参数
 PORT=""
 SERVER_IP=""
 DEST="lacity.gov:443"
@@ -31,166 +40,92 @@ SHORT_ID=""
 PASSWORD=""
 SERVER_NAMES_JSON=""
 
-FW_TYPE="none"
-FW_PORT_OK=false
-BBR_ENABLED=false
-XRAY_RUNNING=false
-
-# 二维码开关：默认开启（true），传入 -close 后变为 false
+# 二维码开关
 QR_ENABLED=true
 
-print_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
-print_success() { echo -e "${GREEN}[OK]${NC}  $1"; }
-print_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-print_error()   { echo -e "${RED}[ERR]${NC} $1"; }
-
-usage() {
-    echo "用法: $0 [选项]"
-    echo ""
-    echo "选项:"
-    echo "  -p, --port PORT           监听端口 (必填, 1-65535)"
-    echo "  -i, --ip IP               服务器公网IP (不指定则自动检测)"
-    echo "  -d, --dest DEST           回落目标 (默认: lacity.gov:443)"
-    echo "  -s, --server-names NAMES  可用域名, 逗号分隔 (默认: lacity.gov,www.lacity.gov)"
-    echo "  -close                    关闭二维码显示（默认显示二维码）"
-    echo "  -h, --help                显示帮助"
-    echo ""
-    echo "支持系统: CentOS 7/8/9, Ubuntu 18/20/22/24, Debian 10/11/12"
-    echo ""
-    echo "示例:"
-    echo "  $0 -p 45673"
-    echo "  $0 -p 45673 -i 137.175.93.245"
-    echo "  $0 -p 45673 -i 137.175.93.245 -d 'www.microsoft.com:443' -s 'microsoft.com,www.microsoft.com'"
-    echo "  $0 -p 45673 -close          # 不显示二维码"
-    exit 0
-}
-
-# ===================== 系统检测 & 依赖 =====================
-
+# ===================== 系统识别 =====================
 detect_pkg_manager() {
-    if command -v apt-get &> /dev/null; then
-        PKG_MANAGER="apt"
-    elif command -v dnf &> /dev/null; then
-        PKG_MANAGER="dnf"
-    elif command -v yum &> /dev/null; then
-        PKG_MANAGER="yum"
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case "$ID" in
+            ubuntu|debian) PKG_MANAGER="apt" ;;
+            centos|rhel|fedora|rocky|almalinux) PKG_MANAGER="yum" ;;
+            *)
+                if command -v apt-get &> /dev/null; then PKG_MANAGER="apt"
+                elif command -v dnf &> /dev/null; then PKG_MANAGER="dnf"
+                elif command -v yum &> /dev/null; then PKG_MANAGER="yum"
+                else
+                    echo -e "${RED}[ERR]${NC} 无法识别包管理器"
+                    exit 1
+                fi
+                ;;
+        esac
     else
-        print_error "无法识别包管理器 (需要 apt-get / dnf / yum)"
-        exit 1
+        if command -v apt-get &> /dev/null; then PKG_MANAGER="apt"
+        elif command -v yum &> /dev/null; then PKG_MANAGER="yum"
+        else
+            echo -e "${RED}[ERR]${NC} 不支持的操作系统"
+            exit 1
+        fi
     fi
-    print_info "包管理器: $PKG_MANAGER"
+    echo -e "${BLUE}[INFO]${NC} 包管理器: $PKG_MANAGER"
 }
 
 install_if_missing() {
     local cmd="$1"
     local pkg="$2"
-
-    if command -v "$cmd" &> /dev/null; then
-        return 0
-    fi
-
-    print_info "$cmd 未安装，尝试安装 $pkg ..."
-
+    if command -v "$cmd" &> /dev/null; then return 0; fi
+    echo -e "${BLUE}[INFO]${NC} 安装 $pkg ..."
     case "$PKG_MANAGER" in
         apt)
             apt-get update -qq
             DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$pkg"
             ;;
         dnf|yum)
-            $PKG_MANAGER install -y -q "$pkg" 2>/dev/null || true
+            timeout 60 $PKG_MANAGER install -y -q "$pkg" 2>/dev/null || true
             ;;
     esac
-
-    if ! command -v "$cmd" &> /dev/null; then
-        print_warning "$cmd 安装失败，请手动安装"
-        return 1
-    fi
-
-    print_success "$cmd 安装完成"
-    return 0
-}
-
-ensure_deps() {
-    detect_pkg_manager
-    install_if_missing "curl" "curl"
-}
-
-detect_public_ip() {
-    local ip
-    ip=$(curl -s --connect-timeout 5 --max-time 10 ifconfig.me 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 ipinfo.io/ip 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 icanhazip.com 2>/dev/null) || \
-    ip=$(curl -s --connect-timeout 5 --max-time 10 api.ipify.org 2>/dev/null)
-    echo "$ip"
 }
 
 # ===================== BBR =====================
-
 enable_bbr() {
-    print_info "检查 BBR 拥塞控制..."
-
-    local kernel_major
-    kernel_major=$(uname -r | cut -d. -f1)
-    local kernel_minor
-    kernel_minor=$(uname -r | cut -d. -f2)
-
+    echo -e "${CYAN}[BBR]${NC} 检查并尝试开启 BBR ..."
+    local kernel_major=$(uname -r | cut -d. -f1)
+    local kernel_minor=$(uname -r | cut -d. -f2)
     if [ "$kernel_major" -lt 4 ] || { [ "$kernel_major" -eq 4 ] && [ "$kernel_minor" -lt 9 ]; }; then
-        print_warning "内核版本 $(uname -r) < 4.9，不支持 BBR"
+        echo -e "${YELLOW}[WARN]${NC} 内核 < 4.9，不支持 BBR"
         BBR_ENABLED=false
-        return 0
+        return
     fi
 
-    local cc
-    cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "")
+    local cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "")
     if [ "$cc" = "bbr" ]; then
-        print_success "BBR 已启用"
+        echo -e "${GREEN}[OK]${NC} BBR 已启用"
         BBR_ENABLED=true
-        return 0
+        return
     fi
-
-    print_info "尝试开启 BBR..."
 
     modprobe tcp_bbr 2>/dev/null || true
-
-    local sysctl_file
-    if [ -d /etc/sysctl.d ]; then
-        sysctl_file="/etc/sysctl.d/99-bbr.conf"
-    else
-        sysctl_file="/etc/sysctl.conf"
-    fi
-
+    local sysctl_file="/etc/sysctl.d/99-bbr.conf"
+    [ ! -d /etc/sysctl.d ] && sysctl_file="/etc/sysctl.conf"
     if ! grep -q "tcp_congestion_control.*=.*bbr" "$sysctl_file" 2>/dev/null; then
-        cat >> "$sysctl_file" << 'SYSCTL_EOF'
+        cat >> "$sysctl_file" << 'EOF'
 
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
-SYSCTL_EOF
+EOF
     fi
-
     sysctl -p "$sysctl_file" > /dev/null 2>&1 || sysctl -p > /dev/null 2>&1 || true
-
     cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "")
     if [ "$cc" = "bbr" ]; then
-        print_success "BBR 已开启 (qdisc=fq, cc=bbr)"
+        echo -e "${GREEN}[OK]${NC} BBR 已开启"
         BBR_ENABLED=true
     else
-        print_warning "BBR 开启失败，当前拥塞控制: $cc"
-        BBR_ENABLED=false
-    fi
-}
-
-check_bbr_status() {
-    local cc
-    cc=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "unknown")
-    if [ "$cc" = "bbr" ]; then
-        BBR_ENABLED=true
-    else
-        BBR_ENABLED=false
+        echo -e "${YELLOW}[WARN]${NC} BBR 开启失败，当前: $cc"
     fi
 }
 
 # ===================== 防火墙 =====================
-
 detect_firewall() {
     if command -v ufw &> /dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
         FW_TYPE="ufw"
@@ -203,196 +138,267 @@ detect_firewall() {
     else
         FW_TYPE="none"
     fi
-    print_info "防火墙类型: $FW_TYPE"
+    echo -e "${BLUE}[INFO]${NC} 防火墙类型: $FW_TYPE"
 }
 
-get_old_port() {
-    if [ -f "$XRAY_CONFIG_FILE" ]; then
-        grep -o '"port"[[:space:]]*:[[:space:]]*[0-9]*' "$XRAY_CONFIG_FILE" 2>/dev/null | grep -o '[0-9]*$' | head -1
-    fi
-}
-
-close_port() {
+close_old_port() {
     local port="$1"
-    print_info "关闭旧端口 $port ..."
-
+    echo -e "${BLUE}[INFO]${NC} 关闭旧端口 $port ..."
     case "$FW_TYPE" in
         ufw)
             ufw delete allow "$port"/tcp 2>/dev/null || true
+            ufw delete allow "$port"/udp 2>/dev/null || true
             ufw reload 2>/dev/null || true
             ;;
         firewalld)
             firewall-cmd --permanent --remove-port="${port}/tcp" 2>/dev/null || true
+            firewall-cmd --permanent --remove-port="${port}/udp" 2>/dev/null || true
             firewall-cmd --reload 2>/dev/null || true
             ;;
         iptables)
             iptables -D INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
-            ;;
-        none)
-            return 0
+            iptables -D INPUT -p udp --dport "$port" -j ACCEPT 2>/dev/null || true
             ;;
     esac
-
     sleep 1
-    if check_port_open "$port" "$FW_TYPE"; then
-        print_warning "旧端口 $port 关闭失败，请手动检查"
-    else
-        print_success "旧端口 $port 已关闭"
-    fi
-}
-
-check_port_open() {
-    local port="$1"
-    local method="$2"
-
-    case "$method" in
-        ufw)
-            ufw status 2>/dev/null | grep -qw "$port" && return 0 || return 1
-            ;;
-        firewalld)
-            firewall-cmd --list-ports 2>/dev/null | grep -qw "${port}/tcp" && return 0 || return 1
-            ;;
-        iptables)
-            iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null && return 0 || return 1
-            ;;
-    esac
-    return 1
 }
 
 open_port() {
     local port="$1"
-    print_info "开放端口 $port ..."
-
+    echo -e "${BLUE}[INFO]${NC} 开放端口 $port ..."
     case "$FW_TYPE" in
         ufw)
-            ufw allow "$port"/tcp 2>/dev/null
+            ufw allow "$port"/tcp 2>/dev/null || true
+            ufw allow "$port"/udp 2>/dev/null || true
             ufw reload 2>/dev/null || true
             ;;
         firewalld)
-            firewall-cmd --permanent --add-port="${port}/tcp" 2>/dev/null
+            firewall-cmd --permanent --add-port="${port}/tcp" 2>/dev/null || true
+            firewall-cmd --permanent --add-port="${port}/udp" 2>/dev/null || true
             firewall-cmd --reload 2>/dev/null || true
             ;;
         iptables)
             iptables -I INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
+            iptables -I INPUT -p udp --dport "$port" -j ACCEPT 2>/dev/null || true
             ;;
         none)
-            print_warning "未检测到防火墙，请手动开放端口 $port"
-            FW_PORT_OK=true
+            echo -e "${YELLOW}[WARN]${NC} 未检测到防火墙，请手动开放端口 $port"
             return 0
             ;;
     esac
-
     sleep 1
-    if check_port_open "$port" "$FW_TYPE"; then
-        print_success "端口 $port 已开放"
-        FW_PORT_OK=true
+    local ok=false
+    if [ "$FW_TYPE" = "ufw" ]; then
+        ufw status 2>/dev/null | grep -qw "$port" && ok=true
+    elif [ "$FW_TYPE" = "firewalld" ]; then
+        firewall-cmd --list-ports 2>/dev/null | grep -qw "${port}/tcp" && ok=true
+    elif [ "$FW_TYPE" = "iptables" ]; then
+        iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null && ok=true
+    fi
+    [ "$ok" = true ] && echo -e "${GREEN}[OK]${NC} 端口 $port 已开放" || echo -e "${YELLOW}[WARN]${NC} 端口 $port 开放验证失败"
+}
+
+# 提前收集旧端口（在写入新配置前调用）
+save_old_ports() {
+    OLD_PORTS=""
+    local key="vlessConfig.json"
+    # 1. 从 firewalld.json 获取历史端口
+    if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
+        local recorded=$(python3 -c "
+import json
+try:
+    with open('$PORT_RECORD_FILE') as f:
+        data = json.load(f)
+    if isinstance(data, dict) and '$key' in data:
+        print(' '.join(map(str, data['$key'])))
+except:
+    pass
+" 2>/dev/null)
+        if [ -n "$recorded" ]; then
+            OLD_PORTS="$recorded"
+        fi
+    fi
+    # 2. 从当前 vlessConfig.json 提取端口
+    if [ -f "$CONF_FILE" ]; then
+        local cur_port=$(grep -oP '"port"\s*:\s*\K\d+' "$CONF_FILE" 2>/dev/null | head -1)
+        if [ -n "$cur_port" ]; then
+            OLD_PORTS="$OLD_PORTS $cur_port"
+        fi
+    fi
+    OLD_PORTS=$(echo "$OLD_PORTS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+    if [ -n "$OLD_PORTS" ]; then
+        echo -e "${BLUE}[INFO]${NC} 已记录旧端口: $OLD_PORTS"
     else
-        print_warning "端口 $port 开放验证失败，请手动检查"
-        FW_PORT_OK=false
+        echo -e "${BLUE}[INFO]${NC} 未发现旧端口记录"
     fi
 }
 
-configure_firewall() {
+# 最后执行防火墙配置（Xray 启动成功后）
+finalize_firewall() {
     detect_firewall
-
-    local old_port
-    old_port=$(get_old_port)
-    if [ -n "$old_port" ] && [ "$old_port" != "$PORT" ]; then
-        print_info "检测到旧端口 $old_port → 新端口 $PORT，清理旧端口..."
-        close_port "$old_port"
+    echo -e "${CYAN}[Firewall]${NC} 开始配置防火墙..."
+    # 1. 关闭旧端口（排除当前新端口）
+    if [ -n "$OLD_PORTS" ]; then
+        for port in $OLD_PORTS; do
+            if [ "$port" != "$PORT" ]; then
+                close_old_port "$port"
+            fi
+        done
     fi
-
+    # 2. 放行新端口
     open_port "$PORT"
+    echo -e "${GREEN}[OK]${NC} 防火墙规则已更新"
 }
 
-# ===================== Xray 检查 =====================
+# ===================== 端口冲突检查 =====================
+check_port_conflict() {
+    local new_port="$1"
+    local key="vlessConfig.json"
 
-XRAY_INSTALL_CMD="bash -c \"\$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install"
-
-check_xray() {
-    if [ -f "$XRAY_BIN" ]; then
-        local ver
-        ver=$("$XRAY_BIN" version 2>&1 | head -1 || echo "未知")
-        print_info "检测到 xray: $ver"
-        return 0
+    # 方法1：优先使用 fuser（不会卡死）
+    local listening_info=""
+    if command -v fuser &>/dev/null; then
+        listening_info=$(fuser -n tcp "$new_port" 2>&1 || true)
     fi
 
-    print_info "未找到 xray，正在自动安装..."
-    install_if_missing "curl" "curl"
-
-    if eval "$XRAY_INSTALL_CMD"; then
-        print_success "Xray 安装完成"
-        if [ -f "$XRAY_BIN" ]; then
-            local ver
-            ver=$("$XRAY_BIN" version 2>&1 | head -1 || echo "未知")
-            print_info "xray 版本: $ver"
-            return 0
+    # 方法2：fuser不可用时，使用 timeout + ss，并过滤掉标题行
+    if [ -z "$listening_info" ] && command -v timeout &>/dev/null; then
+        listening_info=$(timeout 3 ss -tlnp "sport = :${new_port}" 2>/dev/null | tail -n +2)
+        if [ -z "$listening_info" ]; then
+            listening_info=$(timeout 3 ss -tlnp 2>/dev/null | grep -E "LISTEN[^:]*:${new_port}\s" || true)
         fi
     fi
 
-    print_error "Xray 安装失败"
-    print_info "可手动安装: bash -c \"\$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)\" @ install"
-    exit 1
-}
+    if [ -z "$listening_info" ]; then
+        echo -e "${GREEN}[INFO]${NC} 端口 $new_port 未被占用，可以继续"
+        return 0
+    fi
 
-# ===================== 密钥生成 =====================
+    echo -e "${YELLOW}[WARN]${NC} 端口 $new_port 已被占用，详细信息:"
+    echo "$listening_info" | head -3
 
-generate_keys() {
-    print_info "生成 x25519 公私钥..."
-
-    local key_output
-    key_output=$("$XRAY_BIN" x25519 2>&1) || {
-        print_error "x25519 密钥生成失败"
-        exit 1
-    }
-
-    PRIVATE_KEY=$(printf '%s' "$key_output" | sed -n 's/.*PrivateKey: *//p' | head -1)
-    PUBLIC_KEY=$(printf '%s' "$key_output"  | sed -n 's/.*(PublicKey): *//p' | head -1)
-
-    if [ -z "$PRIVATE_KEY" ] || [ -z "$PUBLIC_KEY" ]; then
-        print_error "解析公私钥失败"
-        echo "Raw output:"
-        printf '%s\n' "$key_output"
+    # 检查 firewalld.json 中是否记录了该端口（属于本脚本的 vlessConfig 历史）
+    if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
+        local in_record=$(python3 -c "
+import json
+try:
+    with open('$PORT_RECORD_FILE') as f:
+        data = json.load(f)
+    if isinstance(data, dict) and '$key' in data:
+        ports = data['$key']
+        if $new_port in ports:
+            print('yes')
+except:
+    pass
+" 2>/dev/null)
+        if [ "$in_record" = "yes" ]; then
+            echo -e "${GREEN}[INFO]${NC} 端口 $new_port 属于本脚本历史记录，允许覆盖"
+            return 0
+        fi
+    else
+        echo -e "${RED}[ERR]${NC} 端口被占用，且无法验证是否为脚本历史端口（python3 或记录文件缺失）"
+        echo -e "${YELLOW}       请手动检查或更换端口后重试。${NC}"
         exit 1
     fi
 
-    print_success "Private key: $PRIVATE_KEY"
-    print_success "Public key:  $PUBLIC_KEY"
+    echo -e "${RED}[ERR]${NC} 端口 $new_port 被其他服务占用，无法继续。"
+    echo -e "${YELLOW}       请更换端口后重试，或先停止占用该端口的服务。${NC}"
+    exit 1
 }
 
-random_hex() {
-    local len="$1"
-    cat /dev/urandom 2>/dev/null | tr -dc 'a-f0-9' | head -c "$len" 2>/dev/null || \
-    openssl rand -hex $(( len / 2 )) 2>/dev/null | head -c "$len" 2>/dev/null || \
-    { for i in $(seq 1 "$len"); do printf '%x' $(( RANDOM % 16 )); done; }
+# ===================== Xray 安装 =====================
+install_xray() {
+    echo -e "${CYAN}[Xray]${NC} 安装/检查 Xray ..."
+    if command -v xray &> /dev/null; then
+        echo -e "${GREEN}[OK]${NC} 检测到 xray"
+        return
+    fi
+
+    echo -e "${YELLOW}[WARN]${NC} 未找到 xray，通过官方脚本安装..."
+    if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install; then
+        echo -e "${RED}[ERR]${NC} Xray 安装失败，请检查网络后重试"
+        exit 1
+    fi
+
+    if ! command -v xray &> /dev/null; then
+        echo -e "${RED}[ERR]${NC} 安装后仍找不到 xray 命令"
+        exit 1
+    fi
+    echo -e "${GREEN}[OK]${NC} Xray 安装完成"
 }
 
-random_digits() {
-    local len="$1"
-    local result=""
-    for i in $(seq 1 "$len"); do
-        result="${result}$(( RANDOM % 10 ))"
-    done
-    echo "$result"
+# ===================== 密钥生成 =====================
+generate_keys() {
+    echo -e "${CYAN}[Key]${NC} 生成 x25519 公私钥..."
+    local xray_bin="xray"
+    if [ -x "/usr/local/bin/xray" ]; then
+        xray_bin="/usr/local/bin/xray"
+    fi
+
+    local key_output
+    key_output=$("$xray_bin" x25519 2>&1) || {
+        echo -e "${RED}[ERR]${NC} x25519 密钥生成失败"
+        exit 1
+    }
+
+    PRIVATE_KEY=$(echo "$key_output" | sed -n 's/.*PrivateKey: *//p' | head -1)
+    PUBLIC_KEY=$(echo "$key_output"  | sed -n 's/.*(PublicKey): *//p' | head -1)
+
+    if [ -z "$PRIVATE_KEY" ] || [ -z "$PUBLIC_KEY" ]; then
+        echo -e "${RED}[ERR]${NC} 解析公私钥失败"
+        echo "Raw output:"
+        echo "$key_output"
+        exit 1
+    fi
+
+    echo -e "${GREEN}[OK]${NC} Private key: $PRIVATE_KEY"
+    echo -e "${GREEN}[OK]${NC} Public key:  $PUBLIC_KEY"
 }
 
 generate_clientid() {
-    CLIENT_ID=$(random_digits 10)
-    print_info "生成 clients.id: $CLIENT_ID"
+    CLIENT_ID=""
+    for i in $(seq 1 10); do
+        CLIENT_ID="${CLIENT_ID}$(( RANDOM % 10 ))"
+    done
+    echo -e "${BLUE}[INFO]${NC} 生成 clients.id: $CLIENT_ID"
 }
 
 generate_shortid() {
-    SHORT_ID=$(random_hex 12)
-    print_info "生成 shortId:    $SHORT_ID"
+    SHORT_ID=$(cat /dev/urandom 2>/dev/null | tr -dc 'a-f0-9' | head -c 12 || \
+               openssl rand -hex 6 2>/dev/null | head -c 12 || \
+               { for i in $(seq 1 12); do printf '%x' $(( RANDOM % 16 )); done; })
+    echo -e "${BLUE}[INFO]${NC} 生成 shortId: $SHORT_ID"
 }
 
-# ===================== 配置文件 =====================
+build_server_names_json() {
+    IFS=',' read -ra NAMES <<< "$SERVER_NAMES"
+    local lines=()
+    for name in "${NAMES[@]}"; do
+        name=$(echo "$name" | xargs)
+        [ -n "$name" ] && lines+=("            \"$name\"")
+    done
+    local last_idx=$((${#lines[@]} - 1))
+    for i in "${!lines[@]}"; do
+        if [ "$i" -lt "$last_idx" ]; then
+            echo "${lines[$i]},"
+        else
+            echo "${lines[$i]}"
+        fi
+    done
+}
 
+# ===================== 生成配置 =====================
 write_config() {
-    print_info "写入配置文件..."
-    mkdir -p "$XRAY_CONFIG_DIR"
+    echo -e "${BLUE}[INFO]${NC} 写入配置文件..."
+    mkdir -p "$XRAY_DIR"
 
-    cat > "$XRAY_CONFIG_FILE" << XRAYEOF
+    # 端口冲突检查
+    check_port_conflict "$PORT"
+
+    # 生成 serverNames JSON 行
+    SERVER_NAMES_JSON=$(build_server_names_json)
+
+    cat > "$CONF_FILE" << EOF
 {
   "log": {
     "loglevel": "warning"
@@ -449,90 +455,96 @@ ${SERVER_NAMES_JSON}
   ],
   "routing": {
     "domainStrategy": "IPIfNonMatch",
-    "rules": [
-      {
-        "type": "field",
-        "inboundTag": "socks",
-        "outboundTag": "socks"
-      }
-    ]
+    "rules": []
   }
 }
-XRAYEOF
-
-    chmod 644 "$XRAY_CONFIG_FILE"
-    print_success "配置文件已写入: $XRAY_CONFIG_FILE"
+EOF
+    echo -e "${GREEN}[OK]${NC} 配置文件 $CONF_FILE 已写入"
 }
 
-build_server_names_json() {
-    IFS=',' read -ra NAMES <<< "$SERVER_NAMES"
-    local lines=()
-    for name in "${NAMES[@]}"; do
-        name=$(echo "$name" | xargs)
-        [ -n "$name" ] && lines+=("            \"$name\"")
-    done
-    local last_idx=$((${#lines[@]} - 1))
-    for i in "${!lines[@]}"; do
-        if [ "$i" -lt "$last_idx" ]; then
-            echo "${lines[$i]},"
-        else
-            echo "${lines[$i]}"
-        fi
-    done
-}
+# ===================== 更新 firewalld.json =====================
+update_port_record() {
+    local key="vlessConfig.json"
+    local port=$PORT
 
-# ===================== Xray 重启 =====================
+    if command -v python3 &>/dev/null; then
+        python3 -c "
+import json, sys, os
+record_file = '$PORT_RECORD_FILE'
+key = '$key'
+new_port = $port
 
-restart_xray() {
-    print_info "重启 xray 服务..."
-    XRAY_RUNNING=false
+data = {}
+if os.path.exists(record_file):
+    try:
+        with open(record_file) as f:
+            data = json.load(f)
+    except:
+        data = {}
 
-    if command -v systemctl &> /dev/null && systemctl is-active --quiet xray 2>/dev/null; then
-        systemctl restart xray
-        sleep 3
-        if systemctl is-active --quiet xray 2>/dev/null; then
-            print_success "xray 服务重启成功 (systemd)"
-            XRAY_RUNNING=true
-            return 0
-        fi
-    fi
+if not isinstance(data, dict):
+    data = {}
 
-    if command -v systemctl &> /dev/null; then
-        print_info "尝试 systemctl start..."
-        systemctl start xray 2>/dev/null || true
-        sleep 3
-        if systemctl is-active --quiet xray 2>/dev/null; then
-            print_success "xray 服务启动成功 (systemd)"
-            XRAY_RUNNING=true
-            return 0
-        fi
-    fi
+data[key] = [new_port]
 
-    print_info "直接启动 xray 进程..."
-    pkill -f "xray run" 2>/dev/null || true
-    sleep 1
-    nohup "$XRAY_BIN" run -config "$XRAY_CONFIG_FILE" > /var/log/xray.log 2>&1 &
-    sleep 3
-
-    if pgrep -f "xray run" > /dev/null 2>&1; then
-        print_success "xray 进程已启动 (PID: $(pgrep -f 'xray run' | head -1))"
-        XRAY_RUNNING=true
+with open(record_file, 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+"
+        echo -e "${GREEN}[OK]${NC} 端口记录已更新至 $PORT_RECORD_FILE"
     else
-        print_error "xray 启动失败: cat /var/log/xray.log"
-        XRAY_RUNNING=false
-        return 1
+        cat > "$PORT_RECORD_FILE" << EOF
+{
+  "$key": [$PORT]
+}
+EOF
+        echo -e "${YELLOW}[WARN]${NC} 未找到 python3，firewalld.json 已直接覆盖（历史记录丢失）"
     fi
 }
 
-# ===================== API 上报 =====================
+# ===================== 启动 Xray（confdir 模式） =====================
+restart_xray() {
+    echo -e "${CYAN}[Xray]${NC} 启动/重启 Xray 服务（confdir 模式）..."
 
+    local xray_bin="xray"
+    if [ -x "/usr/local/bin/xray" ]; then
+        xray_bin="/usr/local/bin/xray"
+    fi
+
+    # 优先使用 systemd 服务管理
+    local service_file=$(systemctl show -p FragmentPath xray 2>/dev/null | cut -d= -f2)
+    if [ -n "$service_file" ] && [ -f "$service_file" ]; then
+        echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务，修改为 confdir 启动..."
+        cp "$service_file" "${service_file}.bak.$(date +%s)"
+        sed -i "s|^ExecStart=.*|ExecStart=${xray_bin} -confdir ${XRAY_DIR}|" "$service_file"
+        systemctl daemon-reload
+        systemctl restart xray
+        systemctl enable xray 2>/dev/null || true
+        echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启"
+    else
+        echo -e "${YELLOW}[WARN]${NC} 未找到 systemd 服务，手动启动..."
+        pkill -f "xray.*-confdir.*${XRAY_DIR}" 2>/dev/null || true
+        sleep 1
+        nohup "$xray_bin" -confdir "$XRAY_DIR" > /var/log/xray.log 2>&1 &
+        sleep 2
+        if pgrep -f "xray.*-confdir.*${XRAY_DIR}" > /dev/null; then
+            echo -e "${GREEN}[OK]${NC} Xray 进程已启动（后台）"
+        else
+            echo -e "${RED}[ERR]${NC} Xray 启动失败，请检查配置"
+            exit 1
+        fi
+    fi
+    echo -e "${GREEN}[OK]${NC} Xray 已成功运行"
+}
+
+# ===================== 上报 =====================
 upload_config() {
-    print_info "上报配置到 API..."
-
-    local request_body
-    request_body=$(cat << EOF
+    local ip=$SERVER_IP
+    [ -z "$ip" ] && ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo "0.0.0.0")
+    echo -e "${BLUE}[INFO]${NC} 上报配置到 API..."
+    local request_body=$(cat << EOF
 {
-  "resourcesIp": "${SERVER_IP}",
+  "resourcesIp": "${ip}",
   "publicBrokerKey": "${PUBLIC_KEY}",
   "sni": "${SERVER_NAMES}",
   "shortId": "${SHORT_ID}",
@@ -542,105 +554,58 @@ upload_config() {
 EOF
 )
     local response
-    response=$(curl -s --connect-timeout 10 --max-time 30 \
-        -X POST \
-        -H "Content-Type: application/json" \
-        -d "$request_body" \
-        "$API_URL" 2>&1) || {
-        print_error "API 请求失败: $response"
-        return 1
+    response=$(curl -s --connect-timeout 10 --max-time 30 -X POST -H "Content-Type: application/json" -d "$request_body" "$API_URL" 2>&1) || {
+        echo -e "${RED}[ERR]${NC} API 请求失败"; return 1
     }
-
-    local code
-    code=$(echo "$response" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
+    local code=$(echo "$response" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
     if [ "$code" != "200" ]; then
-        local err_msg
-        err_msg=$(echo "$response" | grep -o '"msg"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"msg"[[:space:]]*:[[:space:]]*"//;s/"$//')
-        print_error "API 返回错误 (code=$code): $err_msg"
-        return 1
+        local err_msg=$(echo "$response" | grep -o '"msg"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"msg"[[:space:]]*:[[:space:]]*"//;s/"$//')
+        echo -e "${RED}[ERR]${NC} API 错误 (code=$code): $err_msg"; return 1
     fi
-
     PASSWORD=$(echo "$response" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"message"[[:space:]]*:[[:space:]]*"//;s/"$//')
-    if [ -z "$PASSWORD" ]; then
-        print_error "解析查询密码失败"
-        return 1
-    fi
-
-    print_success "上报成功"
+    [ -z "$PASSWORD" ] && { echo -e "${RED}[ERR]${NC} 解析密码失败"; return 1; }
+    echo -e "${GREEN}[OK]${NC} 上报成功: ${QUERY_BASE_URL}/${PASSWORD}"
     return 0
 }
 
-# ===================== 结果输出 =====================
-
+# ===================== 输出 =====================
 status_icon() {
-    if [ "$1" = "true" ] || [ "$1" = "1" ]; then
-        echo -e "${GREEN}✓${NC}"
+    [ "$1" = "true" ] && echo -e "${GREEN}✓${NC}" || echo -e "${RED}✗${NC}"
+}
+
+print_qrcode() {
+    local url="$1"
+    if command -v qrencode &> /dev/null; then
+        echo -e "  ${CYAN}请用微信扫码后在浏览器中打开查询链接信息${NC}"
+        echo -e "  ${CYAN}因微信浏览器内核版本过低，会出现查询失败情况${NC}"
+        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
+            echo "  $line"
+        done
     else
-        echo -e "${RED}✗${NC}"
+        echo -e "${YELLOW}[WARN]${NC} qrencode 未安装，无法显示二维码"
     fi
 }
 
 print_result() {
     echo ""
     echo -e "${GREEN}╔════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║           系统检测 & 配置报告              ║${NC}"
+    echo -e "${GREEN}║        VLESS+Reality 一键部署完成           ║${NC}"
     echo -e "${GREEN}╚════════════════════════════════════════════╝${NC}"
     echo ""
-
-    # 系统
-    echo -e "  ${CYAN}系统信息${NC}"
-    if command -v lsb_release &> /dev/null; then
-        echo -e "  发行版:  $(lsb_release -ds 2>/dev/null || echo '-')"
-    elif [ -f /etc/os-release ]; then
-        echo -e "  发行版:  $(. /etc/os-release && echo "$NAME $VERSION")"
-    fi
-    echo -e "  内核:    $(uname -r)"
-    echo -e "  CPU:     $(nproc 2>/dev/null || echo 1) 核"
-    echo ""
-
-    # BBR
-    local cc_display
-    cc_display=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "unknown")
-    local qdisc_display
-    qdisc_display=$(sysctl -n net.core.default_qdisc 2>/dev/null || echo "unknown")
-    echo -e "  ${CYAN}BBR 加速${NC}"
-    printf "  状态:    %b  %s (cc=%s, qdisc=%s)\n" \
-        "$(status_icon "$BBR_ENABLED")" \
-        "$([ "$BBR_ENABLED" = true ] && echo "已启用" || echo "未启用")" \
-        "$cc_display" "$qdisc_display"
-    echo ""
-
-    # 防火墙
-    echo -e "  ${CYAN}防火墙${NC}"
-    echo -e "  类型:    $FW_TYPE"
-    printf "  端口 %s: %b  %s\n" \
-        "$PORT" \
-        "$(status_icon "$FW_PORT_OK")" \
-        "$([ "$FW_PORT_OK" = true ] && echo "已开放" || echo "未开放")"
-    echo ""
-
-    # Xray
-    echo -e "  ${CYAN}Xray 服务${NC}"
-    printf "  xray:    %b  %s\n" \
-        "$(status_icon "$XRAY_RUNNING")" \
-        "$([ "$XRAY_RUNNING" = true ] && echo "运行中" || echo "未运行")"
-    echo -e "  端口:    $PORT"
-    echo -e "  协议:    vless + reality + tcp"
-    echo -e "  回落:    $DEST"
-    echo -e "  域名:    $SERVER_NAMES"
-    echo -e "  Client ID: $CLIENT_ID"
-    echo -e "  公钥:    $PUBLIC_KEY"
-    echo -e "  短ID:    $SHORT_ID"
-    echo ""
-
-    # 查询链接
-    echo -e "  ${CYAN}请复制以下链接在浏览器中打开查询链接信息${NC}"
+    echo -e "  服务器 IP : ${CYAN}${SERVER_IP}${NC}"
+    echo -e "  端口      : ${CYAN}${PORT}${NC}"
+    echo -e "  协议      : vless + reality + tcp"
+    echo -e "  回落目标  : ${CYAN}${DEST}${NC}"
+    echo -e "  服务域名  : ${CYAN}${SERVER_NAMES}${NC}"
+    echo -e "  Client ID : ${CYAN}${CLIENT_ID}${NC}"
+    echo -e "  公钥      : ${CYAN}${PUBLIC_KEY}${NC}"
+    echo -e "  短ID      : ${CYAN}${SHORT_ID}${NC}"
+    echo -e "  防火墙    : ${FW_TYPE}"
     if [ -n "$PASSWORD" ]; then
         local full_url="${QUERY_BASE_URL}/${PASSWORD}"
-        echo -e "  ${CYAN}${full_url}${NC}"
-        echo ""
-        # 仅在开启二维码时显示二维码
+        echo -e "  查询链接  : ${CYAN}${full_url}${NC}"
         if [ "$QR_ENABLED" = "true" ]; then
+            echo ""
             print_qrcode "$full_url"
         fi
     else
@@ -650,35 +615,28 @@ print_result() {
     echo -e "${GREEN}════════════════════════════════════════════${NC}"
 }
 
-print_qrcode() {
-    local url="$1"
-
-    if command -v qrencode &> /dev/null; then
-        echo -e "  ${CYAN}请用微信扫码后在浏览器中打开查询链接信息${NC}"
-        echo -e "  ${CYAN}因微信浏览器内核版本过低，会出现查询失败情况${NC}"
-        qrencode -t ANSIUTF8 -m 1 -s 2 "$url" 2>/dev/null | while IFS= read -r line; do
-            echo "  $line"
-        done
-    else
-        print_warning "qrencode 未安装，无法显示二维码"
-    fi
-}
-
-install_qrencode() {
-    # 仅在二维码开启时安装依赖
-    if [ "$QR_ENABLED" = "true" ]; then
-        install_if_missing "qrencode" "qrencode" || true
-    else
-        print_info "二维码已关闭，跳过安装 qrencode"
-    fi
-}
-
 # ===================== 主流程 =====================
+usage() {
+    echo "用法: $0 [选项]"
+    echo ""
+    echo "选项:"
+    echo "  -p, --port PORT           监听端口 (必填, 1-65535)"
+    echo "  -i, --ip IP               服务器公网IP (不指定则自动检测)"
+    echo "  -d, --dest DEST           回落目标 (默认: lacity.gov:443)"
+    echo "  -s, --server-names NAMES  可用域名, 逗号分隔 (默认: lacity.gov,www.lacity.gov)"
+    echo "  -close                    关闭二维码显示（默认显示二维码）"
+    echo "  -h, --help                显示帮助"
+    echo ""
+    echo "示例:"
+    echo "  $0 -p 45673"
+    echo "  $0 -p 45673 -i 137.175.93.245"
+    echo "  $0 -p 45673 -close"
+    exit 0
+}
 
 main() {
     PORT=""
     SERVER_IP=""
-
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -p|--port)           PORT="$2"; shift 2 ;;
@@ -687,60 +645,51 @@ main() {
             -s|--server-names)   SERVER_NAMES="$2"; shift 2 ;;
             -close)              QR_ENABLED=false; shift ;;
             -h|--help)           usage ;;
-            *) print_error "未知参数: $1"; usage ;;
+            *) echo -e "${RED}[ERR]${NC} 未知参数: $1"; usage ;;
         esac
     done
 
-    [ -z "$PORT" ] && { print_error "必须指定端口号 (-p/--port)"; usage; }
+    [ -z "$PORT" ] && { echo -e "${RED}[ERR]${NC} 必须指定端口号 (-p/--port)"; usage; }
     [[ "$PORT" =~ ^[0-9]+$ ]] && [ "$PORT" -ge 1 ] && [ "$PORT" -le 65535 ] || {
-        print_error "端口号必须是 1-65535 之间的整数"; exit 1;
+        echo -e "${RED}[ERR]${NC} 端口号必须是 1-65535 之间的整数"; exit 1;
     }
 
     echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║     Xray Reality+VLESS 一键部署脚本        ║${NC}"
+    echo -e "${BLUE}║      Xray Reality+VLESS 一键脚本           ║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
     echo ""
 
-    echo -e "${CYAN}[Step 1/7]${NC} 安装依赖"
-    ensure_deps
-
-    if [ -z "$SERVER_IP" ]; then
-        print_info "未指定IP，自动检测公网IP..."
-        SERVER_IP=$(detect_public_ip)
-        [ -z "$SERVER_IP" ] && { print_error "自动检测公网IP失败，请使用 -i/--ip 手动指定"; usage; }
+    detect_pkg_manager
+    install_if_missing "curl" "curl"
+    install_if_missing "ss" "iproute2"
+    install_if_missing "python3" "python3"
+    install_if_missing "fuser" "psmisc"
+    if [ "$QR_ENABLED" = "true" ]; then
+        install_if_missing "qrencode" "qrencode" || true
     fi
-    print_info "服务器IP: $SERVER_IP"
 
-    echo ""
-    echo -e "${CYAN}[Step 2/7]${NC} 开启 BBR 加速"
+    # 自动检测IP
+    if [ -z "$SERVER_IP" ]; then
+        echo -e "${BLUE}[INFO]${NC} 未指定IP，自动检测公网IP..."
+        SERVER_IP=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || \
+                    curl -s --connect-timeout 5 ip.sb 2>/dev/null || \
+                    curl -s --connect-timeout 5 icanhazip.com 2>/dev/null || \
+                    curl -s --connect-timeout 5 api.ipify.org 2>/dev/null || echo "0.0.0.0")
+        [ "$SERVER_IP" = "0.0.0.0" ] && { echo -e "${RED}[ERR]${NC} 自动检测IP失败，请用 -i 指定"; exit 1; }
+    fi
+    echo -e "${BLUE}[INFO]${NC} 服务器IP: $SERVER_IP"
+
     enable_bbr
-
-    echo ""
-    echo -e "${CYAN}[Step 3/7]${NC} 配置防火墙"
-    configure_firewall
-
-    echo ""
-    echo -e "${CYAN}[Step 4/7]${NC} 生成密钥 & 配置"
-    check_xray
+    install_xray
     generate_keys
     generate_clientid
     generate_shortid
-    SERVER_NAMES_JSON=$(build_server_names_json)
-    write_config
-
-    echo ""
-    echo -e "${CYAN}[Step 5/7]${NC} 重启 Xray"
-    restart_xray
-
-    echo ""
-    echo -e "${CYAN}[Step 6/7]${NC} 上报配置"
+    save_old_ports         # ❶ 收集旧端口
+    write_config           # ❷ 写入配置（含端口冲突检查）
+    update_port_record     # ❸ 更新记录为新端口
+    restart_xray           # ❹ 启动 Xray
+    finalize_firewall      # ❺ 启动成功后配置防火墙
     upload_config || true
-
-    echo ""
-    echo -e "${CYAN}[Step 7/7]${NC} 安装二维码依赖"
-    install_qrencode
-
-    echo ""
     print_result
 }
 
