@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终修复 v2)
+# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终双重检查)
 # 用法： bash startSocket5.sh [-p PORT] [-u USER] [-pw PASSWORD] [-h]
 # 特点：内置账户认证，兼容 Ubuntu/Debian/CentOS，自动防火墙
-# 修复：fuser+timeout避免卡死；ss标题行过滤防止误报；UDP防火墙；pkill精确匹配
+# 修复：系统+配置文件双重端口冲突检测，避免漏报
 # ============================================================
 set -e
 
@@ -22,12 +22,11 @@ API_URL="https://api.ganguo168.com/socks5Resources/insert"
 QUERY_BASE_URL="https://www.ganguo168.com/#/query-config/socks5"
 PASSWORD=""
 
-# 固定路径
 XRAY_DIR="/usr/local/etc/xray"
 CONF_FILE="${XRAY_DIR}/socksConfig.json"
 PORT_RECORD_FILE="/usr/local/etc/firewalld.json"
+CURRENT_KEY="socksConfig.json"   # 用于端口记录查询
 
-# 保存旧端口（用于防火墙清理）
 OLD_PORTS=""
 
 # ===================== 系统识别 =====================
@@ -128,7 +127,6 @@ detect_firewall() {
     echo -e "${BLUE}[INFO]${NC} 防火墙类型: $FW_TYPE"
 }
 
-# 关闭旧端口（支持 TCP+UDP）
 close_old_port() {
     local port="$1"
     echo -e "${BLUE}[INFO]${NC} 关闭旧端口 $port ..."
@@ -151,7 +149,6 @@ close_old_port() {
     sleep 1
 }
 
-# 开放新端口（支持 TCP+UDP）
 open_port() {
     local port="$1"
     echo -e "${BLUE}[INFO]${NC} 开放端口 $port ..."
@@ -187,18 +184,16 @@ open_port() {
     [ "$ok" = true ] && echo -e "${GREEN}[OK]${NC} 端口 $port 已开放" || echo -e "${YELLOW}[WARN]${NC} 端口 $port 开放验证失败"
 }
 
-# 提前收集旧端口
 save_old_ports() {
     OLD_PORTS=""
-    # 1. 从 firewalld.json 获取 socksConfig.json 的历史端口
     if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
         local recorded=$(python3 -c "
 import json
 try:
     with open('$PORT_RECORD_FILE') as f:
         data = json.load(f)
-    if isinstance(data, dict) and 'socksConfig.json' in data:
-        print(' '.join(map(str, data['socksConfig.json'])))
+    if isinstance(data, dict) and '$CURRENT_KEY' in data:
+        print(' '.join(map(str, data['$CURRENT_KEY'])))
 except:
     pass
 " 2>/dev/null)
@@ -206,7 +201,6 @@ except:
             OLD_PORTS="$recorded"
         fi
     fi
-    # 2. 从当前 socksConfig.json 提取端口
     if [ -f "$CONF_FILE" ]; then
         local cur_port=$(grep -oP '"port"\s*:\s*\K\d+' "$CONF_FILE" 2>/dev/null | head -1)
         if [ -n "$cur_port" ]; then
@@ -221,11 +215,9 @@ except:
     fi
 }
 
-# 最后执行防火墙配置（Xray 启动成功后）
 finalize_firewall() {
     detect_firewall
     echo -e "${CYAN}[Firewall]${NC} 开始配置防火墙..."
-    # 1. 关闭旧端口（排除当前新端口）
     if [ -n "$OLD_PORTS" ]; then
         for port in $OLD_PORTS; do
             if [ "$port" != "$SOCKS_PORT" ]; then
@@ -233,68 +225,75 @@ finalize_firewall() {
             fi
         done
     fi
-    # 2. 放行新端口
     open_port "$SOCKS_PORT"
     echo -e "${GREEN}[OK]${NC} 防火墙规则已更新"
 }
 
-# ===================== 端口冲突检查（修复：fuser+ss过滤标题行） =====================
+# ===================== 端口冲突检查（双重验证） =====================
 check_port_conflict() {
     local new_port="$1"
+    local current_key="${2:-}"
 
-    # 方法1：优先使用 fuser（不会卡死，且无标题行干扰）
+    # 系统级检测
     local listening_info=""
     if command -v fuser &>/dev/null; then
         listening_info=$(fuser -n tcp "$new_port" 2>&1 || true)
     fi
-
-    # 方法2：fuser不可用时，使用 timeout + ss，并过滤掉标题行
     if [ -z "$listening_info" ] && command -v timeout &>/dev/null; then
-        # ss 直接查询指定端口，用 tail -n +2 去掉第一行标题
         listening_info=$(timeout 3 ss -tlnp "sport = :${new_port}" 2>/dev/null | tail -n +2)
-        # 如果上面无结果，回退到完整 grep 正则（已自带标题过滤）
         if [ -z "$listening_info" ]; then
             listening_info=$(timeout 3 ss -tlnp 2>/dev/null | grep -E "LISTEN[^:]*:${new_port}\s" || true)
         fi
     fi
 
-    # 过滤后仍为空，说明端口空闲
-    if [ -z "$listening_info" ]; then
-        echo -e "${GREEN}[INFO]${NC} 端口 $new_port 未被占用，可以继续"
-        return 0
-    fi
-
-    echo -e "${YELLOW}[WARN]${NC} 端口 $new_port 已被占用，详细信息:"
-    echo "$listening_info" | head -3
-
-    # 检查 firewalld.json 中是否记录了该端口（属于本脚本的 socksConfig 历史）
-    if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
-        local in_record=$(python3 -c "
+    if [ -n "$listening_info" ]; then
+        echo -e "${YELLOW}[WARN]${NC} 端口 $new_port 已被系统进程占用，详细信息:"
+        echo "$listening_info" | head -3
+        if [ -n "$current_key" ] && [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
+            local in_record=$(python3 -c "
 import json
 try:
     with open('$PORT_RECORD_FILE') as f:
         data = json.load(f)
-    if isinstance(data, dict) and 'socksConfig.json' in data:
-        ports = data['socksConfig.json']
+    if isinstance(data, dict) and '$current_key' in data:
+        ports = data['$current_key']
         if $new_port in ports:
             print('yes')
 except:
     pass
 " 2>/dev/null)
-        if [ "$in_record" = "yes" ]; then
-            echo -e "${GREEN}[INFO]${NC} 端口 $new_port 属于本脚本历史记录，允许覆盖"
-            return 0
+            if [ "$in_record" = "yes" ]; then
+                echo -e "${GREEN}[INFO]${NC} 端口 $new_port 属于本脚本历史记录，允许覆盖"
+            else
+                echo -e "${RED}[ERR]${NC} 端口被其他服务占用，且非本脚本历史端口。"
+                echo -e "${YELLOW}       请更换端口或停止占用该端口的服务后重试。${NC}"
+                exit 1
+            fi
+        else
+            echo -e "${RED}[ERR]${NC} 端口被占用，且无法验证历史记录（python3/记录文件缺失）"
+            echo -e "${YELLOW}       请手动检查或更换端口后重试。${NC}"
+            exit 1
         fi
     else
-        # 无法读取记录文件 → 保守失败
-        echo -e "${RED}[ERR]${NC} 端口被占用，且无法验证是否为脚本历史端口（python3 或记录文件缺失）"
-        echo -e "${YELLOW}       请手动检查或更换端口后重试。${NC}"
+        echo -e "${GREEN}[INFO]${NC} 端口 $new_port 未被系统占用"
+    fi
+
+    # 配置文件级检测
+    local conflict_files=""
+    for f in "$XRAY_DIR"/*.json; do
+        [ ! -f "$f" ] && continue
+        [ "$f" = "$CONF_FILE" ] && continue
+        if grep -qE "\"port\"[[:space:]]*:[[:space:]]*${new_port}" "$f" 2>/dev/null; then
+            conflict_files="$conflict_files\n  - $(basename "$f")"
+        fi
+    done
+    if [ -n "$conflict_files" ]; then
+        echo -e "${RED}[ERR]${NC} 端口 $new_port 已被以下配置文件占用（即使未监听也会冲突）:$conflict_files"
+        echo -e "${YELLOW}       请更换端口，或先修改上述配置文件中的端口。${NC}"
         exit 1
     fi
 
-    echo -e "${RED}[ERR]${NC} 端口 $new_port 被其他服务占用，无法继续。"
-    echo -e "${YELLOW}       请更换端口后重试，或先停止占用该端口的服务。${NC}"
-    exit 1
+    echo -e "${GREEN}[OK]${NC} 端口 $new_port 双重检查通过，可以继续"
 }
 
 # ===================== Xray 安装 =====================
@@ -304,13 +303,11 @@ install_xray() {
         echo -e "${GREEN}[OK]${NC} 检测到 xray"
         return
     fi
-
     echo -e "${YELLOW}[WARN]${NC} 未找到 xray，通过官方脚本安装..."
     if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install; then
         echo -e "${RED}[ERR]${NC} Xray 安装失败，请检查网络后重试"
         exit 1
     fi
-
     if ! command -v xray &> /dev/null; then
         echo -e "${RED}[ERR]${NC} 安装后仍找不到 xray 命令"
         exit 1
@@ -318,22 +315,17 @@ install_xray() {
     echo -e "${GREEN}[OK]${NC} Xray 安装完成"
 }
 
-# ===================== 生成 Xray 配置 =====================
 write_config() {
     mkdir -p "$XRAY_DIR"
-
     if [ "$SOCKS_USER" = "root" ]; then
-        echo -e "${RED}[ERR]${NC} 严禁使用 root 作为 SOCKS 用户名，会破坏系统认证！已自动更改为随机用户。"
+        echo -e "${RED}[ERR]${NC} 严禁使用 root 作为 SOCKS 用户名，已自动更改为随机用户。"
         SOCKS_USER=""
     fi
-
     [ -z "$SOCKS_USER" ] && SOCKS_USER="user$(tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
     [ -z "$SOCKS_PASS" ] && SOCKS_PASS="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)"
 
-    # 端口冲突检查（已修复卡死和误报）
-    check_port_conflict "$SOCKS_PORT"
+    check_port_conflict "$SOCKS_PORT" "$CURRENT_KEY"
 
-    # 处理旧的 config.json（避免合并冲突）
     if [ -f "${XRAY_DIR}/config.json" ]; then
         local bak="${XRAY_DIR}/config.json.bak.$(date +%s)"
         mv "${XRAY_DIR}/config.json" "$bak"
@@ -369,11 +361,9 @@ EOF
     echo -e "${GREEN}[OK]${NC} 配置文件 $CONF_FILE 已写入"
 }
 
-# ===================== 更新 firewalld.json =====================
 update_port_record() {
-    local key="socksConfig.json"
+    local key="$CURRENT_KEY"
     local port=$SOCKS_PORT
-
     if command -v python3 &>/dev/null; then
         python3 -c "
 import json, sys, os
@@ -388,12 +378,9 @@ if os.path.exists(record_file):
             data = json.load(f)
     except:
         data = {}
-
 if not isinstance(data, dict):
     data = {}
-
 data[key] = [new_port]
-
 with open(record_file, 'w') as f:
     json.dump(data, f, indent=2)
     f.write('\n')
@@ -409,16 +396,10 @@ EOF
     fi
 }
 
-# ===================== 启动 Xray（confdir 模式） =====================
 restart_xray() {
     echo -e "${CYAN}[Xray]${NC} 启动/重启 Xray 服务（confdir 模式）..."
-
     local xray_bin="xray"
-    if [ -x "/usr/local/bin/xray" ]; then
-        xray_bin="/usr/local/bin/xray"
-    fi
-
-    # 优先使用 systemd 服务管理
+    [ -x "/usr/local/bin/xray" ] && xray_bin="/usr/local/bin/xray"
     local service_file=$(systemctl show -p FragmentPath xray 2>/dev/null | cut -d= -f2)
     if [ -n "$service_file" ] && [ -f "$service_file" ]; then
         echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务，修改为 confdir 启动..."
@@ -429,7 +410,6 @@ restart_xray() {
         systemctl enable xray 2>/dev/null || true
         echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启"
     else
-        # 无 systemd，手动后台启动，只杀本脚本相关进程
         echo -e "${YELLOW}[WARN]${NC} 未找到 systemd 服务，手动启动..."
         pkill -f "xray.*-confdir.*${XRAY_DIR}" 2>/dev/null || true
         sleep 1
@@ -445,12 +425,8 @@ restart_xray() {
     echo -e "${GREEN}[OK]${NC} Xray 已成功运行"
 }
 
-# ===================== 输出和上报 =====================
 print_result() {
-    local ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || \
-               curl -s --connect-timeout 5 ip.sb 2>/dev/null || \
-               curl -s --connect-timeout 5 icanhazip.com 2>/dev/null || \
-               curl -s --connect-timeout 5 api.ipify.org 2>/dev/null || echo "未知")
+    local ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo "未知")
     echo ""
     echo -e "${GREEN}╔════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║       Xray SOCKS5 全量部署完成             ║${NC}"
@@ -467,10 +443,7 @@ print_result() {
 }
 
 upload_config() {
-    local ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || \
-               curl -s --connect-timeout 5 ip.sb 2>/dev/null || \
-               curl -s --connect-timeout 5 icanhazip.com 2>/dev/null || \
-               curl -s --connect-timeout 5 api.ipify.org 2>/dev/null || echo "0.0.0.0")
+    local ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo "0.0.0.0")
     echo -e "${BLUE}[INFO]${NC} 上报配置到 API..."
     local request_body="{\"resourcesIp\":\"${ip}\",\"socks5Port\":\"${SOCKS_PORT}\",\"socks5UserName\":\"${SOCKS_USER}\",\"socks5Password\":\"${SOCKS_PASS}\"}"
     local response=$(curl -s --connect-timeout 10 --max-time 30 -X POST -H "Content-Type: application/json" -d "$request_body" "$API_URL" 2>&1) || {
@@ -492,7 +465,6 @@ usage() {
     exit 0
 }
 
-# ===================== 主流程 =====================
 main() {
     SOCKS_PORT=""; SOCKS_USER=""; SOCKS_PASS=""
     while [[ $# -gt 0 ]]; do
