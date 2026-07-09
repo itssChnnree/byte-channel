@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终修复)
+# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终修复 v2)
 # 用法： bash startSocket5.sh [-p PORT] [-u USER] [-pw PASSWORD] [-h]
 # 特点：内置账户认证，兼容 Ubuntu/Debian/CentOS，自动防火墙
-# 修复：端口检测使用 fuser/timeout 防止 ss 卡死；UDP 防火墙支持；pkill 精确过滤
+# 修复：fuser+timeout避免卡死；ss标题行过滤防止误报；UDP防火墙；pkill精确匹配
 # ============================================================
 set -e
 
@@ -128,7 +128,7 @@ detect_firewall() {
     echo -e "${BLUE}[INFO]${NC} 防火墙类型: $FW_TYPE"
 }
 
-# 关闭旧端口（现在同时支持 TCP 和 UDP）
+# 关闭旧端口（支持 TCP+UDP）
 close_old_port() {
     local port="$1"
     echo -e "${BLUE}[INFO]${NC} 关闭旧端口 $port ..."
@@ -151,7 +151,7 @@ close_old_port() {
     sleep 1
 }
 
-# 开放新端口（同时支持 TCP 和 UDP）
+# 开放新端口（支持 TCP+UDP）
 open_port() {
     local port="$1"
     echo -e "${BLUE}[INFO]${NC} 开放端口 $port ..."
@@ -176,7 +176,6 @@ open_port() {
             ;;
     esac
     sleep 1
-    # 验证
     local ok=false
     if [ "$FW_TYPE" = "ufw" ]; then
         ufw status 2>/dev/null | grep -qw "$port" && ok=true
@@ -188,7 +187,7 @@ open_port() {
     [ "$ok" = true ] && echo -e "${GREEN}[OK]${NC} 端口 $port 已开放" || echo -e "${YELLOW}[WARN]${NC} 端口 $port 开放验证失败"
 }
 
-# 提前收集旧端口（在写入新配置前调用）
+# 提前收集旧端口
 save_old_ports() {
     OLD_PORTS=""
     # 1. 从 firewalld.json 获取 socksConfig.json 的历史端口
@@ -214,7 +213,6 @@ except:
             OLD_PORTS="$OLD_PORTS $cur_port"
         fi
     fi
-    # 去重
     OLD_PORTS=$(echo "$OLD_PORTS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
     if [ -n "$OLD_PORTS" ]; then
         echo -e "${BLUE}[INFO]${NC} 已记录旧端口: $OLD_PORTS"
@@ -227,7 +225,6 @@ except:
 finalize_firewall() {
     detect_firewall
     echo -e "${CYAN}[Firewall]${NC} 开始配置防火墙..."
-
     # 1. 关闭旧端口（排除当前新端口）
     if [ -n "$OLD_PORTS" ]; then
         for port in $OLD_PORTS; do
@@ -236,34 +233,32 @@ finalize_firewall() {
             fi
         done
     fi
-
     # 2. 放行新端口
     open_port "$SOCKS_PORT"
-
     echo -e "${GREEN}[OK]${NC} 防火墙规则已更新"
 }
 
-# ===================== 端口冲突检查（修复卡死问题） =====================
+# ===================== 端口冲突检查（修复：fuser+ss过滤标题行） =====================
 check_port_conflict() {
     local new_port="$1"
 
-    # 方法1：优先使用 fuser 快速检测（不会卡死）
+    # 方法1：优先使用 fuser（不会卡死，且无标题行干扰）
     local listening_info=""
     if command -v fuser &>/dev/null; then
-        # fuser -n tcp 端口，返回占用进程PID列表，无则返回空
         listening_info=$(fuser -n tcp "$new_port" 2>&1 || true)
     fi
 
-    # 方法2：fuser不可用时，使用 timeout 保护 ss 命令
+    # 方法2：fuser不可用时，使用 timeout + ss，并过滤掉标题行
     if [ -z "$listening_info" ] && command -v timeout &>/dev/null; then
-        # 尝试精确匹配，超时3秒
-        listening_info=$(timeout 3 ss -tlnp "sport = :${new_port}" 2>/dev/null || true)
+        # ss 直接查询指定端口，用 tail -n +2 去掉第一行标题
+        listening_info=$(timeout 3 ss -tlnp "sport = :${new_port}" 2>/dev/null | tail -n +2)
+        # 如果上面无结果，回退到完整 grep 正则（已自带标题过滤）
         if [ -z "$listening_info" ]; then
-            # 回退到 grep 正则，同样超时保护
             listening_info=$(timeout 3 ss -tlnp 2>/dev/null | grep -E "LISTEN[^:]*:${new_port}\s" || true)
         fi
     fi
 
+    # 过滤后仍为空，说明端口空闲
     if [ -z "$listening_info" ]; then
         echo -e "${GREEN}[INFO]${NC} 端口 $new_port 未被占用，可以继续"
         return 0
@@ -335,7 +330,7 @@ write_config() {
     [ -z "$SOCKS_USER" ] && SOCKS_USER="user$(tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
     [ -z "$SOCKS_PASS" ] && SOCKS_PASS="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)"
 
-    # 端口冲突检查（已修复卡死）
+    # 端口冲突检查（已修复卡死和误报）
     check_port_conflict "$SOCKS_PORT"
 
     # 处理旧的 config.json（避免合并冲突）
@@ -423,7 +418,7 @@ restart_xray() {
         xray_bin="/usr/local/bin/xray"
     fi
 
-    # 优先使用 systemd 服务管理（避免 pkill 误杀）
+    # 优先使用 systemd 服务管理
     local service_file=$(systemctl show -p FragmentPath xray 2>/dev/null | cut -d= -f2)
     if [ -n "$service_file" ] && [ -f "$service_file" ]; then
         echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务，修改为 confdir 启动..."
@@ -434,9 +429,8 @@ restart_xray() {
         systemctl enable xray 2>/dev/null || true
         echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启"
     else
-        # 无 systemd，手动后台启动（精确杀掉旧的 confdir 实例）
+        # 无 systemd，手动后台启动，只杀本脚本相关进程
         echo -e "${YELLOW}[WARN]${NC} 未找到 systemd 服务，手动启动..."
-        # 只杀掉由本脚本启动的 -confdir 进程
         pkill -f "xray.*-confdir.*${XRAY_DIR}" 2>/dev/null || true
         sleep 1
         nohup "$xray_bin" -confdir "$XRAY_DIR" > /var/log/xray.log 2>&1 &
@@ -523,15 +517,15 @@ main() {
     install_if_missing "curl" "curl"
     install_if_missing "ss" "iproute2"
     install_if_missing "python3" "python3"
-    install_if_missing "fuser" "psmisc"   # 确保 fuser 可用
+    install_if_missing "fuser" "psmisc"
 
     enable_bbr
     install_xray
-    save_old_ports         # ❶ 先收集旧端口
-    write_config           # ❷ 写配置（含端口冲突检查）
-    update_port_record     # ❸ 更新记录为新端口
-    restart_xray           # ❹ 启动 Xray（失败则退出）
-    finalize_firewall      # ❺ 启动成功后配置防火墙
+    save_old_ports
+    write_config
+    update_port_record
+    restart_xray
+    finalize_firewall
     upload_config || true
     print_result
 }
