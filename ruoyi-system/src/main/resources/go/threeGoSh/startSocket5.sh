@@ -1,9 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终双重检查)
+# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终修复)
 # 用法： bash startSocket5.sh [-p PORT] [-u USER] [-pw PASSWORD] [-h]
 # 特点：内置账户认证，兼容 Ubuntu/Debian/CentOS，自动防火墙
-# 修复：系统+配置文件双重端口冲突检测，避免漏报
+# 修复：系统+配置文件双重端口冲突检测；清理 systemd drop-in
 # ============================================================
 set -e
 
@@ -25,7 +25,7 @@ PASSWORD=""
 XRAY_DIR="/usr/local/etc/xray"
 CONF_FILE="${XRAY_DIR}/socksConfig.json"
 PORT_RECORD_FILE="/usr/local/etc/firewalld.json"
-CURRENT_KEY="socksConfig.json"   # 用于端口记录查询
+CURRENT_KEY="socksConfig.json"
 
 OLD_PORTS=""
 
@@ -370,7 +370,6 @@ import json, sys, os
 record_file = '$PORT_RECORD_FILE'
 key = '$key'
 new_port = $port
-
 data = {}
 if os.path.exists(record_file):
     try:
@@ -396,20 +395,37 @@ EOF
     fi
 }
 
+# ===================== 重启 Xray（清理 drop-in） =====================
 restart_xray() {
     echo -e "${CYAN}[Xray]${NC} 启动/重启 Xray 服务（confdir 模式）..."
+
     local xray_bin="xray"
     [ -x "/usr/local/bin/xray" ] && xray_bin="/usr/local/bin/xray"
+
+    # 获取 systemd 服务文件实际路径
     local service_file=$(systemctl show -p FragmentPath xray 2>/dev/null | cut -d= -f2)
     if [ -n "$service_file" ] && [ -f "$service_file" ]; then
-        echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务，修改为 confdir 启动..."
+        echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务文件: $service_file"
+
+        # 删除所有可能覆盖 ExecStart 的 drop-in 配置
+        local dropin_dir="${service_file}.d"
+        if [ -d "$dropin_dir" ]; then
+            echo -e "${YELLOW}[WARN]${NC} 发现 drop-in 目录 $dropin_dir，将清空以避免干扰"
+            rm -rf "$dropin_dir"
+        fi
+
+        # 备份原服务文件
         cp "$service_file" "${service_file}.bak.$(date +%s)"
+
+        # 修改 ExecStart 为 confdir 模式
         sed -i "s|^ExecStart=.*|ExecStart=${xray_bin} -confdir ${XRAY_DIR}|" "$service_file"
+
         systemctl daemon-reload
         systemctl restart xray
         systemctl enable xray 2>/dev/null || true
-        echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启"
+        echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启（已清理 drop-in）"
     else
+        # 无 systemd，手动后台启动
         echo -e "${YELLOW}[WARN]${NC} 未找到 systemd 服务，手动启动..."
         pkill -f "xray.*-confdir.*${XRAY_DIR}" 2>/dev/null || true
         sleep 1
@@ -423,6 +439,25 @@ restart_xray() {
         fi
     fi
     echo -e "${GREEN}[OK]${NC} Xray 已成功运行"
+}
+
+# ===================== 上报与输出 =====================
+upload_config() {
+    local ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo "0.0.0.0")
+    echo -e "${BLUE}[INFO]${NC} 上报配置到 API..."
+    local request_body="{\"resourcesIp\":\"${ip}\",\"socks5Port\":\"${SOCKS_PORT}\",\"socks5UserName\":\"${SOCKS_USER}\",\"socks5Password\":\"${SOCKS_PASS}\"}"
+    local response=$(curl -s --connect-timeout 10 --max-time 30 -X POST -H "Content-Type: application/json" -d "$request_body" "$API_URL" 2>&1) || {
+        echo -e "${RED}[ERR]${NC} API 请求失败"; return 1
+    }
+    local code=$(echo "$response" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
+    if [ "$code" != "200" ]; then
+        local err_msg=$(echo "$response" | grep -o '"msg"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"msg"[[:space:]]*:[[:space:]]*"//;s/"$//')
+        echo -e "${RED}[ERR]${NC} API 错误 (code=$code): $err_msg"; return 1
+    fi
+    PASSWORD=$(echo "$response" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"message"[[:space:]]*:[[:space:]]*"//;s/"$//')
+    [ -z "$PASSWORD" ] && { echo -e "${RED}[ERR]${NC} 解析密码失败"; return 1; }
+    echo -e "${GREEN}[OK]${NC} 上报成功: ${QUERY_BASE_URL}/${PASSWORD}"
+    return 0
 }
 
 print_result() {
@@ -442,29 +477,12 @@ print_result() {
     echo ""
 }
 
-upload_config() {
-    local ip=$(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo "0.0.0.0")
-    echo -e "${BLUE}[INFO]${NC} 上报配置到 API..."
-    local request_body="{\"resourcesIp\":\"${ip}\",\"socks5Port\":\"${SOCKS_PORT}\",\"socks5UserName\":\"${SOCKS_USER}\",\"socks5Password\":\"${SOCKS_PASS}\"}"
-    local response=$(curl -s --connect-timeout 10 --max-time 30 -X POST -H "Content-Type: application/json" -d "$request_body" "$API_URL" 2>&1) || {
-        echo -e "${RED}[ERR]${NC} API 请求失败"; return 1
-    }
-    local code=$(echo "$response" | grep -o '"code"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
-    if [ "$code" != "200" ]; then
-        local err_msg=$(echo "$response" | grep -o '"msg"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"msg"[[:space:]]*:[[:space:]]*"//;s/"$//')
-        echo -e "${RED}[ERR]${NC} API 错误 (code=$code): $err_msg"; return 1
-    fi
-    PASSWORD=$(echo "$response" | grep -o '"message"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"message"[[:space:]]*:[[:space:]]*"//;s/"$//')
-    [ -z "$PASSWORD" ] && { echo -e "${RED}[ERR]${NC} 解析密码失败"; return 1; }
-    echo -e "${GREEN}[OK]${NC} 上报成功: ${QUERY_BASE_URL}/${PASSWORD}"
-    return 0
-}
-
 usage() {
     echo "用法: $0 [-p PORT] [-u USER] [-pw PASSWORD] [-h]"
     exit 0
 }
 
+# ===================== 主流程 =====================
 main() {
     SOCKS_PORT=""; SOCKS_USER=""; SOCKS_PASS=""
     while [[ $# -gt 0 ]]; do
