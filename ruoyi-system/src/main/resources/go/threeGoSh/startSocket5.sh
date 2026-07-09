@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Xray SOCKS5 全量一键脚本 (基于原 Dante 脚本改造)
+# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终)
 # 用法： bash startSocket5.sh [-p PORT] [-u USER] [-pw PASSWORD] [-h]
 # 特点：内置账户认证，兼容 Ubuntu/Debian/CentOS，自动防火墙
 # ============================================================
@@ -20,6 +20,14 @@ BBR_ENABLED=false
 API_URL="https://api.ganguo168.com/socks5Resources/insert"
 QUERY_BASE_URL="https://www.ganguo168.com/#/query-config/socks5"
 PASSWORD=""
+
+# 固定路径
+XRAY_DIR="/usr/local/etc/xray"
+CONF_FILE="${XRAY_DIR}/socksConfig.json"
+PORT_RECORD_FILE="/usr/local/etc/firewalld.json"
+
+# 保存旧端口（用于防火墙清理）
+OLD_PORTS=""
 
 # ===================== 系统识别 =====================
 detect_pkg_manager() {
@@ -137,7 +145,7 @@ open_port() {
         ufw) ufw allow "$port"/tcp 2>/dev/null; ufw reload 2>/dev/null || true ;;
         firewalld) firewall-cmd --permanent --add-port="${port}/tcp" 2>/dev/null; firewall-cmd --reload 2>/dev/null || true ;;
         iptables) iptables -I INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true ;;
-        none) echo -e "${YELLOW}[WARN]${NC} 未检测到防火墙，请手动开放端口 $port"; FW_PORT_OK=true; return 0 ;;
+        none) echo -e "${YELLOW}[WARN]${NC} 未检测到防火墙，请手动开放端口 $port"; return 0 ;;
     esac
     sleep 1
     if [ "$FW_TYPE" = "ufw" ]; then
@@ -150,18 +158,104 @@ open_port() {
     [ "$FW_PORT_OK" = true ] && echo -e "${GREEN}[OK]${NC} 端口 $port 已开放" || echo -e "${YELLOW}[WARN]${NC} 端口 $port 开放验证失败"
 }
 
-get_old_port() {
-    # 尝试从旧 Xray 配置中提取端口（如果存在）
-    if [ -f /usr/local/etc/xray/config.json ]; then
-        grep -oP '"port"\s*:\s*\K\d+' /usr/local/etc/xray/config.json 2>/dev/null | head -1
+# 提前收集旧端口（在写入新配置前调用）
+save_old_ports() {
+    OLD_PORTS=""
+    # 1. 从 firewalld.json 获取 socksConfig.json 的历史端口
+    if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
+        local recorded=$(python3 -c "
+import json
+try:
+    with open('$PORT_RECORD_FILE') as f:
+        data = json.load(f)
+    if isinstance(data, dict) and 'socksConfig.json' in data:
+        print(' '.join(map(str, data['socksConfig.json'])))
+except:
+    pass
+" 2>/dev/null)
+        if [ -n "$recorded" ]; then
+            OLD_PORTS="$recorded"
+        fi
+    fi
+    # 2. 从当前 socksConfig.json 提取端口
+    if [ -f "$CONF_FILE" ]; then
+        local cur_port=$(grep -oP '"port"\s*:\s*\K\d+' "$CONF_FILE" 2>/dev/null | head -1)
+        if [ -n "$cur_port" ]; then
+            OLD_PORTS="$OLD_PORTS $cur_port"
+        fi
+    fi
+    # 去重
+    OLD_PORTS=$(echo "$OLD_PORTS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+    if [ -n "$OLD_PORTS" ]; then
+        echo -e "${BLUE}[INFO]${NC} 已记录旧端口: $OLD_PORTS"
+    else
+        echo -e "${BLUE}[INFO]${NC} 未发现旧端口记录"
     fi
 }
 
-configure_firewall() {
+# 最后执行防火墙配置（Xray 启动成功后）
+finalize_firewall() {
     detect_firewall
-    local old_port=$(get_old_port)
-    [ -n "$old_port" ] && [ "$old_port" != "$SOCKS_PORT" ] && close_old_port "$old_port"
+    echo -e "${CYAN}[Firewall]${NC} 开始配置防火墙..."
+
+    # 1. 关闭旧端口（排除当前新端口）
+    if [ -n "$OLD_PORTS" ]; then
+        for port in $OLD_PORTS; do
+            if [ "$port" != "$SOCKS_PORT" ]; then
+                close_old_port "$port"
+            fi
+        done
+    fi
+
+    # 2. 放行新端口
     open_port "$SOCKS_PORT"
+
+    echo -e "${GREEN}[OK]${NC} 防火墙规则已更新"
+}
+
+# ===================== 端口冲突检查 =====================
+check_port_conflict() {
+    local new_port="$1"
+    
+    # 精确匹配监听端口，避免 80 误匹配 8080 等
+    local listening_info=""
+    if ss -tlnp "sport = :${new_port}" 2>/dev/null | grep -q LISTEN; then
+        listening_info=$(ss -tlnp "sport = :${new_port}" 2>/dev/null)
+    else
+        listening_info=$(ss -tlnp 2>/dev/null | grep -E "LISTEN[^:]*:${new_port}\s")
+    fi
+
+    if [ -z "$listening_info" ]; then
+        echo -e "${GREEN}[INFO]${NC} 端口 $new_port 未被占用，可以继续"
+        return 0
+    fi
+
+    local proc_info=$(echo "$listening_info" | awk '{print $NF}' | sed 's/users:(("//;s/".*//')
+    echo -e "${YELLOW}[WARN]${NC} 端口 $new_port 已被进程占用: $proc_info"
+
+    # 检查 firewalld.json 中是否记录了该端口（属于本脚本的 socksConfig 历史）
+    if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
+        local in_record=$(python3 -c "
+import json, sys
+try:
+    with open('$PORT_RECORD_FILE') as f:
+        data = json.load(f)
+    if isinstance(data, dict) and 'socksConfig.json' in data:
+        ports = data['socksConfig.json']
+        if $new_port in ports:
+            print('yes')
+except:
+    pass
+" 2>/dev/null)
+        if [ "$in_record" = "yes" ]; then
+            echo -e "${GREEN}[INFO]${NC} 端口 $new_port 属于本脚本历史记录，允许覆盖"
+            return 0
+        fi
+    fi
+
+    echo -e "${RED}[ERR]${NC} 端口 $new_port 被其他服务占用，无法继续。"
+    echo -e "${YELLOW}       请更换端口后重试，或先停止占用该端口的服务。${NC}"
+    exit 1
 }
 
 # ===================== Xray 安装 =====================
@@ -173,7 +267,6 @@ install_xray() {
     fi
 
     echo -e "${YELLOW}[WARN]${NC} 未找到 xray，通过官方脚本安装..."
-    # 使用官方安装脚本（自动识别系统架构）
     if ! bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install; then
         echo -e "${RED}[ERR]${NC} Xray 安装失败，请检查网络后重试"
         exit 1
@@ -188,9 +281,8 @@ install_xray() {
 
 # ===================== 生成 Xray 配置 =====================
 write_config() {
-    mkdir -p /usr/local/etc/xray
+    mkdir -p "$XRAY_DIR"
 
-    # 用户名保护：禁止使用 root
     if [ "$SOCKS_USER" = "root" ]; then
         echo -e "${RED}[ERR]${NC} 严禁使用 root 作为 SOCKS 用户名，会破坏系统认证！已自动更改为随机用户。"
         SOCKS_USER=""
@@ -199,8 +291,17 @@ write_config() {
     [ -z "$SOCKS_USER" ] && SOCKS_USER="user$(tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
     [ -z "$SOCKS_PASS" ] && SOCKS_PASS="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)"
 
-    # 生成 Xray 配置文件（带认证的 SOCKS5 入站）
-    cat > /usr/local/etc/xray/config.json << EOF
+    # 端口冲突检查
+    check_port_conflict "$SOCKS_PORT"
+
+    # 处理旧的 config.json（避免合并冲突）
+    if [ -f "${XRAY_DIR}/config.json" ]; then
+        local bak="${XRAY_DIR}/config.json.bak.$(date +%s)"
+        mv "${XRAY_DIR}/config.json" "$bak"
+        echo -e "${YELLOW}[WARN]${NC} 旧的 config.json 已备份为 $(basename "$bak")，防止冲突"
+    fi
+
+    cat > "$CONF_FILE" << EOF
 {
   "inbounds": [
     {
@@ -226,25 +327,80 @@ write_config() {
   ]
 }
 EOF
-    echo -e "${GREEN}[OK]${NC} Xray 配置文件已写入"
+    echo -e "${GREEN}[OK]${NC} 配置文件 $CONF_FILE 已写入"
 }
 
+# ===================== 更新 firewalld.json =====================
+update_port_record() {
+    local key="socksConfig.json"
+    local port=$SOCKS_PORT
+
+    if command -v python3 &>/dev/null; then
+        python3 -c "
+import json, sys, os
+record_file = '$PORT_RECORD_FILE'
+key = '$key'
+new_port = $port
+
+data = {}
+if os.path.exists(record_file):
+    try:
+        with open(record_file) as f:
+            data = json.load(f)
+    except:
+        data = {}
+
+if not isinstance(data, dict):
+    data = {}
+
+data[key] = [new_port]
+
+with open(record_file, 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+"
+        echo -e "${GREEN}[OK]${NC} 端口记录已更新至 $PORT_RECORD_FILE"
+    else
+        cat > "$PORT_RECORD_FILE" << EOF
+{
+  "$key": [$SOCKS_PORT]
+}
+EOF
+        echo -e "${YELLOW}[WARN]${NC} 未找到 python3，firewalld.json 已直接覆盖（历史记录丢失）"
+    fi
+}
+
+# ===================== 启动 Xray（confdir 模式） =====================
 restart_xray() {
-    echo -e "${CYAN}[Xray]${NC} 启动/重启 Xray 服务..."
-    systemctl restart xray || {
-        echo -e "${YELLOW}[WARN]${NC} systemd 重启失败，尝试手动启动 xray..."
+    echo -e "${CYAN}[Xray]${NC} 启动/重启 Xray 服务（confdir 模式）..."
+
+    local xray_bin="xray"
+    if [ -x "/usr/local/bin/xray" ]; then
+        xray_bin="/usr/local/bin/xray"
+    fi
+
+    local service_file="/etc/systemd/system/xray.service"
+    if [ -f "$service_file" ]; then
+        echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务，修改为 confdir 启动..."
+        cp "$service_file" "${service_file}.bak.$(date +%s)"
+        sed -i "s|^ExecStart=.*|ExecStart=${xray_bin} -confdir ${XRAY_DIR}|" "$service_file"
+        systemctl daemon-reload
+        systemctl restart xray
+        systemctl enable xray 2>/dev/null || true
+        echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启"
+    else
+        echo -e "${YELLOW}[WARN]${NC} 未找到 systemd 服务，手动启动..."
         pkill xray 2>/dev/null || true
-        nohup /usr/local/bin/xray run -config /usr/local/etc/xray/config.json > /var/log/xray.log 2>&1 &
+        nohup "$xray_bin" -confdir "$XRAY_DIR" > /var/log/xray.log 2>&1 &
         sleep 2
         if pgrep -f "xray" > /dev/null; then
-            echo -e "${GREEN}[OK]${NC} Xray 进程已启动"
+            echo -e "${GREEN}[OK]${NC} Xray 进程已启动（后台）"
         else
             echo -e "${RED}[ERR]${NC} Xray 启动失败，请检查配置"
             exit 1
         fi
-    }
-    systemctl enable xray 2>/dev/null || true
-    echo -e "${GREEN}[OK]${NC} Xray 已启动并设为开机自启"
+    fi
+    echo -e "${GREEN}[OK]${NC} Xray 已成功运行"
 }
 
 # ===================== 输出和上报 =====================
@@ -294,6 +450,7 @@ usage() {
     exit 0
 }
 
+# ===================== 主流程 =====================
 main() {
     SOCKS_PORT=""; SOCKS_USER=""; SOCKS_PASS=""
     while [[ $# -gt 0 ]]; do
@@ -317,12 +474,15 @@ main() {
     detect_pkg_manager
     install_if_missing "curl" "curl"
     install_if_missing "ss" "iproute2"
+    install_if_missing "python3" "python3"
 
     enable_bbr
-    configure_firewall
     install_xray
-    write_config
-    restart_xray
+    save_old_ports         # ❶ 先收集旧端口（此时 firewalld.json 和 socksConfig.json 尚未更新）
+    write_config           # ❷ 写配置（含端口冲突检查）
+    update_port_record     # ❸ 更新记录为新端口
+    restart_xray           # ❹ 启动 Xray（失败则退出，避免空放行）
+    finalize_firewall      # ❺ 启动成功后配置防火墙（关闭旧端口、放行新端口）
     upload_config || true
     print_result
 }
