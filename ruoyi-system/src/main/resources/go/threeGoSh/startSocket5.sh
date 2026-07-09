@@ -1,8 +1,9 @@
 #!/bin/bash
 # ============================================================
-# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终)
+# Xray SOCKS5 全量一键脚本 (多配置文件版 - 最终修复)
 # 用法： bash startSocket5.sh [-p PORT] [-u USER] [-pw PASSWORD] [-h]
 # 特点：内置账户认证，兼容 Ubuntu/Debian/CentOS，自动防火墙
+# 修复：端口检测使用 fuser/timeout 防止 ss 卡死；UDP 防火墙支持；pkill 精确过滤
 # ============================================================
 set -e
 
@@ -127,35 +128,64 @@ detect_firewall() {
     echo -e "${BLUE}[INFO]${NC} 防火墙类型: $FW_TYPE"
 }
 
+# 关闭旧端口（现在同时支持 TCP 和 UDP）
 close_old_port() {
     local port="$1"
     echo -e "${BLUE}[INFO]${NC} 关闭旧端口 $port ..."
     case "$FW_TYPE" in
-        ufw) ufw delete allow "$port"/tcp 2>/dev/null; ufw reload 2>/dev/null || true ;;
-        firewalld) firewall-cmd --permanent --remove-port="${port}/tcp" 2>/dev/null; firewall-cmd --reload 2>/dev/null || true ;;
-        iptables) iptables -D INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true ;;
+        ufw)
+            ufw delete allow "$port"/tcp 2>/dev/null || true
+            ufw delete allow "$port"/udp 2>/dev/null || true
+            ufw reload 2>/dev/null || true
+            ;;
+        firewalld)
+            firewall-cmd --permanent --remove-port="${port}/tcp" 2>/dev/null || true
+            firewall-cmd --permanent --remove-port="${port}/udp" 2>/dev/null || true
+            firewall-cmd --reload 2>/dev/null || true
+            ;;
+        iptables)
+            iptables -D INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
+            iptables -D INPUT -p udp --dport "$port" -j ACCEPT 2>/dev/null || true
+            ;;
     esac
     sleep 1
 }
 
+# 开放新端口（同时支持 TCP 和 UDP）
 open_port() {
     local port="$1"
     echo -e "${BLUE}[INFO]${NC} 开放端口 $port ..."
     case "$FW_TYPE" in
-        ufw) ufw allow "$port"/tcp 2>/dev/null; ufw reload 2>/dev/null || true ;;
-        firewalld) firewall-cmd --permanent --add-port="${port}/tcp" 2>/dev/null; firewall-cmd --reload 2>/dev/null || true ;;
-        iptables) iptables -I INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true ;;
-        none) echo -e "${YELLOW}[WARN]${NC} 未检测到防火墙，请手动开放端口 $port"; return 0 ;;
+        ufw)
+            ufw allow "$port"/tcp 2>/dev/null || true
+            ufw allow "$port"/udp 2>/dev/null || true
+            ufw reload 2>/dev/null || true
+            ;;
+        firewalld)
+            firewall-cmd --permanent --add-port="${port}/tcp" 2>/dev/null || true
+            firewall-cmd --permanent --add-port="${port}/udp" 2>/dev/null || true
+            firewall-cmd --reload 2>/dev/null || true
+            ;;
+        iptables)
+            iptables -I INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
+            iptables -I INPUT -p udp --dport "$port" -j ACCEPT 2>/dev/null || true
+            ;;
+        none)
+            echo -e "${YELLOW}[WARN]${NC} 未检测到防火墙，请手动开放端口 $port"
+            return 0
+            ;;
     esac
     sleep 1
+    # 验证
+    local ok=false
     if [ "$FW_TYPE" = "ufw" ]; then
-        ufw status 2>/dev/null | grep -qw "$port" && FW_PORT_OK=true || FW_PORT_OK=false
+        ufw status 2>/dev/null | grep -qw "$port" && ok=true
     elif [ "$FW_TYPE" = "firewalld" ]; then
-        firewall-cmd --list-ports 2>/dev/null | grep -qw "${port}/tcp" && FW_PORT_OK=true || FW_PORT_OK=false
+        firewall-cmd --list-ports 2>/dev/null | grep -qw "${port}/tcp" && ok=true
     elif [ "$FW_TYPE" = "iptables" ]; then
-        iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null && FW_PORT_OK=true || FW_PORT_OK=false
+        iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null && ok=true
     fi
-    [ "$FW_PORT_OK" = true ] && echo -e "${GREEN}[OK]${NC} 端口 $port 已开放" || echo -e "${YELLOW}[WARN]${NC} 端口 $port 开放验证失败"
+    [ "$ok" = true ] && echo -e "${GREEN}[OK]${NC} 端口 $port 已开放" || echo -e "${YELLOW}[WARN]${NC} 端口 $port 开放验证失败"
 }
 
 # 提前收集旧端口（在写入新配置前调用）
@@ -213,16 +243,25 @@ finalize_firewall() {
     echo -e "${GREEN}[OK]${NC} 防火墙规则已更新"
 }
 
-# ===================== 端口冲突检查 =====================
+# ===================== 端口冲突检查（修复卡死问题） =====================
 check_port_conflict() {
     local new_port="$1"
-    
-    # 精确匹配监听端口，避免 80 误匹配 8080 等
+
+    # 方法1：优先使用 fuser 快速检测（不会卡死）
     local listening_info=""
-    if ss -tlnp "sport = :${new_port}" 2>/dev/null | grep -q LISTEN; then
-        listening_info=$(ss -tlnp "sport = :${new_port}" 2>/dev/null)
-    else
-        listening_info=$(ss -tlnp 2>/dev/null | grep -E "LISTEN[^:]*:${new_port}\s")
+    if command -v fuser &>/dev/null; then
+        # fuser -n tcp 端口，返回占用进程PID列表，无则返回空
+        listening_info=$(fuser -n tcp "$new_port" 2>&1 || true)
+    fi
+
+    # 方法2：fuser不可用时，使用 timeout 保护 ss 命令
+    if [ -z "$listening_info" ] && command -v timeout &>/dev/null; then
+        # 尝试精确匹配，超时3秒
+        listening_info=$(timeout 3 ss -tlnp "sport = :${new_port}" 2>/dev/null || true)
+        if [ -z "$listening_info" ]; then
+            # 回退到 grep 正则，同样超时保护
+            listening_info=$(timeout 3 ss -tlnp 2>/dev/null | grep -E "LISTEN[^:]*:${new_port}\s" || true)
+        fi
     fi
 
     if [ -z "$listening_info" ]; then
@@ -230,13 +269,13 @@ check_port_conflict() {
         return 0
     fi
 
-    local proc_info=$(echo "$listening_info" | awk '{print $NF}' | sed 's/users:(("//;s/".*//')
-    echo -e "${YELLOW}[WARN]${NC} 端口 $new_port 已被进程占用: $proc_info"
+    echo -e "${YELLOW}[WARN]${NC} 端口 $new_port 已被占用，详细信息:"
+    echo "$listening_info" | head -3
 
     # 检查 firewalld.json 中是否记录了该端口（属于本脚本的 socksConfig 历史）
     if [ -f "$PORT_RECORD_FILE" ] && command -v python3 &>/dev/null; then
         local in_record=$(python3 -c "
-import json, sys
+import json
 try:
     with open('$PORT_RECORD_FILE') as f:
         data = json.load(f)
@@ -251,6 +290,11 @@ except:
             echo -e "${GREEN}[INFO]${NC} 端口 $new_port 属于本脚本历史记录，允许覆盖"
             return 0
         fi
+    else
+        # 无法读取记录文件 → 保守失败
+        echo -e "${RED}[ERR]${NC} 端口被占用，且无法验证是否为脚本历史端口（python3 或记录文件缺失）"
+        echo -e "${YELLOW}       请手动检查或更换端口后重试。${NC}"
+        exit 1
     fi
 
     echo -e "${RED}[ERR]${NC} 端口 $new_port 被其他服务占用，无法继续。"
@@ -291,7 +335,7 @@ write_config() {
     [ -z "$SOCKS_USER" ] && SOCKS_USER="user$(tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
     [ -z "$SOCKS_PASS" ] && SOCKS_PASS="$(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 16)"
 
-    # 端口冲突检查
+    # 端口冲突检查（已修复卡死）
     check_port_conflict "$SOCKS_PORT"
 
     # 处理旧的 config.json（避免合并冲突）
@@ -379,8 +423,9 @@ restart_xray() {
         xray_bin="/usr/local/bin/xray"
     fi
 
-    local service_file="/etc/systemd/system/xray.service"
-    if [ -f "$service_file" ]; then
+    # 优先使用 systemd 服务管理（避免 pkill 误杀）
+    local service_file=$(systemctl show -p FragmentPath xray 2>/dev/null | cut -d= -f2)
+    if [ -n "$service_file" ] && [ -f "$service_file" ]; then
         echo -e "${BLUE}[INFO]${NC} 检测到 systemd 服务，修改为 confdir 启动..."
         cp "$service_file" "${service_file}.bak.$(date +%s)"
         sed -i "s|^ExecStart=.*|ExecStart=${xray_bin} -confdir ${XRAY_DIR}|" "$service_file"
@@ -389,11 +434,14 @@ restart_xray() {
         systemctl enable xray 2>/dev/null || true
         echo -e "${GREEN}[OK]${NC} systemd 服务已更新并重启"
     else
+        # 无 systemd，手动后台启动（精确杀掉旧的 confdir 实例）
         echo -e "${YELLOW}[WARN]${NC} 未找到 systemd 服务，手动启动..."
-        pkill xray 2>/dev/null || true
+        # 只杀掉由本脚本启动的 -confdir 进程
+        pkill -f "xray.*-confdir.*${XRAY_DIR}" 2>/dev/null || true
+        sleep 1
         nohup "$xray_bin" -confdir "$XRAY_DIR" > /var/log/xray.log 2>&1 &
         sleep 2
-        if pgrep -f "xray" > /dev/null; then
+        if pgrep -f "xray.*-confdir.*${XRAY_DIR}" > /dev/null; then
             echo -e "${GREEN}[OK]${NC} Xray 进程已启动（后台）"
         else
             echo -e "${RED}[ERR]${NC} Xray 启动失败，请检查配置"
@@ -475,14 +523,15 @@ main() {
     install_if_missing "curl" "curl"
     install_if_missing "ss" "iproute2"
     install_if_missing "python3" "python3"
+    install_if_missing "fuser" "psmisc"   # 确保 fuser 可用
 
     enable_bbr
     install_xray
-    save_old_ports         # ❶ 先收集旧端口（此时 firewalld.json 和 socksConfig.json 尚未更新）
+    save_old_ports         # ❶ 先收集旧端口
     write_config           # ❷ 写配置（含端口冲突检查）
     update_port_record     # ❸ 更新记录为新端口
-    restart_xray           # ❹ 启动 Xray（失败则退出，避免空放行）
-    finalize_firewall      # ❺ 启动成功后配置防火墙（关闭旧端口、放行新端口）
+    restart_xray           # ❹ 启动 Xray（失败则退出）
+    finalize_firewall      # ❺ 启动成功后配置防火墙
     upload_config || true
     print_result
 }
