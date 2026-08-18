@@ -1,13 +1,16 @@
 #!/bin/bash
 # xrayRelay.sh - Xray 中转节点 reality+vless 配置生成与上报脚本
 # 兼容 CentOS 7/8/9, Ubuntu 18/20/22/24, Debian 10/11/12 等主流 Linux 发行版
-# 功能：BBR优化 → 防火墙开放端口 → x25519生成密钥 → 随机UUID/shortId → 写入config.json(出站指向上游, 支持vless/socks5) → 重启xray → 上报API
+# 功能：BBR优化 → 防火墙开放端口 → x25519生成密钥 → 随机UUID/shortId → 写入relayConfig.json(出站指向上游, 支持vless/socks5) → 重启xray(confdir多配置模式) → 上报API
 # 模式：
-#   full        全量覆盖配置文件（仅保留当前 inbound/outbound/rules）
+#   full        全量覆盖 relayConfig.json（仅保留当前 inbound/outbound/rules）
 #   incremental 增量：若上游已存在，则删除其整套配置（出站+关联入站+路由规则）后再新增；否则直接新增
 # 出站协议：
 #   vless  (默认)  出站为 reality+vless，需 -u/-r/-n/-k/-t
 #   socks5         出站为 socks5，需 -u/-r/--socks5-user/--socks5-pass
+# 说明：与 xrayInStart.sh / startSocket5.sh 一致，使用 confdir 多配置模式（xray -confdir），
+#       中转配置写入 relayConfig.json，与 vlessConfig.json / socksConfig.json 并存互不覆盖；
+#       端口记录维护在 /usr/local/etc/firewalld.json 的 "relayConfig.json" 键下。
 
 set -e
 
@@ -20,7 +23,9 @@ NC='\033[0m'
 
 XRAY_BIN="/usr/local/bin/xray"
 XRAY_CONFIG_DIR="/usr/local/etc/xray"
-XRAY_CONFIG_FILE="$XRAY_CONFIG_DIR/config.json"
+XRAY_CONFIG_FILE="$XRAY_CONFIG_DIR/relayConfig.json"
+PORT_RECORD_FILE="/usr/local/etc/firewalld.json"
+CURRENT_KEY="relayConfig.json"
 API_URL="https://api.ganguo168.com/serverResourcesThree/insert"
 QUERY_BASE_URL="https://www.ganguo168.com/#/query-config"
 
@@ -148,9 +153,7 @@ install_if_missing() {
 ensure_deps() {
     detect_pkg_manager
     install_if_missing "curl" "curl"
-    if [ "$MODE" = "incremental" ]; then
-        install_if_missing "jq" "jq"
-    fi
+    install_if_missing "jq" "jq"
 }
 
 detect_public_ip() {
@@ -237,11 +240,18 @@ is_port_listening() {
     return 1
 }
 
-# 检查端口是否在现有配置文件中作为入站端口存在
+# 检查端口是否在现有配置文件中作为入站端口存在（confdir 多配置：扫描目录下所有 .json，排除本脚本自身）
 is_port_in_config() {
     local port="$1"
-    [ ! -f "$XRAY_CONFIG_FILE" ] && return 1
-    jq -e --argjson port "$port" '.inbounds[] | select(.port == $port)' "$XRAY_CONFIG_FILE" >/dev/null 2>&1
+    local f
+    for f in "$XRAY_CONFIG_DIR"/*.json; do
+        [ ! -f "$f" ] && continue
+        [ "$f" = "$XRAY_CONFIG_FILE" ] && continue
+        if grep -qE "\"port\"[[:space:]]*:[[:space:]]*${port}\b" "$f" 2>/dev/null; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 # 随机获取一个未被使用的端口（范围 20000-65535）
@@ -269,6 +279,16 @@ get_all_inbound_ports() {
         return
     fi
     jq -r '.inbounds[]?.port | select(. != null)' "$XRAY_CONFIG_FILE" 2>/dev/null | tr '\n' ' '
+}
+
+# 备份移走旧版单配置 config.json，防止 confdir 模式重复加载导致冲突
+backup_legacy_config() {
+    local legacy="$XRAY_CONFIG_DIR/config.json"
+    if [ -f "$legacy" ]; then
+        local bak="${legacy}.bak.$(date +%s)"
+        mv "$legacy" "$bak"
+        print_warning "检测到旧版 config.json，已备份为 $(basename "$bak")（confdir 模式加载目录下所有 json，避免新旧配置冲突）"
+    fi
 }
 
 close_port() {
@@ -454,6 +474,7 @@ write_config_full() {
     old_ports=$(get_all_inbound_ports)
 
     mkdir -p "$XRAY_CONFIG_DIR"
+    backup_legacy_config
 
     # 构建出站配置块（根据 OUTBOUND 协议）
     local OUTBOUNDS_BLOCK
@@ -595,6 +616,7 @@ XRAYEOF
 write_config_incremental() {
     print_info "增量模式：更新/添加配置到现有文件..."
     mkdir -p "$XRAY_CONFIG_DIR"
+    backup_legacy_config
 
     # 记录将被删除的端口
     local deleted_ports=""
@@ -872,42 +894,112 @@ configure_firewall() {
     open_port "$new_port"
 }
 
+# 从 firewalld.json 读取本脚本（relayConfig.json 键）记录的端口
+get_recorded_ports() {
+    [ ! -f "$PORT_RECORD_FILE" ] && echo "" && return
+    if command -v python3 &>/dev/null; then
+        python3 -c "
+import json
+try:
+    with open('$PORT_RECORD_FILE') as f:
+        data = json.load(f)
+    if isinstance(data, dict) and '$CURRENT_KEY' in data:
+        print(' '.join(map(str, data['$CURRENT_KEY'])))
+except:
+    pass
+" 2>/dev/null
+    fi
+}
+
+# 更新 firewalld.json 中本脚本（relayConfig.json 键）的端口记录（参考 xrayInStart.sh）
+update_port_record() {
+    if command -v python3 &>/dev/null; then
+        python3 -c "
+import json, os
+record_file = '$PORT_RECORD_FILE'
+key = '$CURRENT_KEY'
+new_port = $PORT
+data = {}
+if os.path.exists(record_file):
+    try:
+        with open(record_file) as f:
+            data = json.load(f)
+    except:
+        data = {}
+if not isinstance(data, dict):
+    data = {}
+data[key] = [new_port]
+with open(record_file, 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+"
+        print_success "端口记录已更新至 $PORT_RECORD_FILE"
+    else
+        cat > "$PORT_RECORD_FILE" << EOF
+{
+  "$CURRENT_KEY": [$PORT]
+}
+EOF
+        print_warning "未找到 python3，firewalld.json 已直接覆盖（其他脚本的历史端口记录可能丢失）"
+    fi
+}
+
 restart_xray() {
-    print_info "重启 xray 服务..."
+    print_info "重启 xray 服务（confdir 多配置模式）..."
     XRAY_RUNNING=false
 
-    if command -v systemctl &> /dev/null && systemctl is-active --quiet xray 2>/dev/null; then
+    local xray_bin="xray"
+    [ -x "$XRAY_BIN" ] && xray_bin="$XRAY_BIN"
+
+    # 参考 xrayInStart.sh：systemd 服务 ExecStart 改为 -confdir，并清理 drop-in
+    local service_file
+    service_file=$(systemctl show -p FragmentPath xray 2>/dev/null | cut -d= -f2)
+    if [ -n "$service_file" ] && [ -f "$service_file" ]; then
+        print_info "检测到 systemd 服务文件: $service_file"
+
+        local dropin_dir="${service_file}.d"
+        if [ -d "$dropin_dir" ]; then
+            print_warning "发现 drop-in 目录 $dropin_dir，将清空以避免干扰"
+            rm -rf "$dropin_dir"
+        fi
+
+        cp "$service_file" "${service_file}.bak.$(date +%s)"
+        sed -i "s|^ExecStart=.*|ExecStart=${xray_bin} -confdir ${XRAY_CONFIG_DIR}|" "$service_file"
+
+        systemctl daemon-reload
         systemctl restart xray
         sleep 3
+        systemctl enable xray 2>/dev/null || true
+
         if systemctl is-active --quiet xray 2>/dev/null; then
-            print_success "xray 服务重启成功 (systemd)"
+            print_success "xray 服务重启成功 (systemd confdir 模式)"
             XRAY_RUNNING=true
             return 0
         fi
-    fi
-
-    if command -v systemctl &> /dev/null; then
-        print_info "尝试 systemctl start..."
-        systemctl start xray 2>/dev/null || true
-        sleep 3
-        if systemctl is-active --quiet xray 2>/dev/null; then
-            print_success "xray 服务启动成功 (systemd)"
-            XRAY_RUNNING=true
-            return 0
+    else
+        print_info "未找到 systemd 服务文件，尝试 systemctl 管理..."
+        if command -v systemctl &> /dev/null; then
+            systemctl restart xray 2>/dev/null || true
+            sleep 3
+            if systemctl is-active --quiet xray 2>/dev/null; then
+                print_success "xray 服务重启成功 (systemd)"
+                XRAY_RUNNING=true
+                return 0
+            fi
         fi
     fi
 
-    print_info "直接启动 xray 进程..."
+    print_info "直接启动 xray 进程（confdir 多配置模式）..."
     pkill -f "xray run" 2>/dev/null || true
     sleep 1
-    nohup "$XRAY_BIN" run -config "$XRAY_CONFIG_FILE" > /var/log/xray.log 2>&1 &
+    nohup "$xray_bin" -confdir "$XRAY_CONFIG_DIR" > /var/log/xray.log 2>&1 &
     sleep 3
 
-    if pgrep -f "xray run" > /dev/null 2>&1; then
-        print_success "xray 进程已启动 (PID: $(pgrep -f 'xray run' | head -1))"
+    if pgrep -f "xray.*-confdir.*${XRAY_CONFIG_DIR}" > /dev/null 2>&1; then
+        print_success "xray 进程已启动（confdir 模式）"
         XRAY_RUNNING=true
     else
-        print_error "xray 启动失败: cat /var/log/xray.log"
+        print_error "xray 启动失败: 请查看 /var/log/xray.log"
         XRAY_RUNNING=false
         return 1
     fi
@@ -1073,10 +1165,6 @@ main() {
     # 如果未指定端口，自动选择
     if [ -z "$PORT" ]; then
         print_info "未指定端口，将自动选择未使用的端口（20000-65535）..."
-        # 确保 jq 已安装（增量模式需要，全量模式也可能需要读取配置文件）
-        if [ "$MODE" = "incremental" ] || [ ! -f "$XRAY_CONFIG_FILE" ]; then
-            install_if_missing "jq" "jq"
-        fi
         PORT=$(get_unused_port)
         print_info "自动选择的端口: $PORT"
     fi
@@ -1147,6 +1235,8 @@ main() {
     local close_ports=""
     if [ "$MODE" = "full" ]; then
         close_ports=$(write_config_full)
+        # 合并 firewalld.json 中本脚本的历史端口（防止配置文件丢失后防火墙残留）
+        close_ports="$close_ports $(get_recorded_ports)"
     else
         close_ports=$(write_config_incremental)
     fi
@@ -1154,6 +1244,7 @@ main() {
     echo ""
     echo -e "${CYAN}[Step 4/7]${NC} 配置防火墙"
     configure_firewall "$close_ports" "$PORT"
+    update_port_record
 
     echo ""
     echo -e "${CYAN}[Step 5/7]${NC} 重启 Xray"
