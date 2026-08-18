@@ -584,7 +584,7 @@ ${SERVER_NAMES_JSON}
   ],
   "outbounds": [
     {
-      "tag": "direct",
+      "tag": "direct-relay",
       "protocol": "freedom",
       "settings": {}
     },
@@ -842,14 +842,16 @@ EOF
         mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
     fi
 
-    # ★★★ 修复 REALITY 回落 Bug：确保 direct (freedom) 出站存在且位于首位 ★★★
-    local direct_outbound='{"tag":"direct","protocol":"freedom","settings":{}}'
-    # 先过滤掉可能存在的旧 direct 规则，然后将新的 direct 插入到数组最前面（索引 0）
+    # ★★★ 修复 REALITY 回落 Bug：确保 direct-relay (freedom) 出站存在且位于首位 ★★★
+    # 注意：tag 用唯一名 "direct-relay"，避免与 vlessConfig.json 的 "direct" 冲突（confdir 多配置合并时重复 tag 会导致 xray 启动失败）；
+    #       同时清理旧版 relayConfig.json 中残留的 "direct" 出站，保证升级路径无冲突
+    local direct_outbound='{"tag":"direct-relay","protocol":"freedom","settings":{}}'
+    # 先过滤掉可能存在的旧 direct-relay / 旧版 direct 规则，然后将新的 direct-relay 插入到数组最前面（索引 0）
     jq --argjson direct "$direct_outbound" \
-        '.outbounds = [.outbounds[] | select(.tag != "direct")] | .outbounds = [$direct] + .outbounds' \
+        '.outbounds = [.outbounds[] | select(.tag != "direct-relay" and .tag != "direct")] | .outbounds = [$direct] + .outbounds' \
         "$XRAY_CONFIG_FILE" > "$XRAY_CONFIG_FILE.tmp"
     mv "$XRAY_CONFIG_FILE.tmp" "$XRAY_CONFIG_FILE"
-    print_success "已确保 direct (freedom) 出站位于首位，以支持 REALITY 协议回落"
+    print_success "已确保 direct-relay (freedom) 出站位于首位，以支持 REALITY 协议回落"
     # ★★★ 修复 REALITY 回落 Bug 结束 ★★★
 
     # 添加新出站
