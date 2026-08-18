@@ -10,6 +10,7 @@ import com.ruoyi.system.domain.dto.SelfDeployDto;
 import com.ruoyi.system.domain.entity.ServerResources;
 import com.ruoyi.system.http.Result;
 import com.ruoyi.system.mapper.ServerResourcesMapper;
+import com.ruoyi.system.util.LogEsUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.validation.BindingResult;
@@ -19,6 +20,8 @@ import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 @Api(tags = "自助部署节点")
@@ -67,19 +70,80 @@ public class SelfDeployController {
             xrayPort = 10000 + RANDOM.nextInt(55536);
         }
 
+        // 部署日志上下文（脱敏：不包含SSH密码/SOCKS5密码）
+        Map<String, Object> logFields = new HashMap<>();
+        logFields.put("deployType", dto.getType());
+        logFields.put("serverIp", ip);
+        logFields.put("sshPort", sshPort);
+        logFields.put("sshUser", username);
+        logFields.put("xrayPort", xrayPort);
+        if (dto.getNextType() != null) {
+            logFields.put("deployMode", dto.getNextType() == 1 ? "full(覆盖中转)" : "incremental(新增中转)");
+        }
+        LogEsUtil.info("自助部署-开始", null, logFields);
+
         String command;
-        if (StrUtil.isNotBlank(dto.getNextPassword())) {
+        String type = dto.getType();
+        if ("socks5".equals(type)) {
+            // SOCKS5 中转：必填下游（ip:端口:账号:密码，ip/端口正则），必选部署方式
+            if (dto.getNextType() == null || (dto.getNextType() != 1 && dto.getNextType() != 2)) {
+                LogEsUtil.warn("自助部署-SOCKS5中转未选择部署方式", null, logFields);
+                return Result.fail("请选择部署方式（新增中转/覆盖中转）");
+            }
+            if (StrUtil.isBlank(dto.getDownstreamSocks5())) {
+                LogEsUtil.warn("自助部署-SOCKS5中转下游为空", null, logFields);
+                return Result.fail("请输入下游SOCKS5（格式：ip:端口:账号:密码）");
+            }
+            String[] parts = dto.getDownstreamSocks5().trim().split(":", 4);
+            if (parts.length != 4 || StrUtil.hasBlank(parts)) {
+                LogEsUtil.warn("自助部署-SOCKS5中转下游格式错误", null, logFields);
+                return Result.fail("下游SOCKS5格式错误，应为 ip:端口:账号:密码");
+            }
+            String sockIp = parts[0].trim();
+            String sockPort = parts[1].trim();
+            if (!sockIp.matches("^((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)$")) {
+                LogEsUtil.warn("自助部署-SOCKS5中转IP格式错误", null, logFields);
+                return Result.fail("下游SOCKS5 IP格式不正确");
+            }
+            if (!sockPort.matches("\\d{1,5}") || Integer.parseInt(sockPort) < 1 || Integer.parseInt(sockPort) > 65535) {
+                LogEsUtil.warn("自助部署-SOCKS5中转端口格式错误", null, logFields);
+                return Result.fail("下游SOCKS5 端口应为 1-65535");
+            }
+            logFields.put("downstreamIp", sockIp);
+            logFields.put("downstreamPort", sockPort);
+            String mode = (dto.getNextType() == 1) ? "full" : "incremental";
+            command = buildSocks5RelayCommand(xrayPort, sockIp, sockPort, parts[2].trim(), parts[3].trim(), mode);
+        } else if ("vless".equals(type)) {
+            // VLESS 中转：必填下游密码，必选部署方式
+            if (dto.getNextType() == null || (dto.getNextType() != 1 && dto.getNextType() != 2)) {
+                LogEsUtil.warn("自助部署-VLESS中转未选择部署方式", null, logFields);
+                return Result.fail("请选择部署方式（新增中转/覆盖中转）");
+            }
+            if (StrUtil.isBlank(dto.getNextPassword())) {
+                LogEsUtil.warn("自助部署-VLESS中转下游密码为空", null, logFields);
+                return Result.fail("请输入下游节点密码");
+            }
             UpstreamInfo upstream = queryUpstream(dto.getNextPassword());
             if (upstream == null) {
+                logFields.put("queryPassword", dto.getNextPassword().trim());
+                LogEsUtil.warn("自助部署-VLESS中转查询上游失败", null, logFields);
                 return Result.fail("查询上游节点配置失败，请检查密码是否正确");
             }
-            String mode = (dto.getNextType() != null && dto.getNextType() == 1) ? "full" : "incremental";
+            logFields.put("upstreamIp", upstream.address);
+            logFields.put("upstreamPort", upstream.port);
+            String mode = (dto.getNextType() == 1) ? "full" : "incremental";
             command = buildRelayCommand(xrayPort, upstream, mode);
         } else {
+            // 新建独立节点
             command = buildInboundCommand(xrayPort);
         }
 
-        return executeSsh(ip, sshPort, username, sshPassword, command);
+        // 记录执行命令（脱敏隐藏 socks5 密码）
+        String safeCommand = command.replaceAll("--socks5-pass '[^']*'", "--socks5-pass '***'");
+        logFields.put("command", safeCommand);
+        LogEsUtil.info("自助部署-命令构建完成", null, logFields);
+
+        return executeSsh(ip, sshPort, username, sshPassword, command, logFields);
     }
 
     private String buildInboundCommand(int port) {
@@ -87,6 +151,19 @@ public class SelfDeployController {
                 + " && bash /tmp/xrayInStart.sh -p " + port
                 + " -d 'lacity.gov:443' -s 'lacity.gov,www.lacity.gov'"
                 + " && rm -f /tmp/xrayInStart.sh";
+    }
+
+    private String buildSocks5RelayCommand(int port, String ip, String sockPort, String user, String pass, String mode) {
+        return "curl -fsSL -o /tmp/xrayRelay.sh " + SCRIPT_RELAY_URL
+                + " && bash /tmp/xrayRelay.sh -p " + port
+                + " -d 'lacity.gov:443' -s 'lacity.gov'"
+                + " -socks5"
+                + " -u " + ip
+                + " -r " + sockPort
+                + " --socks5-user '" + user + "'"
+                + " --socks5-pass '" + pass + "'"
+                + " -m '" + mode + "'"
+                + " && rm -f /tmp/xrayRelay.sh";
     }
 
     private String buildRelayCommand(int port, UpstreamInfo upstream, String mode) {
@@ -127,7 +204,7 @@ public class SelfDeployController {
         return info;
     }
 
-    private Result executeSsh(String ip, String sshPort, String username, String sshPassword, String command) {
+    private Result executeSsh(String ip, String sshPort, String username, String sshPassword, String command, Map<String, Object> logFields) {
         JSch jsch = new JSch();
         Session session = null;
         ChannelExec channel = null;
@@ -138,6 +215,7 @@ public class SelfDeployController {
             session.setConfig("StrictHostKeyChecking", "no");
             session.setConfig("PreferredAuthentications", "password");
             session.connect(15000);
+            LogEsUtil.info("自助部署-SSH连接成功", null, logFields);
 
             channel = (ChannelExec) session.openChannel("exec");
             channel.setCommand(command);
@@ -160,9 +238,15 @@ public class SelfDeployController {
 
             int exitCode = channel.getExitStatus();
             String fullOutput = output.toString();
+            String errText = errOutput.toString();
 
-            if (exitCode != 0 && !errOutput.toString().isEmpty()) {
-                return Result.fail("搭建失败，请联系管理员");
+            if (exitCode != 0 && !errText.isEmpty()) {
+                Map<String, Object> f = new HashMap<>(logFields);
+                f.put("exitCode", exitCode);
+                f.put("stdoutTail", tail(fullOutput, 1000));
+                f.put("stderrTail", tail(errText, 1000));
+                LogEsUtil.error("自助部署-脚本执行失败(exitCode=" + exitCode + ")", null, null, f);
+                return Result.fail("搭建失败（退出码 " + exitCode + "），请联系管理员并提供服务器IP");
             }
 
             String password = extractPassword(fullOutput);
@@ -171,11 +255,21 @@ public class SelfDeployController {
             }
 
             if (password == null || password.isEmpty()) {
-                return Result.fail("搭建失败，请联系管理员");
+                Map<String, Object> f = new HashMap<>(logFields);
+                f.put("exitCode", exitCode);
+                f.put("stdoutTail", tail(fullOutput, 1000));
+                LogEsUtil.error("自助部署-未获取到查询密码", null, null, f);
+                return Result.fail("搭建失败：脚本执行完毕但未获取到查询密码，请联系管理员并提供服务器IP");
             }
 
+            logFields.put("queryPassword", password);
+            LogEsUtil.info("自助部署-成功", null, logFields);
             return Result.success(password, password);
         } catch (com.jcraft.jsch.JSchException e) {
+            Map<String, Object> f = new HashMap<>(logFields);
+            f.put("errorType", "JSchException");
+            f.put("errorMessage", e.getMessage());
+            LogEsUtil.error("自助部署-SSH异常", e, null, f);
             String msg = e.getMessage();
             if (msg != null && msg.toLowerCase().contains("timeout")) {
                 return Result.fail("SSH连接超时，请检查IP和端口是否正确");
@@ -188,7 +282,11 @@ public class SelfDeployController {
             }
             return Result.fail("SSH连接失败: " + (msg != null ? msg : "未知错误"));
         } catch (Exception e) {
-            return Result.fail("搭建失败，请联系管理员");
+            Map<String, Object> f = new HashMap<>(logFields);
+            f.put("errorType", e.getClass().getName());
+            f.put("errorMessage", e.getMessage());
+            LogEsUtil.error("自助部署-执行异常", e, null, f);
+            return Result.fail("搭建失败，请联系管理员并提供服务器IP");
         } finally {
             if (channel != null && channel.isConnected()) {
                 channel.disconnect();
@@ -197,6 +295,13 @@ public class SelfDeployController {
                 session.disconnect();
             }
         }
+    }
+
+    private String tail(String s, int max) {
+        if (s == null || s.length() <= max) {
+            return s;
+        }
+        return "..." + s.substring(s.length() - max);
     }
 
     private String extractPassword(String output) {

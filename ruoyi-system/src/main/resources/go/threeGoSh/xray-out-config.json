@@ -6,23 +6,43 @@
   },
   "inbounds": [
     {
-      "tag": "socks",
-      "port": 46657,
-      "listen": "127.0.0.1",
-      "protocol": "socks",
+      "port": 52548,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "566c6bc0-703f-4fcb-a51d-f52ec3ae82bb",
+            "flow": "xtls-rprx-vision"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "lacity.gov:443",
+          "xver": 0,
+          "serverNames": [
+            "lacity.gov",
+            "www.lacity.gov"
+          ],
+          "privateKey": "EIx2U7vC1Kbzz1SQlyX3tbv9ch8Gvs3yZa0ghTmfSnc",
+          "shortIds": [
+            "e10320fa78ef"
+          ],
+          "fingerprint": "chrome"
+        }
+      },
       "sniffing": {
         "enabled": true,
         "destOverride": [
           "http",
           "tls"
-        ],
-        "routeOnly": false
+        ]
       },
-      "settings": {
-        "auth": "noauth",
-        "udp": true,
-        "allowTransparent": false
-      }
+      "tag": "inbound-52548"
     }
   ],
   "outbounds": [
@@ -70,7 +90,7 @@
     "rules": [
       {
         "type": "field",
-        "inboundTag": "socks",
+        "inboundTag": "inbound-52548",
         "outboundTag": "socks",
         "enabled": true
       }

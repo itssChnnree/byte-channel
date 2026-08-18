@@ -48,6 +48,12 @@ public class SelfDeployDto {
     @ApiModelProperty("下一跳密码")
     public String nextPassword;
 
-    @ApiModelProperty("中转节点增加模式，1为全量模式，2为增量模式")
+    @ApiModelProperty("部署类型：entry=新建独立节点，socks5=SOCKS5中转，vless=VLESS中转")
+    public String type;
+
+    @ApiModelProperty("中转部署方式，1为覆盖中转（full），2为新增中转（incremental），仅socks5/vless中转必填")
     public Integer nextType;
+
+    @ApiModelProperty("下游SOCKS5 连接串（格式 ip:端口:账号:密码，socks5中转必填）")
+    public String downstreamSocks5;
 }

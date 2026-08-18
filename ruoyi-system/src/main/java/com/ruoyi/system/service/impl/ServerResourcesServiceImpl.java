@@ -954,7 +954,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
         String commodityNameByResourcesId = commodityMapper.findCommodityNameByResourcesId(serverResources.getId());
         // 添加备注（URL 编码）
         if (StrUtil.isBlank(commodityNameByResourcesId)){
-            commodityNameByResourcesId = "甘果云自建节点";
+            commodityNameByResourcesId = "甘果出海自建节点";
         }
         if (StrUtil.isNotEmpty(commodityNameByResourcesId)) {
             url.append("#").append(encode(commodityNameByResourcesId));
@@ -976,7 +976,7 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
     private String replaceTemplate(String template, ServerResources serverResources) {
         String commodityNameByResourcesId = commodityMapper.findCommodityNameByResourcesId(serverResources.getId());
         if (StrUtil.isBlank(commodityNameByResourcesId)){
-            commodityNameByResourcesId = "甘果云自建节点";
+            commodityNameByResourcesId = "甘果出海自建节点";
         }
         List<String> split = StrUtil.split(serverResources.getSni(), ",");
         // 创建参数字典

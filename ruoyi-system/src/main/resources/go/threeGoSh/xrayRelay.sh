@@ -1,10 +1,13 @@
 #!/bin/bash
 # xrayRelay.sh - Xray 中转节点 reality+vless 配置生成与上报脚本
 # 兼容 CentOS 7/8/9, Ubuntu 18/20/22/24, Debian 10/11/12 等主流 Linux 发行版
-# 功能：BBR优化 → 防火墙开放端口 → x25519生成密钥 → 随机UUID/shortId → 写入config.json(出站指向上游) → 重启xray → 上报API
+# 功能：BBR优化 → 防火墙开放端口 → x25519生成密钥 → 随机UUID/shortId → 写入config.json(出站指向上游, 支持vless/socks5) → 重启xray → 上报API
 # 模式：
 #   full        全量覆盖配置文件（仅保留当前 inbound/outbound/rules）
 #   incremental 增量：若上游已存在，则删除其整套配置（出站+关联入站+路由规则）后再新增；否则直接新增
+# 出站协议：
+#   vless  (默认)  出站为 reality+vless，需 -u/-r/-n/-k/-t
+#   socks5         出站为 socks5，需 -u/-r/--socks5-user/--socks5-pass
 
 set -e
 
@@ -40,6 +43,11 @@ UPSTREAM_PBK=""
 UPSTREAM_SID=""
 UPSTREAM_SNI=""
 
+# 出站协议: vless(默认) 或 socks5
+OUTBOUND="vless"
+SOCKS5_USER=""
+SOCKS5_PASS=""
+
 FW_TYPE="none"
 FW_PORT_OK=false
 BBR_ENABLED=false
@@ -66,10 +74,16 @@ usage() {
     echo "出站参数 (指向上游入口节点):"
     echo "  -u, --upstream-address IP 上游入口节点IP (必填)"
     echo "  -r, --upstream-port PORT  上游入口节点端口 (必填)"
-    echo "  -n, --upstream-id UUID    上游入口节点UUID/ClientID (必填)"
-    echo "  -k, --upstream-pbk KEY    上游入口节点publicKey (必填)"
-    echo "  -t, --upstream-sid ID     上游入口节点shortId (必填)"
+    echo "  -n, --upstream-id UUID    上游入口节点UUID/ClientID (vless 模式必填)"
+    echo "  -k, --upstream-pbk KEY    上游入口节点publicKey (vless 模式必填)"
+    echo "  -t, --upstream-sid ID     上游入口节点shortId (vless 模式必填)"
     echo "  -w, --upstream-sni SNI    上游TLS SNI (默认: 本节点server-names第一个域名)"
+    echo ""
+    echo "出站协议参数:"
+    echo "  -vless                    出站协议: VLESS (默认, 无需额外参数)"
+    echo "  -socks5                   出站协议: SOCKS5 (必须同时指定: -u IP -r 端口 --socks5-user 账号 --socks5-pass 密码)"
+    echo "  --socks5-user USER        SOCKS5 认证账号 (socks5 模式必填)"
+    echo "  --socks5-pass PASS        SOCKS5 认证密码 (socks5 模式必填)"
     echo ""
     echo "模式参数:"
     echo "  -m, --mode {full|incremental}  配置模式: full=全量覆盖(默认), incremental=增量添加/更新"
@@ -83,6 +97,8 @@ usage() {
     echo "  $0 -m full -p 45673 -u 137.175.93.245 -r 56790 -n 'd6f7a3c3-...' -k '2SAAzbmdk...' -t '5689902540'"
     echo "  # 增量添加/删除旧配置后新增（自动选择端口）"
     echo "  $0 -m incremental -u 137.175.93.245 -r 56790 -n 'd6f7a3c3-...' -k '2SAAzbmdk...' -t '5689902540'"
+    echo "  # socks5 出站模式（全量）"
+    echo "  $0 -m full -p 45673 -socks5 -u 137.175.93.245 -r 1080 --socks5-user admin --socks5-pass '123456'"
     exit 0
 }
 
@@ -439,6 +455,67 @@ write_config_full() {
 
     mkdir -p "$XRAY_CONFIG_DIR"
 
+    # 构建出站配置块（根据 OUTBOUND 协议）
+    local OUTBOUNDS_BLOCK
+    if [ "$OUTBOUND" = "socks5" ]; then
+        OUTBOUNDS_BLOCK=$(cat << SOCKS_OUTBOUND
+    {
+      "tag": "proxy",
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "address": "${UPSTREAM_ADDRESS}",
+            "port": ${UPSTREAM_PORT},
+            "users": [
+              {
+                "user": "${SOCKS5_USER}",
+                "pass": "${SOCKS5_PASS}"
+              }
+            ]
+          }
+        ]
+      }
+    }
+SOCKS_OUTBOUND
+)
+    else
+        OUTBOUNDS_BLOCK=$(cat << VLESS_OUTBOUND
+    {
+      "tag": "proxy",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "${UPSTREAM_ADDRESS}",
+            "port": ${UPSTREAM_PORT},
+            "users": [
+              {
+                "id": "${UPSTREAM_ID}",
+                "flow": "xtls-rprx-vision",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "serverName": "${UPSTREAM_SNI}",
+          "fingerprint": "chrome",
+          "show": false,
+          "publicKey": "${UPSTREAM_PBK}",
+          "shortId": "${UPSTREAM_SID}",
+          "spiderX": "/"
+        }
+      }
+    }
+VLESS_OUTBOUND
+)
+    fi
+
     cat > "$XRAY_CONFIG_FILE" << XRAYEOF
 {
   "log": {
@@ -490,37 +567,7 @@ ${SERVER_NAMES_JSON}
       "protocol": "freedom",
       "settings": {}
     },
-    {
-      "tag": "proxy",
-      "protocol": "vless",
-      "settings": {
-        "vnext": [
-          {
-            "address": "${UPSTREAM_ADDRESS}",
-            "port": ${UPSTREAM_PORT},
-            "users": [
-              {
-                "id": "${UPSTREAM_ID}",
-                "flow": "xtls-rprx-vision",
-                "encryption": "none"
-              }
-            ]
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "reality",
-        "realitySettings": {
-          "serverName": "${UPSTREAM_SNI}",
-          "fingerprint": "chrome",
-          "show": false,
-          "publicKey": "${UPSTREAM_PBK}",
-          "shortId": "${UPSTREAM_SID}",
-          "spiderX": "/"
-        }
-      }
-    }
+${OUTBOUNDS_BLOCK}
   ],
   "routing": {
     "domainStrategy": "IPIfNonMatch",
@@ -613,49 +660,75 @@ EOF
             tag: $inbound_tag
         }')
 
-    # 构建新 outbound 对象（JSON）
+    # 构建新 outbound 对象（JSON，根据 OUTBOUND 协议）
     local new_outbound
-    new_outbound=$(jq -n \
-        --arg address "$UPSTREAM_ADDRESS" \
-        --arg port "$UPSTREAM_PORT" \
-        --arg upstream_id "$UPSTREAM_ID" \
-        --arg upstream_sni "$UPSTREAM_SNI" \
-        --arg upstream_pbk "$UPSTREAM_PBK" \
-        --arg upstream_sid "$UPSTREAM_SID" \
-        --arg outbound_tag "$outbound_tag" \
-        '{
-            tag: $outbound_tag,
-            protocol: "vless",
-            settings: {
-                vnext: [{
-                    address: $address,
-                    port: ($port | tonumber),
-                    users: [{
-                        id: $upstream_id,
-                        flow: "xtls-rprx-vision",
-                        encryption: "none"
+    if [ "$OUTBOUND" = "socks5" ]; then
+        new_outbound=$(jq -n \
+            --arg address "$UPSTREAM_ADDRESS" \
+            --arg port "$UPSTREAM_PORT" \
+            --arg user "$SOCKS5_USER" \
+            --arg pass "$SOCKS5_PASS" \
+            --arg outbound_tag "$outbound_tag" \
+            '{
+                tag: $outbound_tag,
+                protocol: "socks",
+                settings: {
+                    servers: [{
+                        address: $address,
+                        port: ($port | tonumber),
+                        users: [{ user: $user, pass: $pass }]
                     }]
-                }]
-            },
-            streamSettings: {
-                network: "tcp",
-                security: "reality",
-                realitySettings: {
-                    serverName: $upstream_sni,
-                    fingerprint: "chrome",
-                    show: false,
-                    publicKey: $upstream_pbk,
-                    shortId: $upstream_sid,
-                    spiderX: "/"
                 }
-            }
-        }')
+            }')
+    else
+        new_outbound=$(jq -n \
+            --arg address "$UPSTREAM_ADDRESS" \
+            --arg port "$UPSTREAM_PORT" \
+            --arg upstream_id "$UPSTREAM_ID" \
+            --arg upstream_sni "$UPSTREAM_SNI" \
+            --arg upstream_pbk "$UPSTREAM_PBK" \
+            --arg upstream_sid "$UPSTREAM_SID" \
+            --arg outbound_tag "$outbound_tag" \
+            '{
+                tag: $outbound_tag,
+                protocol: "vless",
+                settings: {
+                    vnext: [{
+                        address: $address,
+                        port: ($port | tonumber),
+                        users: [{
+                            id: $upstream_id,
+                            flow: "xtls-rprx-vision",
+                            encryption: "none"
+                        }]
+                    }]
+                },
+                streamSettings: {
+                    network: "tcp",
+                    security: "reality",
+                    realitySettings: {
+                        serverName: $upstream_sni,
+                        fingerprint: "chrome",
+                        show: false,
+                        publicKey: $upstream_pbk,
+                        shortId: $upstream_sid,
+                        spiderX: "/"
+                    }
+                }
+            }')
+    fi
 
     # 1. 检查是否已存在相同上游（address+port）的出站
     local outbound_idx
-    outbound_idx=$(jq --arg addr "$UPSTREAM_ADDRESS" --argjson port "$UPSTREAM_PORT" \
-        '.outbounds | map(.settings.vnext[0].address == $addr and .settings.vnext[0].port == $port) | index(true)' \
-        "$XRAY_CONFIG_FILE")
+    if [ "$OUTBOUND" = "socks5" ]; then
+        outbound_idx=$(jq --arg addr "$UPSTREAM_ADDRESS" --argjson port "$UPSTREAM_PORT" \
+            '.outbounds | map(.protocol == "socks" and .settings.servers[0].address == $addr and .settings.servers[0].port == $port) | index(true)' \
+            "$XRAY_CONFIG_FILE")
+    else
+        outbound_idx=$(jq --arg addr "$UPSTREAM_ADDRESS" --argjson port "$UPSTREAM_PORT" \
+            '.outbounds | map(.settings.vnext[0].address == $addr and .settings.vnext[0].port == $port) | index(true)' \
+            "$XRAY_CONFIG_FILE")
+    fi
 
     if [ "$outbound_idx" != "null" ] && [ -n "$outbound_idx" ]; then
         # 上游已存在，需要删除整套旧配置
@@ -942,11 +1015,16 @@ print_result() {
     echo ""
 
     echo -e "  ${CYAN}上游入口节点${NC}"
+    echo -e "  协议:    $OUTBOUND"
     echo -e "  地址:    $UPSTREAM_ADDRESS:$UPSTREAM_PORT"
-    echo -e "  UUID:    $UPSTREAM_ID"
-    echo -e "  公钥:    $UPSTREAM_PBK"
-    echo -e "  短ID:    $UPSTREAM_SID"
-    echo -e "  SNI:     $UPSTREAM_SNI"
+    if [ "$OUTBOUND" = "socks5" ]; then
+        echo -e "  账号:    $SOCKS5_USER"
+    else
+        echo -e "  UUID:    $UPSTREAM_ID"
+        echo -e "  公钥:    $UPSTREAM_PBK"
+        echo -e "  短ID:    $UPSTREAM_SID"
+        echo -e "  SNI:     $UPSTREAM_SNI"
+    fi
     echo ""
 
     echo -e "  ${CYAN}配置查询链接${NC}"
@@ -983,6 +1061,10 @@ main() {
             -t|--upstream-sid)       UPSTREAM_SID="$2"; shift 2 ;;
             -w|--upstream-sni)       UPSTREAM_SNI="$2"; shift 2 ;;
             -m|--mode)               MODE="$2"; shift 2 ;;
+            -vless)                  OUTBOUND="vless"; shift ;;
+            -socks5)                 OUTBOUND="socks5"; shift ;;
+            --socks5-user)           SOCKS5_USER="$2"; shift 2 ;;
+            --socks5-pass)           SOCKS5_PASS="$2"; shift 2 ;;
             -h|--help)               usage ;;
             *) print_error "未知参数: $1"; usage ;;
         esac
@@ -1004,11 +1086,24 @@ main() {
         print_error "端口号必须是 1-65535 之间的整数"; exit 1;
     }
 
-    [ -z "$UPSTREAM_ADDRESS" ] && { print_error "必须指定上游入口节点IP (-u/--upstream-address)"; usage; }
-    [ -z "$UPSTREAM_PORT" ] && { print_error "必须指定上游入口节点端口 (-r/--upstream-port)"; usage; }
-    [ -z "$UPSTREAM_ID" ] && { print_error "必须指定上游入口节点UUID (-n/--upstream-id)"; usage; }
-    [ -z "$UPSTREAM_PBK" ] && { print_error "必须指定上游入口节点publicKey (-k/--upstream-pbk)"; usage; }
-    [ -z "$UPSTREAM_SID" ] && { print_error "必须指定上游入口节点shortId (-t/--upstream-sid)"; usage; }
+    # 出站协议校验
+    if [ "$OUTBOUND" != "vless" ] && [ "$OUTBOUND" != "socks5" ]; then
+        print_error "出站协议必须是 vless 或 socks5"
+        usage
+    fi
+
+    # 出站公共必填：上游地址与端口
+    [ -z "$UPSTREAM_ADDRESS" ] && { print_error "必须指定上游IP (-u/--upstream-address)"; usage; }
+    [ -z "$UPSTREAM_PORT" ] && { print_error "必须指定上游端口 (-r/--upstream-port)"; usage; }
+
+    if [ "$OUTBOUND" = "socks5" ]; then
+        [ -z "$SOCKS5_USER" ] && { print_error "socks5 模式必须指定账号 (--socks5-user)"; usage; }
+        [ -z "$SOCKS5_PASS" ] && { print_error "socks5 模式必须指定密码 (--socks5-pass)"; usage; }
+    else
+        [ -z "$UPSTREAM_ID" ] && { print_error "必须指定上游入口节点UUID (-n/--upstream-id)"; usage; }
+        [ -z "$UPSTREAM_PBK" ] && { print_error "必须指定上游入口节点publicKey (-k/--upstream-pbk)"; usage; }
+        [ -z "$UPSTREAM_SID" ] && { print_error "必须指定上游入口节点shortId (-t/--upstream-sid)"; usage; }
+    fi
 
     if [ "$MODE" != "full" ] && [ "$MODE" != "incremental" ]; then
         print_error "模式必须是 full 或 incremental"
@@ -1041,6 +1136,7 @@ main() {
 
     echo ""
     echo -e "${CYAN}[Step 3/7]${NC} 生成密钥 & 配置"
+    print_info "出站协议: $OUTBOUND"
     check_xray
     generate_keys
     generate_clientid
