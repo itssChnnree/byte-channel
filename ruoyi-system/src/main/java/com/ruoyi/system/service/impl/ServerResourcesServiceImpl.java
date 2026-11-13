@@ -951,16 +951,18 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
                 .append("&spx=%2F")
                 .append("&type=tcp")
                 .append("&headerType=none");
-        String commodityNameByResourcesId = commodityMapper.findCommodityNameByResourcesId(serverResources.getId());
-        // 添加备注（URL 编码）
-        if (StrUtil.isBlank(commodityNameByResourcesId)){
-            commodityNameByResourcesId = "甘果出海自建节点";
-        }
-        if (StrUtil.isNotEmpty(commodityNameByResourcesId)) {
-            url.append("#").append(encode(commodityNameByResourcesId));
-        }
+        // 添加备注（URL 编码）：自建节点（查询密码）
+        url.append("#").append(encode(buildNodeName(serverResources)));
 
         return url.toString();
+    }
+
+    /**
+     * 节点名称统一为「自建节点（查询密码）」，便于用户从节点名直接看到查询密码
+     */
+    private String buildNodeName(ServerResources serverResources) {
+        String password = serverResources.getPassword();
+        return StrUtil.isBlank(password) ? "自建节点" : "自建节点（" + password + "）";
     }
 
 
@@ -974,14 +976,10 @@ public class ServerResourcesServiceImpl  implements IServerResourcesService {
 
     //替换模板
     private String replaceTemplate(String template, ServerResources serverResources) {
-        String commodityNameByResourcesId = commodityMapper.findCommodityNameByResourcesId(serverResources.getId());
-        if (StrUtil.isBlank(commodityNameByResourcesId)){
-            commodityNameByResourcesId = "甘果出海自建节点";
-        }
         List<String> split = StrUtil.split(serverResources.getSni(), ",");
         // 创建参数字典
         Dict params = Dict.create()
-                .set("commodityName", commodityNameByResourcesId)
+                .set("commodityName", buildNodeName(serverResources))
                 .set("ip", serverResources.getResourcesIp())
                 .set("port", serverResources.getNodePort())
                 .set("uuid", serverResources.getUserId())
