@@ -439,8 +439,12 @@ random_digits() {
 }
 
 generate_clientid() {
-    CLIENT_ID=$(random_digits 10)
-    print_info "生成 clients.id: $CLIENT_ID"
+    local u=""
+    for i in $(seq 1 32); do
+        u="${u}$(printf '%x' $(( RANDOM % 16 )))"
+    done
+    CLIENT_ID="${u:0:8}-${u:8:4}-${u:12:4}-${u:16:4}-${u:20:12}"
+    echo -e "${BLUE}[INFO]${NC} 生成 clients.id: $CLIENT_ID"
 }
 
 generate_shortid() {
